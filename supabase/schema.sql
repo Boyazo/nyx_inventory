@@ -153,7 +153,7 @@ create index if not exists team_shifts_department_idx on public.team_shifts(depa
 create table if not exists public.strategy_plays (
   id uuid primary key default gen_random_uuid(),
   name text not null check (length(trim(name)) > 0),
-  game_year text not null default '2025',
+  game_year text not null default '2026',
   drawing_data text not null,
   notes text not null default '',
   created_by uuid references auth.users(id),
