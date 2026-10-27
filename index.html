@@ -1686,7 +1686,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
         <div class="playbook-toolbar">
           <div class="tool-group">
             <span class="tool-label">TOOL:</span>
-            <button type="button" class="tool-btn" data-tool="pointer" title="Tactical Laser Pointer">🎯 Pointer</button>
+            <button type="button" class="tool-btn" data-tool="move" title="Move & Pan Tool (Drag robots, tokens or pan page)">🖐️ Move</button>
             <button type="button" class="tool-btn active" data-tool="pen" title="Freehand Path">✏️ Draw</button>
             <button type="button" class="tool-btn" data-tool="arrow" title="Route Arrow">↗️ Arrow</button>
             <button type="button" class="tool-btn" data-tool="line" title="Straight Line">📏 Line</button>
@@ -4819,43 +4819,8 @@ let playHistory = [];
 let isDrawing = false;
 let currentPath = [];
 let shapeStart = null;
-let liveLaserPoint = null;
-
-function drawLiveLaser(coords) {
-  renderCanvas();
-  const canvas = $("#field-canvas");
-  if (!canvas || !coords) return;
-  const ctx = canvas.getContext("2d");
-
-  // Outer glowing pulse ring
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(coords.x, coords.y, 22, 0, Math.PI * 2);
-  ctx.strokeStyle = activeColor;
-  ctx.lineWidth = 2.5;
-  ctx.globalAlpha = 0.55;
-  ctx.stroke();
-
-  // Crosshairs
-  ctx.beginPath();
-  ctx.moveTo(coords.x - 30, coords.y);
-  ctx.lineTo(coords.x + 30, coords.y);
-  ctx.moveTo(coords.x, coords.y - 30);
-  ctx.lineTo(coords.x, coords.y + 30);
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  // Solid bright core dot
-  ctx.beginPath();
-  ctx.arc(coords.x, coords.y, 7, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
-  ctx.globalAlpha = 1.0;
-  ctx.fill();
-  ctx.strokeStyle = activeColor;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.restore();
-}
+let draggedItem = null;
+let draggedOffset = { x: 0, y: 0 };
 let currentSortMetric = "epa";
 let currentSearchQuery = "";
 
@@ -5394,12 +5359,29 @@ function initPlaybook() {
     }
     activePointerId = e.pointerId;
     try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
-    isDrawing = true;
     const coords = getCanvasCoords(e);
-    if (activeTool === "pointer") {
-      liveLaserPoint = coords;
-      drawLiveLaser(coords);
-    } else if (activeTool === "pen") {
+    if (activeTool === "move") {
+      // Find draggable token or game piece under pointer (within 28px hit radius)
+      for (let i = playHistory.length - 1; i >= 0; i--) {
+        const item = playHistory[i];
+        if (item.type === "token" || item.type === "piece") {
+          const dist = Math.hypot(item.x - coords.x, item.y - coords.y);
+          if (dist <= 28) {
+            draggedItem = item;
+            draggedOffset = { x: item.x - coords.x, y: item.y - coords.y };
+            isDrawing = true;
+            canvas.style.cursor = "grabbing";
+            return;
+          }
+        }
+      }
+      // If nothing under pointer, allow native touch scrolling on mobile
+      isDrawing = false;
+      activePointerId = null;
+      return;
+    }
+    isDrawing = true;
+    if (activeTool === "pen") {
       currentPath = [coords];
     } else if (activeTool === "line" || activeTool === "arrow") {
       shapeStart = coords;
@@ -5462,9 +5444,12 @@ function initPlaybook() {
   canvas.addEventListener("pointermove", e => {
     if (!isDrawing || (activePointerId !== null && e.pointerId !== activePointerId)) return;
     const coords = getCanvasCoords(e);
-    if (activeTool === "pointer") {
-      liveLaserPoint = coords;
-      drawLiveLaser(coords);
+    if (activeTool === "move") {
+      if (draggedItem) {
+        draggedItem.x = Math.max(16, Math.min(canvas.width - 16, coords.x + draggedOffset.x));
+        draggedItem.y = Math.max(16, Math.min(canvas.height - 16, coords.y + draggedOffset.y));
+        renderCanvas();
+      }
       return;
     }
     if (activeTool === "eraser") {
@@ -5507,8 +5492,9 @@ function initPlaybook() {
     }
     activePointerId = null;
 
-    if (activeTool === "pointer") {
-      liveLaserPoint = null;
+    if (activeTool === "move") {
+      draggedItem = null;
+      canvas.style.cursor = "grab";
       renderCanvas();
       return;
     }
@@ -5538,6 +5524,13 @@ function initPlaybook() {
       $$(".playbook-toolbar .tool-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       activeTool = btn.dataset.tool;
+      if (activeTool === "move") {
+        canvas.style.cursor = "grab";
+        canvas.style.touchAction = "pan-y pan-x";
+      } else {
+        canvas.style.cursor = "crosshair";
+        canvas.style.touchAction = "none";
+      }
     });
   });
 
