@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#07070c">
-<meta name="description" content="Shared inventory and tool tracking for FRC Team 11744 Nyx (San Diego, CA)">
-<title>Nyx 11744 | Team Inventory & Tool Tracking</title>
+<meta name="description" content="Shared inventory, tool tracking, and team planner for FRC Team 11744 Nyx (San Diego, CA)">
+<title>Nyx 11744 | Team Inventory & Planner</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -31,6 +32,8 @@
   --red-dim: rgba(248, 113, 113, .15);
   --amber: #fbbf24;
   --amber-dim: rgba(251, 191, 36, .15);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96, 165, 250, .15);
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --page-max: 1240px;
@@ -80,11 +83,10 @@ button:disabled { opacity: .55; cursor: wait; }
   padding: 0 4px;
 }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
-.brandmark {
-  height: 38px; width: 38px; display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--accent-bright), var(--accent));
-  color: #0b0813; font-weight: 700; font-size: 18px; border-radius: 10px;
-  box-shadow: 0 0 20px rgba(139, 92, 246, .35);
+.brand-logo {
+  height: 40px; width: 40px; border-radius: 10px; object-fit: contain;
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+  box-shadow: 0 0 16px rgba(139, 92, 246, .25);
 }
 .brandtext strong { display: block; font-size: 15px; font-weight: 700; letter-spacing: .06em; line-height: 1.1; }
 .brandtext small { font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; color: var(--accent-soft); }
@@ -155,8 +157,6 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
   margin-top: 36px; border: 1px solid var(--line); display: inline-flex; align-items: center; gap: 16px;
   padding: 12px 18px; border-radius: var(--radius); background: rgba(255, 255, 255, .03);
 }
-.stamp b { font-size: 26px; font-family: var(--font-mono); color: var(--accent-bright); }
-.stamp span { font-size: 10px; font-family: var(--font-mono); letter-spacing: .18em; color: var(--text-muted); }
 
 .card {
   background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-lg);
@@ -198,10 +198,10 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 .stat p { font-size: 11px; margin: 0; }
 
 /* View Nav Tabs */
-.viewtabs { display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.viewtabs { display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 10px; overflow-x: auto; }
 .viewtab {
   background: transparent; border: 1px solid transparent; color: var(--text-muted);
-  padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; transition: all .15s;
+  padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; transition: all .15s; white-space: nowrap;
 }
 .viewtab:hover { color: var(--text); background: rgba(255, 255, 255, .05); }
 .viewtab.active { background: var(--accent-dim); color: var(--accent-soft); border-color: var(--accent-line); }
@@ -210,7 +210,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
   font-family: var(--font-mono); background: var(--line-strong); color: var(--text); margin-left: 5px;
 }
 
-/* Toolbar & Filters */
+/* Panel */
 .panel {
   background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-lg);
   overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
@@ -258,7 +258,17 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 .pill.Electrical { color: #bae6fd; border-color: rgba(56, 189, 248, .3); background: rgba(56, 189, 248, .1); }
 .pill.Software { color: #ddd6fe; border-color: rgba(167, 139, 250, .3); background: rgba(167, 139, 250, .1); }
 .pill.Miscellaneous { color: #bbf7d0; border-color: rgba(74, 222, 128, .3); background: rgba(74, 222, 128, .1); }
+.pill.DesignCAD { color: #fbcfe8; border-color: rgba(244, 114, 182, .3); background: rgba(244, 114, 182, .1); }
+.pill.Business { color: #fef08a; border-color: rgba(250, 204, 21, .3); background: rgba(250, 204, 21, .1); }
+.pill.General { color: #cbd5e1; border-color: rgba(148, 163, 184, .3); background: rgba(148, 163, 184, .1); }
 .pill.tool { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+
+/* Priority pills */
+.prio { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; font-weight: 700; }
+.prio.urgent { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248, 113, 113, .3); }
+.prio.high { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251, 191, 36, .3); }
+.prio.medium { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96, 165, 250, .3); }
+.prio.low { background: rgba(255, 255, 255, .05); color: var(--text-muted); border: 1px solid var(--line); }
 
 /* Quantity & Actions */
 .quantity { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); }
@@ -286,8 +296,40 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
 }
 
+/* Planner Board */
+.planner-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 20px 24px;
+}
+.planner-col {
+  background: rgba(255, 255, 255, .02); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 480px;
+}
+.col-header {
+  display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px;
+  border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+}
+.col-count {
+  background: var(--line-strong); padding: 2px 7px; border-radius: 999px; font-size: 10px;
+}
+.task-card {
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+  transition: transform .14s ease, border-color .14s ease; display: flex; flex-direction: column; gap: 8px;
+}
+.task-card:hover { transform: translateY(-2px); border-color: var(--accent-line); background: var(--bg-card-hover); }
+.task-title { font-weight: 700; font-size: 14px; line-height: 1.25; color: var(--text); }
+.task-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+.task-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; }
+.task-assignee { font-family: var(--font-mono); font-size: 11px; color: var(--accent-bright); }
+.task-date { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+.task-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+.task-stepbtn {
+  background: var(--accent-dim); border: 1px solid var(--accent-line); color: var(--accent-soft);
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+}
+.task-stepbtn:hover { background: var(--accent); color: #0b0813; }
+
 /* Modals */
-.modalback { position: fixed; inset: 0; z-index: 100; background: rgba(7, 7, 12, .8); backdrop-filter: blur(8px); display: grid; place-items: center; padding: 20px; }
+.modalback { position: fixed; inset: 0; z-index: 100; background: rgba(7, 7, 12, .85); backdrop-filter: blur(8px); display: grid; place-items: center; padding: 20px; }
 .modal {
   width: min(100%, 580px); max-height: 90vh; overflow-y: auto; background: var(--bg-card);
   border: 1px solid var(--line-strong); border-radius: var(--radius-lg); padding: 28px;
@@ -317,6 +359,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 .logaction.ITEM_DELETED { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248, 113, 113, .3); }
 .logaction.TOOL_CHECKOUT { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251, 191, 36, .3); }
 .logaction.TOOL_CHECKIN { background: rgba(56, 189, 248, .15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, .3); }
+.logaction.PLANNER_TASK_CREATED { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96, 165, 250, .3); }
+.logaction.PLANNER_TASK_UPDATED { background: var(--accent-dim); color: var(--accent-soft); }
+.logaction.PLANNER_TASK_COMPLETED { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74, 222, 128, .3); }
 .logaction.MEMBER_APPROVED { background: var(--green-dim); color: var(--green); }
 .logaction.MEMBER_REVOKED { background: var(--red-dim); color: var(--red); }
 
@@ -341,6 +386,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
   .itemrow .location { display: none; }
   .itemrow .quantity { grid-column: 2; grid-row: 1; }
   .itemrow .actions { grid-column: 2; grid-row: 2; justify-content: flex-end; }
+  .planner-grid { grid-template-columns: 1fr; }
   .logrow { grid-template-columns: 1fr; gap: 4px; }
 }
 </style>
@@ -350,11 +396,11 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 <div class="shell">
   <!-- Topbar -->
   <header class="topbar">
-    <a class="brand" href="#" aria-label="NYX 11744 Inventory">
-      <span class="brandmark">N×</span>
+    <a class="brand" href="#" aria-label="NYX 11744 Inventory & Planner">
+      <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
       <span class="brandtext">
-        <strong>NYX INVENTORY</strong>
-        <small>FRC TEAM 11744</small>
+        <strong>NYX 11744</strong>
+        <small>INVENTORY & PLANNER</small>
       </span>
     </a>
     <div class="topnote">
@@ -373,16 +419,16 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
       <span class="eyebrow">FRC TEAM 11744 / SAN DIEGO, CA</span>
       <h1>Built for the build season.<br><em>Ready for the next match.</em></h1>
       <p style="font-size: 17px; max-width: 520px;">
-        Shared inventory, parts catalog, and tool check-out for the engineers who design, machine, wire, and program Nyx.
+        Shared inventory, live tool tracking, and collaborative build planning for the engineers who design, machine, wire, and program Nyx.
       </p>
       <div class="metrics">
         <div class="metric"><strong>04</strong><small>SUBSYSTEMS</small></div>
         <div class="metric"><strong>LIVE</strong><small>TOOL TRACKING</small></div>
-        <div class="metric"><strong>24/7</strong><small>TEAM SYNC</small></div>
+        <div class="metric"><strong>TEAM</strong><small>PLANNER</small></div>
       </div>
       <div class="stamp">
-        <b>11744</b>
-        <span>NYX ROBOTICS<br>ENGINEERED TOGETHER</span>
+        <img src="logo.png" alt="Nyx Logo" width="44" height="44" style="border-radius:8px; object-fit:contain;">
+        <span class="mono" style="font-size:11px; letter-spacing:.15em; color:var(--text-muted);">NYX ROBOTICS 11744<br>ENGINEERED TOGETHER</span>
       </div>
     </section>
 
@@ -392,7 +438,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
         <span class="mono small muted">SAN DIEGO</span>
       </div>
       <h2 id="auth-title">Sign in to the shop.</h2>
-      <p id="auth-subtitle" class="muted small">Check stock, log part usage, and check out team tools.</p>
+      <p id="auth-subtitle" class="muted small">Check stock, borrow tools, and coordinate tasks with your subteam.</p>
       
       <div class="tabs">
         <button type="button" class="tab active" id="show-signin">Sign in</button>
@@ -428,7 +474,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     <div class="card" style="text-align: center; padding: 40px 30px;">
       <span class="eyebrow">REGISTRATION CONFIRMED</span>
       <h2>Waiting for team approval.</h2>
-      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can view inventory and check out tools.</p>
+      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can view inventory and contribute to the planner.</p>
       <div style="margin-top: 24px;">
         <button class="btn btn--ghost" id="pending-signout" type="button">Sign out</button>
       </div>
@@ -459,8 +505,8 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     <section class="welcome">
       <div>
         <span class="eyebrow">FRC 11744 / ROBOTICS WORKSHOP</span>
-        <h1>Team <em>inventory.</em></h1>
-        <p class="muted">Live inventory, parts tracker, and shop tool checkouts.</p>
+        <h1>Team <em>workspace.</em></h1>
+        <p class="muted">Live inventory, equipment checkouts, and collaborative build planning.</p>
       </div>
       <div class="userchip">
         <div class="avatar" id="profile-avatar">N</div>
@@ -475,9 +521,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     <!-- Stats -->
     <section class="stats">
       <article class="stat">
-        <small>UNIQUE ITEMS</small>
+        <small>CATALOGED ITEMS</small>
         <strong id="stat-items">0</strong>
-        <p class="muted">Cataloged parts & tools</p>
+        <p class="muted">Parts & equipment entries</p>
       </article>
       <article class="stat">
         <small>TOTAL IN STOCK</small>
@@ -490,9 +536,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
         <p class="muted">Currently in use</p>
       </article>
       <article class="stat">
-        <small>LOW STOCK ITEMS</small>
-        <strong id="stat-low" style="color:var(--red)">0</strong>
-        <p class="muted">At or below minimum threshold</p>
+        <small>ACTIVE TASKS</small>
+        <strong id="stat-tasks" style="color:var(--blue)">0</strong>
+        <p class="muted">In planner roadmap</p>
       </article>
     </section>
 
@@ -500,8 +546,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     <nav class="viewtabs">
       <button class="viewtab active" data-view="inventory">Parts & Tools <span class="badgenum" id="badge-all">0</span></button>
       <button class="viewtab" data-view="checkouts">Active Checkouts <span class="badgenum" id="badge-checkouts">0</span></button>
+      <button class="viewtab" data-view="planner">Team Planner 📋 <span class="badgenum" id="badge-planner">0</span></button>
       <button class="viewtab hidden" id="tab-members" data-view="members">Member Access <span class="badgenum" id="badge-members">0</span></button>
-      <button class="viewtab hidden" id="tab-logs" data-view="logs">Audit Logs (Admin) 🔒</button>
+      <button class="viewtab hidden" id="tab-logs" data-view="logs">Audit Logs 🔒</button>
     </nav>
 
     <!-- INVENTORY VIEW -->
@@ -512,7 +559,6 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
           <p class="muted small">Changes sync in real time across all team devices.</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--ghost btn--sm" id="export-csv-btn" type="button" title="Download inventory for pit packing">⬇ Export CSV</button>
           <button class="btn btn--primary btn--sm" id="add-item-button" type="button">＋ Add Item</button>
         </div>
       </div>
@@ -560,12 +606,64 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
       </div>
     </section>
 
+    <!-- PLANNER VIEW -->
+    <section id="view-planner" class="panel hidden">
+      <div class="toolbar">
+        <div>
+          <h2>Team Build & Task Planner 📋</h2>
+          <p class="muted small">Collaborative board for build milestones, CAD deliverables, wiring goals, and pit preparation.</p>
+        </div>
+        <button class="btn btn--primary btn--sm" id="add-task-btn" type="button">＋ Add Task</button>
+      </div>
+
+      <div class="filters">
+        <div class="tabslist">
+          <button class="catbtn active" data-planner-cat="All">All Subsystems</button>
+          <button class="catbtn" data-planner-cat="Mechanical">Mechanical</button>
+          <button class="catbtn" data-planner-cat="Electrical">Electrical</button>
+          <button class="catbtn" data-planner-cat="Software">Software</button>
+          <button class="catbtn" data-planner-cat="Design / CAD">Design / CAD</button>
+          <button class="catbtn" data-planner-cat="Business">Business</button>
+          <button class="catbtn" data-planner-cat="General">General</button>
+        </div>
+      </div>
+
+      <div class="planner-grid">
+        <!-- Column 1: To Do -->
+        <div class="planner-col" id="col-todo">
+          <div class="col-header">
+            <span>📌 TO DO</span>
+            <span class="col-count" id="count-todo">0</span>
+          </div>
+          <div id="tasks-todo" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+
+        <!-- Column 2: In Progress -->
+        <div class="planner-col" id="col-in-progress">
+          <div class="col-header" style="color:var(--amber);">
+            <span>⚡ IN PROGRESS</span>
+            <span class="col-count" id="count-in-progress">0</span>
+          </div>
+          <div id="tasks-in-progress" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+
+        <!-- Column 3: Done -->
+        <div class="planner-col" id="col-done">
+          <div class="col-header" style="color:var(--green);">
+            <span>✅ COMPLETED</span>
+            <span class="col-count" id="count-done">0</span>
+          </div>
+          <div id="tasks-done" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ADMIN: MEMBERS VIEW -->
     <section id="view-members" class="panel hidden">
       <div class="toolbar">
         <div>
           <h2>Team Access & Member Approvals</h2>
-          <p class="muted small">Only approved members can view inventory and check out tools.</p>
+          <p class="muted small">Only approved members can view inventory and contribute to the workspace.</p>
         </div>
       </div>
       <div id="admin-members-list">
@@ -578,7 +676,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
       <div class="toolbar">
         <div>
           <h2>Audit & Activity Logs 🔒</h2>
-          <p class="muted small">Protected administrative event log. Tracks all inventory modifications and tool checkouts.</p>
+          <p class="muted small">Protected administrative event log. Tracks all inventory modifications, tool checkouts, and planner activity.</p>
         </div>
         <button class="btn btn--ghost btn--sm" id="refresh-logs-btn" type="button">↻ Refresh Logs</button>
       </div>
@@ -592,7 +690,6 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
         <div style="padding:40px; text-align:center;" class="muted">Loading audit logs…</div>
       </div>
     </section>
-
   </main>
 
   <!-- ITEM MODAL (ADD / EDIT) -->
@@ -697,6 +794,73 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     </div>
   </div>
 
+  <!-- PLANNER TASK MODAL -->
+  <div id="task-modal" class="modalback hidden">
+    <div class="modal">
+      <div class="modalhead">
+        <div>
+          <span class="eyebrow">TEAM PLANNER</span>
+          <h2 id="task-modal-title">Add Planner Task</h2>
+        </div>
+        <button class="close" id="close-task-modal" type="button" aria-label="Close">×</button>
+      </div>
+
+      <form id="task-form">
+        <label for="task-title">Task Title *</label>
+        <input id="task-title" maxlength="120" required placeholder="e.g. Assemble intake gearbox, Flash RoboRIO 2, Order 1/2in bearings">
+
+        <div class="formgrid">
+          <div>
+            <label for="task-subsystem">Subteam / Subsystem *</label>
+            <select id="task-subsystem">
+              <option value="General">General</option>
+              <option value="Mechanical">Mechanical</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Software">Software</option>
+              <option value="Design / CAD">Design / CAD</option>
+              <option value="Business">Business</option>
+            </select>
+          </div>
+          <div>
+            <label for="task-priority">Priority</label>
+            <select id="task-priority">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent 🔥</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="formgrid">
+          <div>
+            <label for="task-status">Status</label>
+            <select id="task-status">
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="done">Completed</option>
+            </select>
+          </div>
+          <div>
+            <label for="task-due-date">Target Date</label>
+            <input id="task-due-date" type="date">
+          </div>
+        </div>
+
+        <label for="task-assignee">Assigned To (Member Name or Subteam)</label>
+        <input id="task-assignee" maxlength="60" placeholder="e.g. Maya, CAD Team, or leave blank">
+
+        <label for="task-desc">Description / Instructions</label>
+        <textarea id="task-desc" maxlength="800" rows="3" placeholder="Acceptance criteria, CAD link, part checklist, or notes…"></textarea>
+
+        <div class="modalactions">
+          <button type="button" class="btn btn--ghost" id="cancel-task-modal">Cancel</button>
+          <button type="submit" class="btn btn--primary" id="save-task-btn">Save Task ↗</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <!-- Footer -->
@@ -721,9 +885,12 @@ let currentUser = null;
 let currentProfile = null;
 let allItems = [];
 let allCheckouts = [];
+let allTasks = [];
 let activeCategory = "All";
+let activePlannerSubsystem = "All";
 let currentView = "inventory";
-let editingId = null;
+let editingItemId = null;
+let editingTaskId = null;
 let checkingOutItem = null;
 let channel = null;
 
@@ -756,7 +923,7 @@ function authMode(mode) {
   $("#show-signin").classList.toggle("active", signIn);
   $("#show-signup").classList.toggle("active", !signIn);
   $("#auth-title").textContent = signIn ? "Sign in to the shop." : "Join the team workspace.";
-  $("#auth-subtitle").textContent = signIn ? "Check stock, log part usage, and check out team tools." : "Register with your real name and team email.";
+  $("#auth-subtitle").textContent = signIn ? "Check stock, borrow tools, and coordinate tasks with your subteam." : "Register with your real name and team email.";
   $("#auth-message").classList.add("hidden");
 }
 
@@ -771,6 +938,7 @@ function switchView(viewName) {
   $$(".viewtab").forEach(tab => tab.classList.toggle("active", tab.dataset.view === viewName));
   $("#view-inventory").classList.toggle("hidden", viewName !== "inventory");
   $("#view-checkouts").classList.toggle("hidden", viewName !== "checkouts");
+  $("#view-planner").classList.toggle("hidden", viewName !== "planner");
   $("#view-members").classList.toggle("hidden", viewName !== "members");
   $("#view-logs").classList.toggle("hidden", viewName !== "logs");
 
@@ -805,6 +973,7 @@ async function signOut() {
   currentProfile = null;
   allItems = [];
   allCheckouts = [];
+  allTasks = [];
   screens("auth");
   authMode("signin");
 }
@@ -838,7 +1007,7 @@ async function checkUser(user) {
   $("#tab-members").classList.toggle("hidden", !data.is_admin);
   $("#tab-logs").classList.toggle("hidden", !data.is_admin);
 
-  await Promise.all([loadItems(), loadCheckouts()]);
+  await Promise.all([loadItems(), loadCheckouts(), loadTasks()]);
 
   if (data.is_admin) {
     await loadMembers();
@@ -846,12 +1015,13 @@ async function checkUser(user) {
 
   // Subscribe to realtime changes
   if (!channel) {
-    channel = supabase.channel("nyx-realtime-feed")
+    channel = supabase.channel("nyx-realtime-workspace")
       .on("postgres_changes", { event: "*", schema: "public", table: "inventory_items" }, () => loadItems(true))
       .on("postgres_changes", { event: "*", schema: "public", table: "tool_checkouts" }, () => {
         loadCheckouts(true);
         loadItems(true);
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "planner_tasks" }, () => loadTasks(true))
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
         if (currentView === "logs" && currentProfile?.is_admin) loadLogs();
       })
@@ -901,6 +1071,20 @@ async function loadCheckouts(quiet) {
   }
 }
 
+/* Load Planner Tasks */
+async function loadTasks(quiet) {
+  if (!supabase || !currentUser) return;
+  const { data, error } = await supabase
+    .from("planner_tasks")
+    .select("id, title, description, subsystem, status, priority, due_date, assigned_to, created_by, created_by_name, created_at, updated_at")
+    .order("created_at", { ascending: false });
+
+  if (!error) {
+    allTasks = data || [];
+    renderTasks();
+  }
+}
+
 function renderItems() {
   const totalQty = allItems.reduce((n, x) => n + Number(x.quantity || 0), 0);
   const lowCount = allItems.filter(x => Number(x.quantity) <= Number(x.min_quantity || 1)).length;
@@ -908,7 +1092,6 @@ function renderItems() {
 
   $("#stat-items").textContent = allItems.length;
   $("#stat-quantity").textContent = totalQty;
-  $("#stat-low").textContent = lowCount;
   $("#badge-all").textContent = allItems.length;
 
   $("#count-all").textContent = allItems.length;
@@ -926,7 +1109,9 @@ function renderItems() {
     return [x.name, x.category, x.location, x.notes, x.part_number].join(" ").toLowerCase().includes(q);
   });
 
-  $$(".catbtn").forEach(b => b.classList.toggle("active", b.dataset.category === activeCategory));
+  $$(".catbtn").forEach(b => {
+    if (b.dataset.category) b.classList.toggle("active", b.dataset.category === activeCategory);
+  });
 
   if (!shown.length) {
     $("#items-list").innerHTML = '<div style="padding:40px; text-align:center;" class="muted">' +
@@ -1024,6 +1209,64 @@ function renderCheckouts() {
   }).join("");
 }
 
+function renderTasks() {
+  const activeTasks = allTasks.filter(t => t.status !== "done");
+  $("#stat-tasks").textContent = activeTasks.length;
+  $("#badge-planner").textContent = activeTasks.length;
+
+  const filtered = allTasks.filter(t => {
+    if (activePlannerSubsystem === "All") return true;
+    return t.subsystem === activePlannerSubsystem;
+  });
+
+  const todoTasks = filtered.filter(t => t.status === "todo");
+  const inProgTasks = filtered.filter(t => t.status === "in_progress");
+  const doneTasks = filtered.filter(t => t.status === "done");
+
+  $("#count-todo").textContent = todoTasks.length;
+  $("#count-in-progress").textContent = inProgTasks.length;
+  $("#count-done").textContent = doneTasks.length;
+
+  function renderCard(t) {
+    const subsysClass = t.subsystem.replace(/[\s\/]/g, "");
+    return `
+      <div class="task-card" data-task-id="${t.id}">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
+          <span class="pill ${esc(subsysClass)}">${esc(t.subsystem)}</span>
+          <span class="prio ${esc(t.priority)}">${esc(t.priority)}</span>
+        </div>
+        <div class="task-title">${esc(t.title)}</div>
+        ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
+        <div class="task-meta">
+          <span class="task-assignee">${t.assigned_to ? `@${esc(t.assigned_to)}` : '<em class="muted">Unassigned</em>'}</span>
+          ${t.due_date ? `<span class="task-date">📅 ${esc(t.due_date)}</span>` : ''}
+        </div>
+        <div class="task-actions">
+          <div style="display:flex; gap:5px;">
+            ${t.status === "todo" ? `
+              <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="in_progress">Start ⚡</button>
+            ` : ''}
+            ${t.status === "in_progress" ? `
+              <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="done">Done ✅</button>
+            ` : ''}
+            ${t.status === "done" ? `
+              <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="in_progress">Reopen ↺</button>
+            ` : ''}
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button class="actionbtn" data-action="edit-task" data-id="${t.id}" title="Edit task">✏️</button>
+            <button class="actionbtn delete" data-action="delete-task" data-id="${t.id}" title="Delete task">🗑</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  $("#tasks-todo").innerHTML = todoTasks.length ? todoTasks.map(renderCard).join("") : '<div class="muted small" style="text-align:center; padding:30px 10px;">No pending tasks</div>';
+  $("#tasks-in-progress").innerHTML = inProgTasks.length ? inProgTasks.map(renderCard).join("") : '<div class="muted small" style="text-align:center; padding:30px 10px;">No tasks currently active</div>';
+  $("#tasks-done").innerHTML = doneTasks.length ? doneTasks.map(renderCard).join("") : '<div class="muted small" style="text-align:center; padding:30px 10px;">No completed tasks yet</div>';
+}
+
 /* Load Admin Members List */
 async function loadMembers() {
   if (!supabase || !currentProfile?.is_admin) return;
@@ -1097,8 +1340,10 @@ async function loadLogs() {
 
   list.innerHTML = data.map(log => {
     let detailsText = "";
+    if (log.details?.title) detailsText += `<strong>${esc(log.details.title)}</strong> `;
     if (log.details?.name) detailsText += `<strong>${esc(log.details.name)}</strong> `;
     if (log.details?.qty != null) detailsText += `(Qty: ${esc(log.details.qty)}) `;
+    if (log.details?.status) detailsText += `Status: ${esc(log.details.status)} `;
     if (log.details?.notes) detailsText += `— ${esc(log.details.notes)}`;
     if (!detailsText) detailsText = JSON.stringify(log.details);
 
@@ -1113,41 +1358,9 @@ async function loadLogs() {
   }).join("");
 }
 
-/* CSV Export */
-function exportCSV() {
-  if (!allItems.length) {
-    toast("No inventory items to export.", true);
-    return;
-  }
-
-  const headers = ["Name", "Category", "Classification", "Quantity", "Unit", "Min Threshold", "Location", "Part Number", "Notes", "Last Updated"];
-  const rows = allItems.map(x => [
-    `"${(x.name || "").replace(/"/g, '""')}"`,
-    `"${(x.category || "").replace(/"/g, '""')}"`,
-    x.is_tool ? "Tool" : "Part",
-    x.quantity || 0,
-    `"${(x.unit || "pcs").replace(/"/g, '""')}"`,
-    x.min_quantity || 1,
-    `"${(x.location || "").replace(/"/g, '""')}"`,
-    `"${(x.part_number || "").replace(/"/g, '""')}"`,
-    `"${(x.notes || "").replace(/"/g, '""')}"`,
-    x.updated_at || ""
-  ]);
-
-  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `NYX_11744_Inventory_${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  toast("Inventory CSV downloaded.");
-}
-
 /* Modals */
 function openItemModal(item) {
-  editingId = item ? item.id : null;
+  editingItemId = item ? item.id : null;
   $("#item-form").reset();
   $("#modal-title").textContent = item ? "Edit Inventory Item" : "Add Inventory Item";
   $("#save-item-button").textContent = item ? "Save Changes ↗" : "Save Item ↗";
@@ -1166,7 +1379,7 @@ function openItemModal(item) {
 
 function closeItemModal() {
   $("#item-modal").classList.add("hidden");
-  editingId = null;
+  editingItemId = null;
 }
 
 function openCheckoutModal(item) {
@@ -1183,6 +1396,27 @@ function openCheckoutModal(item) {
 function closeCheckoutModal() {
   $("#checkout-modal").classList.add("hidden");
   checkingOutItem = null;
+}
+
+function openTaskModal(task) {
+  editingTaskId = task ? task.id : null;
+  $("#task-form").reset();
+  $("#task-modal-title").textContent = task ? "Edit Planner Task" : "Add Planner Task";
+  $("#save-task-btn").textContent = task ? "Save Changes ↗" : "Save Task ↗";
+  $("#task-title").value = task ? task.title : "";
+  $("#task-subsystem").value = task ? task.subsystem : (activePlannerSubsystem !== "All" ? activePlannerSubsystem : "Mechanical");
+  $("#task-priority").value = task ? task.priority : "medium";
+  $("#task-status").value = task ? task.status : "todo";
+  $("#task-due-date").value = task ? (task.due_date || "") : "";
+  $("#task-assignee").value = task ? (task.assigned_to || "") : "";
+  $("#task-desc").value = task ? (task.description || "") : "";
+  $("#task-modal").classList.remove("hidden");
+  $("#task-title").focus();
+}
+
+function closeTaskModal() {
+  $("#task-modal").classList.add("hidden");
+  editingTaskId = null;
 }
 
 /* Item Save */
@@ -1212,8 +1446,8 @@ async function saveItem(e) {
   };
 
   let result;
-  if (editingId) {
-    result = await supabase.from("inventory_items").update(payload).eq("id", editingId);
+  if (editingItemId) {
+    result = await supabase.from("inventory_items").update(payload).eq("id", editingItemId);
   } else {
     result = await supabase.from("inventory_items").insert({ ...payload, created_by: currentUser.id });
   }
@@ -1225,15 +1459,68 @@ async function saveItem(e) {
   }
 
   await logAction(
-    editingId ? "ITEM_UPDATED" : "ITEM_CREATED",
+    editingItemId ? "ITEM_UPDATED" : "ITEM_CREATED",
     "inventory_items",
-    editingId || "new",
+    editingItemId || "new",
     { name, category, is_tool, qty: quantity }
   );
 
   closeItemModal();
   await loadItems();
-  toast(editingId ? "Item updated." : "Item added to inventory.");
+  toast(editingItemId ? "Item updated." : "Item added to inventory.");
+}
+
+/* Task Save */
+async function saveTask(e) {
+  e.preventDefault();
+  const title = $("#task-title").value.trim();
+  const subsystem = $("#task-subsystem").value;
+  const priority = $("#task-priority").value;
+  const status = $("#task-status").value;
+  const due_date = $("#task-due-date").value || null;
+  const assigned_to = $("#task-assignee").value.trim();
+  const description = $("#task-desc").value.trim();
+
+  if (!title) {
+    toast("Task title is required.", true);
+    return;
+  }
+
+  const btn = $("#save-task-btn");
+  btn.disabled = true;
+
+  const payload = {
+    title, subsystem, priority, status, due_date, assigned_to, description,
+    updated_at: new Date().toISOString()
+  };
+
+  let result;
+  if (editingTaskId) {
+    result = await supabase.from("planner_tasks").update(payload).eq("id", editingTaskId);
+  } else {
+    result = await supabase.from("planner_tasks").insert({
+      ...payload,
+      created_by: currentUser.id,
+      created_by_name: currentProfile?.full_name || currentUser.email || "Team Member"
+    });
+  }
+
+  btn.disabled = false;
+  if (result.error) {
+    toast("Could not save task: " + result.error.message, true);
+    return;
+  }
+
+  await logAction(
+    editingTaskId ? "PLANNER_TASK_UPDATED" : "PLANNER_TASK_CREATED",
+    "planner_tasks",
+    editingTaskId || "new",
+    { title, subsystem, status, priority, assigned_to }
+  );
+
+  closeTaskModal();
+  await loadTasks();
+  toast(editingTaskId ? "Task updated." : "Task added to team planner.");
 }
 
 /* Update Quantity Quick Buttons */
@@ -1326,7 +1613,6 @@ $$(".viewtab").forEach(tab => {
   tab.addEventListener("click", () => switchView(tab.dataset.view));
 });
 
-$("#export-csv-btn").addEventListener("click", exportCSV);
 $("#add-item-button").addEventListener("click", () => openItemModal(null));
 $("#close-modal").addEventListener("click", closeItemModal);
 $("#cancel-modal").addEventListener("click", closeItemModal);
@@ -1336,6 +1622,12 @@ $("#item-form").addEventListener("submit", saveItem);
 $("#close-checkout-modal").addEventListener("click", closeCheckoutModal);
 $("#cancel-checkout-modal").addEventListener("click", closeCheckoutModal);
 $("#checkout-modal").addEventListener("click", e => { if (e.target.id === "checkout-modal") closeCheckoutModal(); });
+
+$("#add-task-btn").addEventListener("click", () => openTaskModal(null));
+$("#close-task-modal").addEventListener("click", closeTaskModal);
+$("#cancel-task-modal").addEventListener("click", closeTaskModal);
+$("#task-modal").addEventListener("click", e => { if (e.target.id === "task-modal") closeTaskModal(); });
+$("#task-form").addEventListener("submit", saveTask);
 
 /* Confirm Check Out */
 $("#checkout-form").addEventListener("submit", async e => {
@@ -1376,8 +1668,14 @@ $("#checkout-form").addEventListener("submit", async e => {
 
 $("#search-items").addEventListener("input", renderItems);
 $$(".catbtn").forEach(b => b.addEventListener("click", () => {
-  activeCategory = b.dataset.category;
-  renderItems();
+  if (b.dataset.category) {
+    activeCategory = b.dataset.category;
+    renderItems();
+  } else if (b.dataset.plannerCat) {
+    activePlannerSubsystem = b.dataset.plannerCat;
+    $$("[data-planner-cat]").forEach(btn => btn.classList.toggle("active", btn.dataset.plannerCat === activePlannerSubsystem));
+    renderTasks();
+  }
 }));
 
 /* Item List Actions (Edit, Delete, Check out, Direct return) */
@@ -1447,6 +1745,45 @@ $("#checkouts-list").addEventListener("click", async e => {
   }
 });
 
+/* Planner Actions */
+$("#view-planner").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-action]");
+  if (!b) return;
+  const action = b.dataset.action;
+  const id = b.dataset.id;
+  const task = allTasks.find(t => t.id === id);
+
+  if (action === "move-status") {
+    const newStatus = b.dataset.newstatus;
+    const { error } = await supabase.from("planner_tasks").update({
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    }).eq("id", id);
+
+    if (error) {
+      toast("Failed to update status: " + error.message, true);
+    } else {
+      const logType = newStatus === "done" ? "PLANNER_TASK_COMPLETED" : "PLANNER_TASK_UPDATED";
+      await logAction(logType, "planner_tasks", id, { title: task?.title, status: newStatus });
+      await loadTasks(true);
+      toast(newStatus === "done" ? "Task marked complete! 🎉" : "Task moved to in progress.");
+    }
+  } else if (action === "edit-task") {
+    if (task) openTaskModal(task);
+  } else if (action === "delete-task") {
+    if (confirm(`Delete task "${task?.title}"?`)) {
+      const { error } = await supabase.from("planner_tasks").delete().eq("id", id);
+      if (error) {
+        toast("Delete failed: " + error.message, true);
+      } else {
+        await logAction("PLANNER_TASK_DELETED", "planner_tasks", id, { title: task?.title });
+        await loadTasks(true);
+        toast("Task removed.");
+      }
+    }
+  }
+});
+
 /* Admin Member Actions */
 $("#admin-members-list").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action]");
@@ -1475,7 +1812,6 @@ if (configured) {
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
     supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 
-    // Check for password recovery event
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         $("#recovery-modal").classList.remove("hidden");

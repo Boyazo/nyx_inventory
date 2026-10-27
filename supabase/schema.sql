@@ -58,8 +58,8 @@ create index if not exists tool_checkouts_status_idx on public.tool_checkouts(st
 -- 4. Activity & Audit Logs Table (Admin Only View)
 create table if not exists public.activity_logs (
   id uuid primary key default gen_random_uuid(),
-  action text not null, -- 'ITEM_CREATED', 'ITEM_UPDATED', 'ITEM_DELETED', 'TOOL_CHECKOUT', 'TOOL_CHECKIN', 'MEMBER_APPROVED', 'MEMBER_REVOKED'
-  entity_type text not null, -- 'inventory_items', 'tool_checkouts', 'profiles'
+  action text not null,
+  entity_type text not null,
   entity_id text,
   details jsonb not null default '{}'::jsonb,
   user_id uuid references auth.users(id),
@@ -70,7 +70,27 @@ create table if not exists public.activity_logs (
 create index if not exists activity_logs_created_at_idx on public.activity_logs(created_at desc);
 create index if not exists activity_logs_action_idx on public.activity_logs(action);
 
--- 5. Helper Functions
+-- 5. Collaborative Team Planner Table
+create table if not exists public.planner_tasks (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (length(trim(title)) > 0),
+  description text not null default '',
+  subsystem text not null check (subsystem in ('General', 'Mechanical', 'Electrical', 'Software', 'Design / CAD', 'Business')),
+  status text not null default 'todo' check (status in ('todo', 'in_progress', 'done')),
+  priority text not null default 'medium' check (priority in ('low', 'medium', 'high', 'urgent')),
+  due_date date,
+  assigned_to text not null default '',
+  created_by uuid not null references auth.users(id),
+  created_by_name text not null default 'Team Member',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists planner_tasks_status_idx on public.planner_tasks(status);
+create index if not exists planner_tasks_subsystem_idx on public.planner_tasks(subsystem);
+create index if not exists planner_tasks_due_date_idx on public.planner_tasks(due_date);
+
+-- 6. Helper Functions & Triggers
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
@@ -112,11 +132,12 @@ drop trigger if exists inventory_items_updated_at on public.inventory_items;
 create trigger inventory_items_updated_at before update on public.inventory_items
 for each row execute procedure public.set_inventory_updated_at();
 
--- 6. Row Level Security Policies
+-- 7. Row Level Security Policies
 alter table public.profiles enable row level security;
 alter table public.inventory_items enable row level security;
 alter table public.tool_checkouts enable row level security;
 alter table public.activity_logs enable row level security;
+alter table public.planner_tasks enable row level security;
 
 -- Profiles policies
 drop policy if exists "Members read own profile; admins read all" on public.profiles;
@@ -174,7 +195,25 @@ drop policy if exists "Approved members can insert activity logs" on public.acti
 create policy "Approved members can insert activity logs" on public.activity_logs
 for insert to authenticated with check((select public.is_approved_member()));
 
--- 7. Realtime configuration
+-- Planner tasks policies (All approved members can contribute)
+drop policy if exists "Approved members can read planner tasks" on public.planner_tasks;
+create policy "Approved members can read planner tasks" on public.planner_tasks
+for select to authenticated using((select public.is_approved_member()));
+
+drop policy if exists "Approved members can create planner tasks" on public.planner_tasks;
+create policy "Approved members can create planner tasks" on public.planner_tasks
+for insert to authenticated with check((select public.is_approved_member()) and created_by=(select auth.uid()));
+
+drop policy if exists "Approved members can update planner tasks" on public.planner_tasks;
+create policy "Approved members can update planner tasks" on public.planner_tasks
+for update to authenticated using((select public.is_approved_member()))
+with check((select public.is_approved_member()));
+
+drop policy if exists "Approved members can delete planner tasks" on public.planner_tasks;
+create policy "Approved members can delete planner tasks" on public.planner_tasks
+for delete to authenticated using((select public.is_approved_member()));
+
+-- 8. Realtime configuration
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -186,6 +225,9 @@ begin
     end if;
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'activity_logs') then
       execute 'alter publication supabase_realtime add table public.activity_logs';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'planner_tasks') then
+      execute 'alter publication supabase_realtime add table public.planner_tasks';
     end if;
   end if;
 end
