@@ -164,6 +164,29 @@ create table if not exists public.strategy_plays (
 
 create index if not exists strategy_plays_created_at_idx on public.strategy_plays(created_at desc);
 
+-- 10. Match Scouting Logs (Live 2026 REBUILT Match Data)
+create table if not exists public.match_scouting_logs (
+  id text primary key,
+  team_num integer not null,
+  match_num integer not null,
+  match_type text not null default 'qm',
+  event_name text not null default '2026 Event',
+  scout_name text not null default 'Scout',
+  station text not null default 'R1',
+  auto_fuel integer not null default 0,
+  tele_fuel integer not null default 0,
+  climb text not null default 'none',
+  est_points integer not null default 0,
+  notes text not null default '',
+  raw_data jsonb,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists match_scouting_team_idx on public.match_scouting_logs(team_num);
+create index if not exists match_scouting_match_idx on public.match_scouting_logs(match_num);
+create index if not exists match_scouting_created_at_idx on public.match_scouting_logs(created_at desc);
+
 -- 10. Helper Functions & Triggers
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
@@ -372,6 +395,20 @@ with check((select public.is_approved_member()));
 
 drop policy if exists "Approved members can delete strategy plays" on public.strategy_plays;
 create policy "Approved members can delete strategy plays" on public.strategy_plays
+for delete to authenticated using((select public.is_team_admin()) or created_by = auth.uid());
+
+-- Scouting policies
+alter table public.match_scouting_logs enable row level security;
+drop policy if exists "Anyone can read scouting records" on public.match_scouting_logs;
+create policy "Anyone can read scouting records" on public.match_scouting_logs
+for select to authenticated using(true);
+
+drop policy if exists "Approved members can insert scouting records" on public.match_scouting_logs;
+create policy "Approved members can insert scouting records" on public.match_scouting_logs
+for insert to authenticated with check((select public.is_approved_member()));
+
+drop policy if exists "Admins or authors can delete scouting records" on public.match_scouting_logs;
+create policy "Admins or authors can delete scouting records" on public.match_scouting_logs
 for delete to authenticated using((select public.is_team_admin()) or created_by = auth.uid());
 
 -- 12. Realtime configuration

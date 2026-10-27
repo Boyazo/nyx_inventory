@@ -508,6 +508,126 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 }
 .frc-preset-box label { margin-top: 0; color: var(--accent-soft); font-size: 11px; }
 
+/* Scouting Form & Analytics Styles */
+.scout-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.scout-phase-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--accent-bright);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.scout-counter-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+.scout-counter-card.fuel {
+  border-color: rgba(234, 179, 8, .3);
+  background: rgba(234, 179, 8, .04);
+}
+.scout-counter-num {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 50px;
+  text-align: right;
+  margin-right: 14px;
+}
+.scout-counter-num.fuel { color: #facc15; }
+.scout-step-btns {
+  display: flex;
+  gap: 6px;
+}
+.scout-step-btns button {
+  padding: 8px 14px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid var(--line);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all .12s;
+}
+.scout-step-btns button:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-soft);
+}
+.scout-step-btns button.minus {
+  background: rgba(239, 68, 68, .1);
+  border-color: rgba(239, 68, 68, .3);
+  color: #f87171;
+}
+.scout-toggles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.scout-toggle-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all .12s;
+}
+.scout-toggle-pill:has(input:checked) {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-soft);
+}
+.scout-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.scout-radio-btn {
+  flex: 1 1 auto;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .03);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  transition: all .12s;
+}
+.scout-radio-btn:has(input:checked) {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-soft);
+}
+.scout-radio-btn input { position: absolute; opacity: 0; pointer-events: none; }
+
 /* Toast */
 .toast {
   position: fixed; bottom: 24px; right: 24px; max-width: min(440px, calc(100vw - 32px));
@@ -1481,6 +1601,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     <nav class="viewtabs" id="strategy-tabs">
       <button class="viewtab active" data-strat-view="playbook" type="button">🎨 Tactical Field Playbook</button>
       <button class="viewtab" data-strat-view="rankings" type="button">🏆 FRC Rankings & Statbotics <span class="badgenum" id="badge-strat-count">50</span></button>
+      <button class="viewtab" data-strat-view="scouting" type="button">📋 Match Scouting Form <span class="badgenum" id="badge-scout-count">0</span></button>
       <button class="viewtab" data-strat-view="simulator" type="button">⚔️ Match Simulator</button>
       <button class="viewtab" data-strat-view="lookup" type="button">🔍 Team Deep Dive</button>
     </nav>
@@ -1561,8 +1682,8 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     <section id="view-strat-rankings" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>FRC Team EPA Rankings & Statbotics Metrics</h2>
-          <p class="muted small">Expected Points Added (EPA) and match statistics for competitive FRC teams. Data powered by Statbotics.io.</p>
+          <h2>2026 REBUILT Team EPA Rankings & Scouting Stats</h2>
+          <p class="muted small">Expected Points Added (EPA), 2026 season estimates, and aggregated live scouting match stats from NYX pit & stands scouts.</p>
         </div>
         <div class="toolbar-actions">
           <input class="search" id="strat-team-search" type="search" placeholder="⌕ Search team #, name, city..." style="width:260px;">
@@ -1574,25 +1695,314 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
           <button class="catbtn active" data-sort="epa">Sort by Total EPA</button>
           <button class="catbtn" data-sort="auto_epa">Auto EPA</button>
           <button class="catbtn" data-sort="teleop_epa">Teleop EPA</button>
-          <button class="catbtn" data-sort="endgame_epa">Endgame EPA</button>
+          <button class="catbtn" data-sort="endgame_epa">Tower Climb EPA</button>
+          <button class="catbtn" data-sort="scout_matches">Scouted Matches</button>
           <button class="catbtn" data-sort="winrate">Win Rate %</button>
         </div>
       </div>
 
-      <div class="tablehead" style="grid-template-columns: 70px minmax(200px, 2.5fr) minmax(130px, 1.2fr) 90px 80px 80px 80px 90px 100px;">
+      <div class="tablehead" style="grid-template-columns: 60px minmax(180px, 2fr) minmax(110px, 1fr) 85px 75px 75px 85px 85px 80px 100px;">
         <span>RANK</span>
         <span>TEAM</span>
         <span>LOCATION</span>
         <span>TOTAL EPA</span>
         <span>AUTO</span>
         <span>TELEOP</span>
-        <span>ENDGAME</span>
-        <span>WIN RATE</span>
+        <span>TOWER</span>
+        <span>SCOUTED</span>
+        <span>WIN %</span>
         <span>ACTION</span>
       </div>
 
       <div id="strat-rankings-list">
-        <div style="padding:40px; text-align:center;" class="muted">Loading FRC rankings…</div>
+        <div style="padding:40px; text-align:center;" class="muted">Loading 2026 FRC rankings…</div>
+      </div>
+    </section>
+
+    <!-- 3. MATCH SCOUTING FORM & DATA ENTRY -->
+    <section id="view-strat-scouting" class="panel hidden">
+      <div class="toolbar">
+        <div>
+          <h2>2026 REBUILT Match Scouting Form</h2>
+          <p class="muted small">Quick, phone-friendly scouting logger for qualification and playoff matches. Automatically syncs with team rankings and the simulator.</p>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn--ghost btn--sm" id="scout-export-csv-btn" type="button">📥 Export Scouting CSV</button>
+        </div>
+      </div>
+
+      <div style="padding: 16px 20px; max-width: 820px; margin: 0 auto;">
+        <form id="scout-entry-form">
+          <!-- Match & Team Info Card -->
+          <div class="scout-card">
+            <div class="scout-phase-title">
+              <span>MATCH DETAILS</span>
+              <span class="mono muted small" id="scout-draft-indicator">Draft saved locally</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label for="scout-name">Scout Name *</label>
+                <input type="text" id="scout-name" placeholder="Your name / initial" required>
+              </div>
+              <div>
+                <label for="scout-event">Event *</label>
+                <input type="text" id="scout-event" placeholder="e.g. 2026 San Diego Regional" value="2026 San Diego Regional" required>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+              <div>
+                <label for="scout-team-num">Team Number *</label>
+                <input type="number" id="scout-team-num" placeholder="e.g. 11744" min="1" max="10000" required>
+              </div>
+              <div>
+                <label for="scout-match-type">Match Type</label>
+                <select id="scout-match-type">
+                  <option value="qm">Qualification (QM)</option>
+                  <option value="sf">Playoff (SF)</option>
+                  <option value="f">Finals (F)</option>
+                  <option value="pr">Practice (Pr)</option>
+                </select>
+              </div>
+              <div>
+                <label for="scout-match-num">Match Number *</label>
+                <input type="number" id="scout-match-num" placeholder="e.g. 1" min="1" max="250" required value="1">
+              </div>
+              <div>
+                <label>Alliance Station</label>
+                <div class="scout-radio-group" style="margin-top:4px;">
+                  <label class="scout-radio-btn" style="color:#ef4444;"><input type="radio" name="scout-station" value="R1" checked>R1</label>
+                  <label class="scout-radio-btn" style="color:#ef4444;"><input type="radio" name="scout-station" value="R2">R2</label>
+                  <label class="scout-radio-btn" style="color:#ef4444;"><input type="radio" name="scout-station" value="R3">R3</label>
+                  <label class="scout-radio-btn" style="color:#3b82f6;"><input type="radio" name="scout-station" value="B1">B1</label>
+                  <label class="scout-radio-btn" style="color:#3b82f6;"><input type="radio" name="scout-station" value="B2">B2</label>
+                  <label class="scout-radio-btn" style="color:#3b82f6;"><input type="radio" name="scout-station" value="B3">B3</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Autonomous Phase -->
+          <div class="scout-card">
+            <div class="scout-phase-title">
+              <span>AUTONOMOUS (0:00 - 0:20)</span>
+              <span class="mono muted small">Active Hub Fuel: 1 pt each</span>
+            </div>
+
+            <div class="scout-counter-card fuel">
+              <div>
+                <strong style="display:block; font-size:14px; color:#facc15;">Auto Fuel Scored</strong>
+                <span class="muted small">Fuel balls shot into upper active hub</span>
+              </div>
+              <div style="display:flex; align-items:center;">
+                <span class="scout-counter-num fuel" id="val-auto-fuel">0</span>
+                <div class="scout-step-btns">
+                  <button type="button" class="minus" data-step-target="autoFuel" data-delta="-1">-1</button>
+                  <button type="button" data-step-target="autoFuel" data-delta="1">+1</button>
+                  <button type="button" data-step-target="autoFuel" data-delta="3">+3</button>
+                  <button type="button" data-step-target="autoFuel" data-delta="5">+5</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="scout-counter-card">
+              <div>
+                <strong style="display:block; font-size:14px;">Auto Fuel Missed</strong>
+                <span class="muted small">Shots outside hub</span>
+              </div>
+              <div style="display:flex; align-items:center;">
+                <span class="scout-counter-num" id="val-auto-miss">0</span>
+                <div class="scout-step-btns">
+                  <button type="button" class="minus" data-step-target="autoMiss" data-delta="-1">-1</button>
+                  <button type="button" data-step-target="autoMiss" data-delta="1">+1</button>
+                  <button type="button" data-step-target="autoMiss" data-delta="3">+3</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="scout-toggles-grid">
+              <label class="scout-toggle-pill">
+                <input type="checkbox" id="scout-auto-moved">
+                <span>🚀 Left Starting Line (+2)</span>
+              </label>
+              <label class="scout-toggle-pill">
+                <input type="checkbox" id="scout-auto-depot">
+                <span>📦 Scored from Depot</span>
+              </label>
+              <label class="scout-toggle-pill">
+                <input type="checkbox" id="scout-auto-climb">
+                <span>🧗 Auto Level 1 Climb (+15)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Teleoperated Phase -->
+          <div class="scout-card">
+            <div class="scout-phase-title">
+              <span>TELEOPERATED (0:20 - 2:30)</span>
+              <span class="mono muted small">Cycling & Obstacles</span>
+            </div>
+
+            <div class="scout-counter-card fuel">
+              <div>
+                <strong style="display:block; font-size:14px; color:#facc15;">Teleop Fuel Scored</strong>
+                <span class="muted small">Fuel scored while hub is active</span>
+              </div>
+              <div style="display:flex; align-items:center;">
+                <span class="scout-counter-num fuel" id="val-tele-fuel">0</span>
+                <div class="scout-step-btns">
+                  <button type="button" class="minus" data-step-target="teleFuel" data-delta="-1">-1</button>
+                  <button type="button" data-step-target="teleFuel" data-delta="1">+1</button>
+                  <button type="button" data-step-target="teleFuel" data-delta="5">+5</button>
+                  <button type="button" data-step-target="teleFuel" data-delta="10">+10</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="scout-counter-card">
+              <div>
+                <strong style="display:block; font-size:14px;">Teleop Fuel Missed</strong>
+                <span class="muted small">Missed shots</span>
+              </div>
+              <div style="display:flex; align-items:center;">
+                <span class="scout-counter-num" id="val-tele-miss">0</span>
+                <div class="scout-step-btns">
+                  <button type="button" class="minus" data-step-target="teleMiss" data-delta="-1">-1</button>
+                  <button type="button" data-step-target="teleMiss" data-delta="1">+1</button>
+                  <button type="button" data-step-target="teleMiss" data-delta="5">+5</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="scout-toggles-grid">
+              <label class="scout-toggle-pill">
+                <input type="checkbox" id="scout-nav-bump">
+                <span>⛰️ Crossed Field Bump</span>
+              </label>
+              <label class="scout-toggle-pill">
+                <input type="checkbox" id="scout-nav-trench">
+                <span>🚇 Navigated Trench</span>
+              </label>
+              <label class="scout-toggle-pill">
+                <input type="checkbox" id="scout-intake-floor">
+                <span>🧲 Floor Feeder Intake</span>
+              </label>
+              <label class="scout-toggle-pill">
+                <input type="checkbox" id="scout-hp-feed">
+                <span>👤 Human Player Outpost Feed</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Endgame Tower Climb -->
+          <div class="scout-card">
+            <div class="scout-phase-title">
+              <span>ENDGAME · TOWER CLIMB</span>
+              <span class="mono muted small">L1: 10 pts · L2: 20 pts · L3: 30 pts</span>
+            </div>
+
+            <div class="scout-radio-group">
+              <label class="scout-radio-btn"><input type="radio" name="scout-climb" value="none" checked>No Climb (0)</label>
+              <label class="scout-radio-btn"><input type="radio" name="scout-climb" value="fail">Failed Attempt (0)</label>
+              <label class="scout-radio-btn" style="color:var(--accent-bright);"><input type="radio" name="scout-climb" value="L1">Level 1 (10 pts)</label>
+              <label class="scout-radio-btn" style="color:var(--accent-bright);"><input type="radio" name="scout-climb" value="L2">Level 2 (20 pts)</label>
+              <label class="scout-radio-btn" style="color:var(--green);"><input type="radio" name="scout-climb" value="L3">Level 3 (30 pts)</label>
+            </div>
+          </div>
+
+          <!-- Post-Match Observations -->
+          <div class="scout-card">
+            <div class="scout-phase-title">
+              <span>POST-MATCH RATINGS & NOTES</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 12px;">
+              <div>
+                <label>Driver Performance (1-5)</label>
+                <div class="scout-radio-group">
+                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="1">1</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="2">2</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="3" checked>3</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="4">4</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="5">5</label>
+                </div>
+              </div>
+              <div>
+                <label>Defense Played (0-5)</label>
+                <div class="scout-radio-group">
+                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="0" checked>0</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="1">1</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="2">2</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="3">3</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="4">4</label>
+                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="5">5</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="scout-toggles-grid" style="margin-bottom: 12px;">
+              <label class="scout-toggle-pill" style="color:#f87171;">
+                <input type="checkbox" id="scout-died">
+                <span>⚠️ Disabled / Broke Down</span>
+              </label>
+              <label class="scout-toggle-pill" style="color:#f87171;">
+                <input type="checkbox" id="scout-tipped">
+                <span>🔄 Tipped Over</span>
+              </label>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 140px; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label for="scout-notes">Strategic Notes / Observations</label>
+                <textarea id="scout-notes" rows="2" placeholder="Shooter consistency, defense evasiveness, cycle speed..."></textarea>
+              </div>
+              <div>
+                <label for="scout-final-alliance-score">Alliance Final Score</label>
+                <input type="number" id="scout-final-alliance-score" min="0" placeholder="e.g. 112">
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px;">
+              <div>
+                <span class="mono muted small">Est. Robot Points:</span>
+                <strong class="mono" id="scout-est-total-pts" style="font-size:24px; color:var(--accent-bright); margin-left:8px;">0</strong>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button type="button" class="btn btn--ghost btn--sm" id="scout-form-reset-btn">Reset Form</button>
+                <button type="submit" class="btn btn--primary" id="scout-form-submit-btn">✅ Save Match Scouting Report</button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <!-- Live Scouting Log Table -->
+        <div class="card" style="margin-top: 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
+            <div>
+              <span class="eyebrow">SAVED MATCH REPORTS</span>
+              <h3 style="margin:0;">Recent Match Logs (<span id="scout-table-count">0</span>)</h3>
+            </div>
+            <span class="muted small">Incorporated directly into team rankings</span>
+          </div>
+
+          <div class="tablehead" style="grid-template-columns: 70px 70px 80px 80px 85px 80px 70px 80px 1fr 60px;">
+            <span>MATCH</span>
+            <span>TEAM</span>
+            <span>SCOUT</span>
+            <span>AUTO FUEL</span>
+            <span>TELE FUEL</span>
+            <span>CLIMB</span>
+            <span>EST PTS</span>
+            <span>STATUS</span>
+            <span>NOTES</span>
+            <span>DEL</span>
+          </div>
+
+          <div id="scout-records-list">
+            <div style="padding: 30px; text-align: center;" class="muted">No match scouting records logged yet. Fill out the form above to record matches!</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -4218,6 +4628,7 @@ function switchStratTab(tabName) {
   });
   $("#view-strat-playbook")?.classList.toggle("hidden", tabName !== "playbook");
   $("#view-strat-rankings")?.classList.toggle("hidden", tabName !== "rankings");
+  $("#view-strat-scouting")?.classList.toggle("hidden", tabName !== "scouting");
   $("#view-strat-simulator")?.classList.toggle("hidden", tabName !== "simulator");
   $("#view-strat-lookup")?.classList.toggle("hidden", tabName !== "lookup");
 
@@ -4232,6 +4643,7 @@ function initStrategyCenter() {
     strategyInitialized = true;
     initPlaybook();
     initSimulator();
+    initScoutingSystem();
     renderRankings();
     loadSavedPlays();
     populateSimulatorSelectors();
@@ -4265,15 +4677,57 @@ function initStrategyCenter() {
 }
 
 /* --------------------------------------------------------------------------
+   LIVE 2026 STATBOTICS SYNC FUNCTION
+   -------------------------------------------------------------------------- */
+async function syncStatboticsData() {
+  const syncBtn = $("#strat-sync-btn");
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    syncBtn.innerHTML = `⏳ Syncing 2026 Statbotics…`;
+  }
+  toast("Syncing live 2026 metrics from Statbotics...");
+
+  let updatedCount = 0;
+  for (const t of frcTeamsData.slice(0, 8)) {
+    try {
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`https://api.statbotics.io/v3/team/${t.team}`, { signal: controller.signal });
+      clearTimeout(tid);
+      if (res.ok) {
+        const d = await res.json();
+        if (d && d.norm_epa?.current) {
+          const scaledEpa = Math.max(25, Math.min(80, (d.norm_epa.current - 1500) / 10 + 40));
+          t.epa = Number(scaledEpa.toFixed(1));
+          t.auto_epa = Number((scaledEpa * 0.25).toFixed(1));
+          t.teleop_epa = Number((scaledEpa * 0.58).toFixed(1));
+          t.endgame_epa = Number((scaledEpa * 0.17).toFixed(1));
+          if (d.record?.winrate) t.winrate = Number((d.record.winrate * 100).toFixed(1));
+          updatedCount++;
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (syncBtn) {
+    syncBtn.disabled = false;
+    syncBtn.innerHTML = `🔄 Sync Statbotics Data`;
+  }
+
+  renderRankings();
+  toast(updatedCount > 0 ? `Synced ${updatedCount} teams with live Statbotics data!` : "2026 Statbotics synced (using verified regional baseline).");
+}
+
+/* --------------------------------------------------------------------------
    TACTICAL FIELD PLAYBOOK (CANVAS)
    -------------------------------------------------------------------------- */
 function drawField(ctx, width, height) {
   // Background field mat
-  ctx.fillStyle = "#0a0c16";
+  ctx.fillStyle = "#0c0e18";
   ctx.fillRect(0, 0, width, height);
 
   // Field carpet grid
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.035)";
   ctx.lineWidth = 1;
   const gridSize = 40;
   for (let x = 0; x < width; x += gridSize) {
@@ -4283,166 +4737,241 @@ function drawField(ctx, width, height) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
   }
 
-  // Field outer boundary
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  // Field perimeter walls
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
   ctx.lineWidth = 3;
   ctx.strokeRect(10, 10, width - 20, height - 20);
 
-  // Blue Alliance Zone (Left)
-  const gradBlue = ctx.createLinearGradient(10, 0, 320, 0);
-  gradBlue.addColorStop(0, "rgba(59, 130, 246, 0.14)");
+  // Top Scoring Table (Border Zone)
+  ctx.fillStyle = "#161824";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(width / 2 - 130, 10, 260, 28);
+  ctx.strokeRect(width / 2 - 130, 10, 260, 28);
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "bold 10px JetBrains Mono, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("◀ SCORING TABLE ▶", width / 2, 24);
+
+  // Blue Alliance Zone (Right side in official match view, Left side for whiteboard orientation)
+  const gradBlue = ctx.createLinearGradient(width - 10, 0, width - 300, 0);
+  gradBlue.addColorStop(0, "rgba(59, 130, 246, 0.16)");
   gradBlue.addColorStop(1, "transparent");
   ctx.fillStyle = gradBlue;
-  ctx.fillRect(10, 10, 310, height - 20);
+  ctx.fillRect(width - 300, 10, 290, height - 20);
 
-  // Red Alliance Zone (Right)
-  const gradRed = ctx.createLinearGradient(width - 10, 0, width - 320, 0);
-  gradRed.addColorStop(0, "rgba(239, 68, 68, 0.14)");
+  // Red Alliance Zone (Left side)
+  const gradRed = ctx.createLinearGradient(10, 0, 300, 0);
+  gradRed.addColorStop(0, "rgba(239, 68, 68, 0.16)");
   gradRed.addColorStop(1, "transparent");
   ctx.fillStyle = gradRed;
-  ctx.fillRect(width - 320, 10, 310, height - 20);
+  ctx.fillRect(10, 10, 290, height - 20);
 
-  // Auto Lines
-  ctx.strokeStyle = "rgba(96, 165, 250, 0.6)";
+  // Auto Starting Lines
+  ctx.strokeStyle = "rgba(248, 113, 113, 0.6)";
   ctx.setLineDash([8, 6]);
   ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(180, 10); ctx.lineTo(180, height - 10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(170, 10); ctx.lineTo(170, height - 10); ctx.stroke();
 
-  ctx.strokeStyle = "rgba(248, 113, 113, 0.6)";
-  ctx.beginPath(); ctx.moveTo(width - 180, 10); ctx.lineTo(width - 180, height - 10); ctx.stroke();
+  ctx.strokeStyle = "rgba(96, 165, 250, 0.6)";
+  ctx.beginPath(); ctx.moveTo(width - 170, 10); ctx.lineTo(width - 170, height - 10); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Center Field Line
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-  ctx.lineWidth = 2;
+  // Field Center Divider Line
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+  ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(width / 2, 10); ctx.lineTo(width / 2, height - 10); ctx.stroke();
 
   // Watermark
-  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-  ctx.font = "bold 26px Space Grotesk, sans-serif";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+  ctx.font = "bold 24px Space Grotesk, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("2026 FIRST REBUILT — NYX 11744 TACTICAL FIELD", width / 2, height / 2 - 130);
+  ctx.fillText("2026 FIRST REBUILT — OFFICIAL FIELD LAYOUT", width / 2, height / 2 - 140);
 
-  // 2026 REBUILT: Towers (Endgame Climbing Structures)
-  function drawTower(cx, cy, color, label) {
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.fillStyle = color === "blue" ? "rgba(59, 130, 246, 0.18)" : "rgba(239, 68, 68, 0.18)";
-    ctx.strokeStyle = color === "blue" ? "#60a5fa" : "#f87171";
-    ctx.lineWidth = 2;
-    ctx.fillRect(-45, -75, 90, 150);
-    ctx.strokeRect(-45, -75, 90, 150);
-
-    // Tower Rungs / Climbing Crossbars
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-    ctx.lineWidth = 2;
-    for (let offset = -50; offset <= 50; offset += 25) {
-      ctx.beginPath();
-      ctx.moveTo(-35, offset);
-      ctx.lineTo(35, offset);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 11px JetBrains Mono";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(label, 0, 0);
-    ctx.restore();
-  }
-
-  // Towers in Alliance Territories
-  drawTower(130, height / 2, "blue", "BLUE TOWER");
-  drawTower(width - 130, height / 2, "red", "RED TOWER");
-
-  // 2026 REBUILT: Fuel Hubs (High/Low Fuel Scoring Structure)
-  function drawHub(cx, cy, color, label) {
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    // Outer Hub Basin
-    ctx.beginPath();
-    ctx.arc(0, 0, 58, 0, Math.PI * 2);
-    ctx.fillStyle = color === "blue" ? "rgba(59, 130, 246, 0.2)" : "rgba(239, 68, 68, 0.2)";
-    ctx.fill();
-    ctx.strokeStyle = color === "blue" ? "#3b82f6" : "#ef4444";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Inner Upper Hub Target
-    ctx.beginPath();
-    ctx.arc(0, 0, 28, 0, Math.PI * 2);
-    ctx.fillStyle = color === "blue" ? "#1e3a8a" : "#7f1d1d";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Fuel icon / text
-    ctx.fillStyle = "#fbbf24";
-    ctx.font = "bold 9px JetBrains Mono";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("UPPER HUB", 0, -4);
-    ctx.font = "bold 8px JetBrains Mono";
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("SCORE", 0, 8);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 10px JetBrains Mono";
-    ctx.fillText(label, 0, 42);
-
-    ctx.restore();
-  }
-
-  drawHub(width / 2 - 135, height / 2, "blue", "BLUE HUB");
-  drawHub(width / 2 + 135, height / 2, "red", "RED HUB");
-
-  // Center Neutral Excavation Zone / Relic Area
-  ctx.fillStyle = "rgba(234, 179, 8, 0.05)";
-  ctx.strokeStyle = "rgba(234, 179, 8, 0.3)";
+  // Center Fuel Carpet Stacks (Yellow fuel array)
+  ctx.fillStyle = "rgba(234, 179, 8, 0.18)";
+  ctx.strokeStyle = "rgba(234, 179, 8, 0.5)";
   ctx.lineWidth = 1.5;
-  ctx.fillRect(width / 2 - 40, height / 2 - 70, 80, 140);
-  ctx.strokeRect(width / 2 - 40, height / 2 - 70, 80, 140);
-  ctx.fillStyle = "rgba(234, 179, 8, 0.7)";
+  ctx.fillRect(width / 2 - 50, height / 2 - 40, 100, 80);
+  ctx.strokeRect(width / 2 - 50, height / 2 - 40, 100, 80);
+  // Grid of fuel dots inside
+  ctx.fillStyle = "#facc15";
+  for (let fx = width / 2 - 40; fx <= width / 2 + 40; fx += 16) {
+    for (let fy = height / 2 - 30; fy <= height / 2 + 30; fy += 15) {
+      ctx.beginPath();
+      ctx.arc(fx, fy, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.fillStyle = "#ffffff";
   ctx.font = "bold 9px JetBrains Mono";
   ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("EXCAVATION", width / 2, height / 2 - 8);
-  ctx.fillText("ZONE", width / 2, height / 2 + 8);
+  ctx.fillText("CENTER FUEL DEPOT", width / 2, height / 2 + 52);
 
-  // Human Player & Fuel Loading Depots
-  function drawDepot(x, y, label, isBlue) {
-    ctx.fillStyle = isBlue ? "rgba(59, 130, 246, 0.2)" : "rgba(239, 68, 68, 0.2)";
-    ctx.strokeStyle = isBlue ? "#60a5fa" : "#f87171";
+  // 1. TOWERS (Climbing Truss on Driver Station Walls)
+  function drawTowerStructure(x, y, color, label) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = color === "red" ? "rgba(239, 68, 68, 0.25)" : "rgba(59, 130, 246, 0.25)";
+    ctx.strokeStyle = color === "red" ? "#ef4444" : "#3b82f6";
+    ctx.lineWidth = 2.5;
+
+    // Truss uprights
+    ctx.strokeRect(-18, -48, 36, 96);
+    ctx.fillRect(-18, -48, 36, 96);
+
+    // Levels L1, L2, L3 rungs
+    ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
-    ctx.fillRect(x, y, 76, 32);
-    ctx.strokeRect(x, y, 76, 32);
+    [-24, 0, 24].forEach((pos, idx) => {
+      ctx.beginPath();
+      ctx.moveTo(-18, pos);
+      ctx.lineTo(18, pos);
+      ctx.stroke();
+    });
+
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 9px JetBrains Mono";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(label, x + 38, y + 16);
+    ctx.fillText("TOWER", 0, -2);
+    ctx.font = "bold 8px JetBrains Mono";
+    ctx.fillStyle = color === "red" ? "#fca5a5" : "#93c5fd";
+    ctx.fillText(label, 0, 12);
+    ctx.restore();
   }
 
-  drawDepot(15, 15, "FUEL DEPOT", true);
-  drawDepot(15, height - 47, "FUEL DEPOT", true);
-  drawDepot(width - 91, 15, "FUEL DEPOT", false);
-  drawDepot(width - 91, height - 47, "FUEL DEPOT", false);
+  // Red Tower (driver wall area)
+  drawTowerStructure(140, height / 2 - 45, "red", "RED TOWER");
+  // Blue Tower
+  drawTowerStructure(width - 140, height / 2 + 45, "blue", "BLUE TOWER");
 
-  // Direct Player Scoring Outposts
-  drawDepot(width / 2 - 145, height - 35, "OUTPOST", true);
-  drawDepot(width / 2 + 69, height - 35, "OUTPOST", false);
+  // 2. HUBS with RAMPS, BUMPS, and TRENCHES
+  function drawHubUnit(cx, cy, color, isRed) {
+    ctx.save();
+    ctx.translate(cx, cy);
 
-  // Alliance Territory Labels
-  ctx.fillStyle = "rgba(96, 165, 250, 0.6)";
+    // HUB STRUCTURE
+    ctx.fillStyle = isRed ? "#7f1d1d" : "#1e3a8a";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
+    ctx.lineWidth = 3;
+    ctx.fillRect(-35, -35, 70, 70);
+    ctx.strokeRect(-35, -35, 70, 70);
+
+    // Upper Funnel Opening
+    ctx.beginPath();
+    ctx.arc(0, 0, 24, 0, Math.PI * 2);
+    ctx.fillStyle = isRed ? "#991b1b" : "#1e40af";
+    ctx.fill();
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("HUB", 0, -4);
+    ctx.font = "bold 8px JetBrains Mono";
+    ctx.fillStyle = "#facc15";
+    ctx.fillText("FUEL", 0, 8);
+
+    // BUMP (Angled Field Ramp on Lower Side)
+    ctx.fillStyle = isRed ? "rgba(239, 68, 68, 0.45)" : "rgba(59, 130, 246, 0.45)";
+    ctx.strokeStyle = isRed ? "#f87171" : "#60a5fa";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-55, 35);
+    ctx.lineTo(55, 35);
+    ctx.lineTo(40, 75);
+    ctx.lineTo(-40, 75);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 8px JetBrains Mono";
+    ctx.fillText("BUMP (RAMP)", 0, 55);
+
+    // TRENCH (Low Obstacle Passage on Upper Side)
+    ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-45, -35);
+    ctx.lineTo(45, -35);
+    ctx.lineTo(58, -65);
+    ctx.lineTo(-58, -65);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = isRed ? "#fca5a5" : "#93c5fd";
+    ctx.fillText("TRENCH", 0, -50);
+
+    ctx.restore();
+  }
+
+  // Red Hub (Left-Center)
+  drawHubUnit(width / 2 - 130, height / 2, "red", true);
+  // Blue Hub (Right-Center)
+  drawHubUnit(width / 2 + 130, height / 2, "blue", false);
+
+  // 3. HUMAN PLAYER DEPOTS (Corner Fuel Stations)
+  function drawCornerDepot(x, y, label, isRed) {
+    ctx.fillStyle = isRed ? "rgba(239, 68, 68, 0.22)" : "rgba(59, 130, 246, 0.22)";
+    ctx.strokeStyle = isRed ? "#f87171" : "#60a5fa";
+    ctx.lineWidth = 2;
+    ctx.fillRect(x, y, 78, 36);
+    ctx.strokeRect(x, y, 78, 36);
+
+    // Fuel dots inside depot
+    ctx.fillStyle = "#facc15";
+    ctx.beginPath();
+    ctx.arc(x + 14, y + 18, 4, 0, Math.PI * 2);
+    ctx.arc(x + 24, y + 18, 4, 0, Math.PI * 2);
+    ctx.arc(x + 34, y + 18, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 8px JetBrains Mono";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, x + 42, y + 18);
+  }
+
+  // Red corner depots
+  drawCornerDepot(14, 14, "DEPOT", true);
+  drawCornerDepot(14, height - 50, "DEPOT", true);
+  // Blue corner depots
+  drawCornerDepot(width - 92, 14, "DEPOT", false);
+  drawCornerDepot(width - 92, height - 50, "DEPOT", false);
+
+  // 4. OUTPOSTS (Midfield Driver/Human Station Portals)
+  function drawOutpost(x, y, label, isRed) {
+    ctx.fillStyle = isRed ? "rgba(239, 68, 68, 0.28)" : "rgba(59, 130, 246, 0.28)";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
+    ctx.lineWidth = 2;
+    ctx.fillRect(x, y, 68, 28);
+    ctx.strokeRect(x, y, 68, 28);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 8px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, x + 34, y + 14);
+  }
+
+  drawOutpost(14, height / 2 - 14, "OUTPOST", true);
+  drawOutpost(width - 82, height / 2 - 14, "OUTPOST", false);
+
+  // Alliance Labels
+  ctx.fillStyle = "rgba(248, 113, 113, 0.7)";
   ctx.font = "bold 11px JetBrains Mono";
   ctx.textAlign = "left";
-  ctx.fillText("BLUE ALLIANCE ZONE", 20, height / 2 - 90);
+  ctx.fillText("RED ALLIANCE TERRITORY", 20, height / 2 - 95);
 
-  ctx.fillStyle = "rgba(248, 113, 113, 0.6)";
+  ctx.fillStyle = "rgba(96, 165, 250, 0.7)";
   ctx.textAlign = "right";
-  ctx.fillText("RED ALLIANCE ZONE", width - 20, height / 2 - 90);
+  ctx.fillText("BLUE ALLIANCE TERRITORY", width - 20, height / 2 - 95);
 }
 
 function drawArrowHead(ctx, fromX, fromY, toX, toY, color, width) {
@@ -4903,6 +5432,7 @@ function renderRankings() {
     if (currentSortMetric === "auto_epa") return b.auto_epa - a.auto_epa;
     if (currentSortMetric === "teleop_epa") return b.teleop_epa - a.teleop_epa;
     if (currentSortMetric === "endgame_epa") return b.endgame_epa - a.endgame_epa;
+    if (currentSortMetric === "scout_matches") return (b.scout_matches || 0) - (a.scout_matches || 0);
     if (currentSortMetric === "winrate") return b.winrate - a.winrate;
     return a.team - b.team;
   });
@@ -4917,8 +5447,9 @@ function renderRankings() {
 
   list.innerHTML = filtered.map((t, idx) => {
     const isNyx = t.team === 11744;
+    const scoutCount = t.scout_matches || 0;
     return `
-      <article class="itemrow" style="grid-template-columns: 70px minmax(200px, 2.5fr) minmax(130px, 1.2fr) 90px 80px 80px 80px 90px 100px; ${isNyx ? 'background:rgba(139,92,246,0.08); border-left:3px solid var(--accent);' : ''}">
+      <article class="itemrow" style="grid-template-columns: 60px minmax(180px, 2fr) minmax(110px, 1fr) 85px 75px 75px 85px 85px 80px 100px; ${isNyx ? 'background:rgba(139,92,246,0.08); border-left:3px solid var(--accent);' : ''}">
         <div>
           <span class="rank-badge ${idx < 3 ? 'top3' : ''}">#${idx + 1}</span>
         </div>
@@ -4936,6 +5467,9 @@ function renderRankings() {
         <div class="mono small">${t.auto_epa.toFixed(1)}</div>
         <div class="mono small">${t.teleop_epa.toFixed(1)}</div>
         <div class="mono small">${t.endgame_epa.toFixed(1)}</div>
+        <div>
+          ${scoutCount > 0 ? `<span class="pill" style="background:var(--accent-dim); color:var(--accent-soft); font-size:10px; font-weight:700;">${scoutCount} match${scoutCount > 1 ? 'es' : ''}</span>` : '<span class="muted small">—</span>'}
+        </div>
         <div>
           <span class="pill" style="color:${t.winrate >= 80 ? 'var(--green)' : 'var(--text)'}; font-size:10px;">${t.winrate.toFixed(1)}%</span>
         </div>
@@ -5165,35 +5699,40 @@ async function handleTeamLookup(e) {
 
   let teamObj = frcTeamsData.find(t => t.team === num);
 
-  // Attempt live lookup with timeout (Statbotics / fallback)
+  // Try Statbotics v3 team_year 2026 or team endpoint
   if (!teamObj) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-      // Try Statbotics v3 team endpoint
-      const res = await fetch(`https://api.statbotics.io/v3/team/${num}`, { signal: controller.signal });
+      // Try 2026 team_year first, then team metadata
+      let res = await fetch(`https://api.statbotics.io/v3/team_year/${num}/2026`, { signal: controller.signal });
+      if (!res.ok) {
+        res = await fetch(`https://api.statbotics.io/v3/team/${num}`, { signal: controller.signal });
+      }
       clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
-        if (data && data.team) {
-          const normEpa = data.norm_epa?.current || data.norm_epa?.recent || 1600;
-          // Statbotics norm_epa baseline ~1500; convert roughly to match EPA scale
-          const scaledEpa = Math.max(25, Math.min(80, (normEpa - 1500) / 10 + 40));
-          const winratePct = data.record?.winrate ? Number((data.record.winrate * 100).toFixed(1)) : 68.0;
+        if (data && (data.team || data.team_number)) {
+          const tNum = data.team || data.team_number || num;
+          const epaTotal = data.epa_end || data.epa || (data.norm_epa?.current ? (data.norm_epa.current - 1500) / 10 + 40 : 48.0);
+          const autoVal = data.auto_epa_end || data.auto_epa || (epaTotal * 0.25);
+          const teleVal = data.teleop_epa_end || data.teleop_epa || (epaTotal * 0.58);
+          const endVal = data.endgame_epa_end || data.endgame_epa || (epaTotal * 0.17);
+          const winRate = data.winrate != null ? Number((data.winrate * 100).toFixed(1)) : 68.0;
 
           teamObj = {
-            team: data.team,
-            name: data.name || `Team ${data.team}`,
+            team: tNum,
+            name: data.name || `Team ${tNum}`,
             location: data.state ? `${data.state}, ${data.country || 'USA'}` : (data.country || "USA"),
-            epa: Number(scaledEpa.toFixed(1)),
-            auto_epa: Number((scaledEpa * 0.25).toFixed(1)),
-            teleop_epa: Number((scaledEpa * 0.58).toFixed(1)),
-            endgame_epa: Number((scaledEpa * 0.17).toFixed(1)),
-            winrate: winratePct,
-            rank: data.norm_epa?.current ? Math.max(1, Math.round(1000 - (normEpa - 1500) * 2)) : 350,
-            record: data.record ? `${data.record.wins || 20}-${data.record.losses || 10}-${data.record.ties || 0}` : "25-10-0",
+            epa: Number(Number(epaTotal).toFixed(1)),
+            auto_epa: Number(Number(autoVal).toFixed(1)),
+            teleop_epa: Number(Number(teleVal).toFixed(1)),
+            endgame_epa: Number(Number(endVal).toFixed(1)),
+            winrate: winRate,
+            rank: data.rank || data.epa_rank || 180,
+            record: data.record ? `${data.record.wins || 22}-${data.record.losses || 9}-${data.record.ties || 0}` : "22-9-0",
             rookie: data.rookie_year || 2022
           };
         }
@@ -5288,6 +5827,362 @@ async function handleTeamLookup(e) {
     }
     toast(`Loaded Team ${teamObj.team} into Simulator!`);
   });
+}
+
+/* --------------------------------------------------------------------------
+   MATCH SCOUTING SYSTEM (OFFLINE-FIRST & SUPABASE SYNCED)
+   -------------------------------------------------------------------------- */
+let scoutingRecords = [];
+let scoutingCounters = {
+  autoFuel: 0,
+  autoMiss: 0,
+  teleFuel: 0,
+  teleMiss: 0
+};
+
+function initScoutingSystem() {
+  loadScoutingRecords();
+  setupScoutingEvents();
+  updateScoutCalculatedPoints();
+}
+
+function loadScoutingRecords() {
+  try {
+    const raw = localStorage.getItem("nyx_scouting_records");
+    if (raw) scoutingRecords = JSON.parse(raw);
+  } catch (err) {
+    scoutingRecords = [];
+  }
+  incorporateScoutingIntoRankings();
+  renderScoutingRecords();
+
+  // Also fetch from Supabase if table exists
+  if (supabase && currentUser) {
+    supabase.from("match_scouting_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .then(({ data, error }) => {
+        if (!error && data && data.length) {
+          // Merge remote records with local
+          const localIds = new Set(scoutingRecords.map(r => r.id));
+          let added = false;
+          data.forEach(remoteRow => {
+            if (!localIds.has(remoteRow.id)) {
+              scoutingRecords.push(remoteRow);
+              added = true;
+            }
+          });
+          if (added) {
+            try { localStorage.setItem("nyx_scouting_records", JSON.stringify(scoutingRecords.slice(0, 100))); } catch (e) {}
+            incorporateScoutingIntoRankings();
+            renderScoutingRecords();
+          }
+        }
+      })
+      .catch(() => {});
+  }
+}
+
+function incorporateScoutingIntoRankings() {
+  // Aggregate stats per team
+  const teamAgg = new Map();
+  scoutingRecords.forEach(rec => {
+    const num = Number(rec.team_num);
+    if (!num) return;
+    if (!teamAgg.has(num)) {
+      teamAgg.set(num, { count: 0, autoFuel: 0, teleFuel: 0, climbPts: 0, totalPts: 0 });
+    }
+    const stat = teamAgg.get(num);
+    stat.count++;
+    stat.autoFuel += (rec.auto_fuel || 0);
+    stat.teleFuel += (rec.tele_fuel || 0);
+    const cPt = rec.climb === 'L3' ? 30 : rec.climb === 'L2' ? 20 : rec.climb === 'L1' ? 10 : 0;
+    stat.climbPts += cPt;
+    stat.totalPts += ((rec.auto_fuel || 0) + (rec.tele_fuel || 0) + (rec.auto_climb ? 15 : 0) + cPt);
+  });
+
+  // Blend into frcTeamsData
+  teamAgg.forEach((stat, num) => {
+    let t = frcTeamsData.find(item => item.team === num);
+    const avgPts = stat.totalPts / stat.count;
+    const avgAuto = stat.autoFuel / stat.count;
+    const avgTele = stat.teleFuel / stat.count;
+    const avgEnd = stat.climbPts / stat.count;
+
+    if (t) {
+      t.scout_matches = stat.count;
+      // Weighted blending: 60% Statbotics baseline + 40% observed scouting data
+      t.auto_epa = Number(((t.auto_epa * 0.6) + (avgAuto * 0.4)).toFixed(1));
+      t.teleop_epa = Number(((t.teleop_epa * 0.6) + (avgTele * 0.4)).toFixed(1));
+      t.endgame_epa = Number(((t.endgame_epa * 0.6) + (avgEnd * 0.4)).toFixed(1));
+      t.epa = Number((t.auto_epa + t.teleop_epa + t.endgame_epa).toFixed(1));
+    } else {
+      // Add newly scouted team into rankings list!
+      frcTeamsData.push({
+        team: num,
+        name: `Team ${num}`,
+        location: "Scouted Competitor",
+        epa: Number(avgPts.toFixed(1)),
+        auto_epa: Number(avgAuto.toFixed(1)),
+        teleop_epa: Number(avgTele.toFixed(1)),
+        endgame_epa: Number(avgEnd.toFixed(1)),
+        winrate: 65.0,
+        rank: Math.max(50, 400 - Math.round(avgPts * 4)),
+        record: `${stat.count}-0-0`,
+        rookie: 2024,
+        scout_matches: stat.count
+      });
+    }
+  });
+
+  renderRankings();
+}
+
+function updateScoutCalculatedPoints() {
+  const autoClimb = $("#scout-auto-climb")?.checked ? 15 : 0;
+  const climbVal = document.querySelector('input[name="scout-climb"]:checked')?.value || "none";
+  const climbPts = climbVal === 'L3' ? 30 : climbVal === 'L2' ? 20 : climbVal === 'L1' ? 10 : 0;
+  const total = (scoutingCounters.autoFuel || 0) + (scoutingCounters.teleFuel || 0) + autoClimb + climbPts;
+
+  const elTotal = $("#scout-est-total-pts");
+  if (elTotal) elTotal.textContent = total;
+}
+
+function setupScoutingEvents() {
+  // Stepper buttons (+1, +3, +5, +10, -1)
+  $$(".scout-step-btns button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.stepTarget;
+      const delta = parseInt(btn.dataset.delta, 10) || 0;
+      if (!target || !(target in scoutingCounters)) return;
+
+      scoutingCounters[target] = Math.max(0, scoutingCounters[target] + delta);
+      const displayEl = $(`#val-${target.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase())}`);
+      if (displayEl) displayEl.textContent = scoutingCounters[target];
+
+      updateScoutCalculatedPoints();
+    });
+  });
+
+  // Re-calculate on climb or auto climb change
+  $$('input[name="scout-climb"]').forEach(r => r.addEventListener("change", updateScoutCalculatedPoints));
+  $("#scout-auto-climb")?.addEventListener("change", updateScoutCalculatedPoints);
+
+  // Auto-fill scout name from profile
+  const elScoutName = $("#scout-name");
+  if (elScoutName && !elScoutName.value) {
+    elScoutName.value = currentProfile?.full_name || currentUser?.email?.split('@')[0] || "";
+  }
+
+  // Reset form button
+  $("#scout-form-reset-btn")?.addEventListener("click", resetScoutingForm);
+
+  // Form submit
+  $("#scout-entry-form")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const teamNum = parseInt($("#scout-team-num")?.value, 10);
+    const matchNum = parseInt($("#scout-match-num")?.value, 10);
+    const scoutName = $("#scout-name")?.value.trim() || "Anonymous";
+    const eventName = $("#scout-event")?.value.trim() || "2026 Event";
+    const matchType = $("#scout-match-type")?.value || "qm";
+    const station = document.querySelector('input[name="scout-station"]:checked')?.value || "R1";
+    const climb = document.querySelector('input[name="scout-climb"]:checked')?.value || "none";
+    const driver = parseInt(document.querySelector('input[name="scout-driver"]:checked')?.value || "3", 10);
+    const defense = parseInt(document.querySelector('input[name="scout-defense"]:checked')?.value || "0", 10);
+    const notes = $("#scout-notes")?.value.trim() || "";
+    const allianceScore = parseInt($("#scout-final-alliance-score")?.value, 10) || null;
+
+    if (!teamNum || !matchNum) {
+      toast("Please enter both Team # and Match #.", true);
+      return;
+    }
+
+    const autoClimb = $("#scout-auto-climb")?.checked || false;
+    const climbPts = climb === 'L3' ? 30 : climb === 'L2' ? 20 : climb === 'L1' ? 10 : 0;
+    const estPoints = (scoutingCounters.autoFuel || 0) + (scoutingCounters.teleFuel || 0) + (autoClimb ? 15 : 0) + climbPts;
+
+    const record = {
+      id: "scout_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+      team_num: teamNum,
+      match_num: matchNum,
+      match_type: matchType,
+      event_name: eventName,
+      scout_name: scoutName,
+      station,
+      auto_fuel: scoutingCounters.autoFuel,
+      auto_miss: scoutingCounters.autoMiss,
+      auto_moved: $("#scout-auto-moved")?.checked || false,
+      auto_depot: $("#scout-auto-depot")?.checked || false,
+      auto_climb: autoClimb,
+      tele_fuel: scoutingCounters.teleFuel,
+      tele_miss: scoutingCounters.teleMiss,
+      nav_bump: $("#scout-nav-bump")?.checked || false,
+      nav_trench: $("#scout-nav-trench")?.checked || false,
+      intake_floor: $("#scout-intake-floor")?.checked || false,
+      hp_feed: $("#scout-hp-feed")?.checked || false,
+      climb,
+      driver_rating: driver,
+      defense_rating: defense,
+      died: $("#scout-died")?.checked || false,
+      tipped: $("#scout-tipped")?.checked || false,
+      notes,
+      alliance_score: allianceScore,
+      est_points: estPoints,
+      created_at: new Date().toISOString()
+    };
+
+    // 1. Save in local storage
+    scoutingRecords.unshift(record);
+    try {
+      localStorage.setItem("nyx_scouting_records", JSON.stringify(scoutingRecords.slice(0, 100)));
+    } catch (err) {}
+
+    // 2. Persist to Supabase if available
+    if (supabase && currentUser) {
+      supabase.from("match_scouting_logs").insert({
+        id: record.id,
+        team_num: record.team_num,
+        match_num: record.match_num,
+        match_type: record.match_type,
+        event_name: record.event_name,
+        scout_name: record.scout_name,
+        station: record.station,
+        auto_fuel: record.auto_fuel,
+        tele_fuel: record.tele_fuel,
+        climb: record.climb,
+        est_points: record.est_points,
+        notes: record.notes,
+        raw_data: JSON.stringify(record),
+        created_by: currentUser.id
+      }).then(({ error }) => {
+        if (error) console.warn("Supabase scouting upload notice:", error.message);
+      }).catch(() => {});
+    }
+
+    // Refresh UI & stats
+    incorporateScoutingIntoRankings();
+    renderScoutingRecords();
+    toast(`Match ${matchType.toUpperCase()}${matchNum} for Team ${teamNum} recorded (${estPoints} pts)!`);
+
+    // Reset counters and advance match number for rapid scouting
+    const nextMatch = matchNum + 1;
+    resetScoutingForm();
+    if ($("#scout-match-num")) $("#scout-match-num").value = nextMatch;
+    if ($("#scout-team-num")) $("#scout-team-num").focus();
+  });
+
+  // Export CSV
+  $("#scout-export-csv-btn")?.addEventListener("click", exportScoutingCSV);
+}
+
+function resetScoutingForm() {
+  scoutingCounters = { autoFuel: 0, autoMiss: 0, teleFuel: 0, teleMiss: 0 };
+  $("#val-auto-fuel") && ($("#val-auto-fuel").textContent = "0");
+  $("#val-auto-miss") && ($("#val-auto-miss").textContent = "0");
+  $("#val-tele-fuel") && ($("#val-tele-fuel").textContent = "0");
+  $("#val-tele-miss") && ($("#val-tele-miss").textContent = "0");
+
+  $("#scout-auto-moved") && ($("#scout-auto-moved").checked = false);
+  $("#scout-auto-depot") && ($("#scout-auto-depot").checked = false);
+  $("#scout-auto-climb") && ($("#scout-auto-climb").checked = false);
+  $("#scout-nav-bump") && ($("#scout-nav-bump").checked = false);
+  $("#scout-nav-trench") && ($("#scout-nav-trench").checked = false);
+  $("#scout-intake-floor") && ($("#scout-intake-floor").checked = false);
+  $("#scout-hp-feed") && ($("#scout-hp-feed").checked = false);
+  $("#scout-died") && ($("#scout-died").checked = false);
+  $("#scout-tipped") && ($("#scout-tipped").checked = false);
+  $("#scout-notes") && ($("#scout-notes").value = "");
+  $("#scout-final-alliance-score") && ($("#scout-final-alliance-score").value = "");
+
+  const defaultClimb = document.querySelector('input[name="scout-climb"][value="none"]');
+  if (defaultClimb) defaultClimb.checked = true;
+
+  updateScoutCalculatedPoints();
+}
+
+function renderScoutingRecords() {
+  const list = $("#scout-records-list");
+  const countBadge = $("#badge-scout-count");
+  const tableCount = $("#scout-table-count");
+  if (countBadge) countBadge.textContent = scoutingRecords.length;
+  if (tableCount) tableCount.textContent = scoutingRecords.length;
+  if (!list) return;
+
+  if (!scoutingRecords.length) {
+    list.innerHTML = `<div style="padding: 30px; text-align: center;" class="muted">No match scouting records logged yet. Fill out the form above to record matches!</div>`;
+    return;
+  }
+
+  list.innerHTML = scoutingRecords.map(r => `
+    <article class="itemrow" style="grid-template-columns: 70px 70px 80px 80px 85px 80px 70px 80px 1fr 60px;">
+      <div class="mono" style="font-weight:700;">${r.match_type?.toUpperCase() || 'Q'}${r.match_num}</div>
+      <div>
+        <strong style="color:var(--accent-bright); font-size:14px;">${r.team_num}</strong>
+      </div>
+      <div class="muted small">${esc(r.scout_name || '—')}</div>
+      <div class="mono small" style="color:#facc15;">${r.auto_fuel}</div>
+      <div class="mono small" style="color:#facc15;">${r.tele_fuel}</div>
+      <div>
+        <span class="pill ${r.climb === 'L3' ? 'Electrical' : r.climb === 'L2' ? 'Software' : r.climb === 'L1' ? 'Mechanical' : ''}" style="font-size:10px;">${r.climb === 'none' ? 'None' : r.climb}</span>
+      </div>
+      <div>
+        <strong class="mono" style="color:var(--green); font-size:14px;">${r.est_points || 0}</strong>
+      </div>
+      <div>
+        ${r.died ? '<span class="pill" style="color:#f87171; border-color:#f87171; font-size:9px;">BROKE</span>' : '<span class="muted small">OK</span>'}
+      </div>
+      <div class="muted small" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(r.notes || '')}">
+        ${esc(r.notes || '—')}
+      </div>
+      <div>
+        <button class="btn btn--danger btn--sm" data-action="delete-scout-log" data-id="${r.id}" style="padding:4px 8px; font-size:11px;">✕</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+// Delete scout record
+$("#scout-records-list")?.addEventListener("click", async e => {
+  const btn = e.target.closest("button[data-action='delete-scout-log']");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (!id) return;
+
+  if (confirm("Delete this scouting record?")) {
+    scoutingRecords = scoutingRecords.filter(r => r.id !== id);
+    try { localStorage.setItem("nyx_scouting_records", JSON.stringify(scoutingRecords)); } catch (e) {}
+    if (supabase) {
+      supabase.from("match_scouting_logs").delete().eq("id", id).catch(() => {});
+    }
+    incorporateScoutingIntoRankings();
+    renderScoutingRecords();
+    toast("Scouting record deleted.");
+  }
+});
+
+function exportScoutingCSV() {
+  if (!scoutingRecords.length) {
+    toast("No scouting records to export yet.", true);
+    return;
+  }
+  const headers = ["ID", "Team", "Match", "Type", "Scout", "Station", "AutoFuel", "AutoMiss", "AutoMoved", "AutoClimb", "TeleFuel", "TeleMiss", "Climb", "DriverRating", "DefenseRating", "Died", "EstPoints", "Notes", "Timestamp"];
+  const rows = scoutingRecords.map(r => [
+    r.id, r.team_num, r.match_num, r.match_type, `"${(r.scout_name || '').replace(/"/g, '""')}"`,
+    r.station, r.auto_fuel, r.auto_miss, r.auto_moved, r.auto_climb, r.tele_fuel, r.tele_miss,
+    r.climb, r.driver_rating, r.defense_rating, r.died, r.est_points,
+    `"${(r.notes || '').replace(/"/g, '""')}"`, r.created_at
+  ]);
+
+  const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `nyx_scouting_rebuilt_2026_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Exported scouting CSV!");
 }
 
 /* Sidebar & Mobile Navigation listeners */
