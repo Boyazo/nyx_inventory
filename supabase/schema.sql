@@ -29,7 +29,6 @@ create table if not exists public.inventory_items (
   updated_at timestamptz not null default now()
 );
 
--- Alter existing columns if table already existed prior to update
 alter table public.inventory_items add column if not exists is_tool boolean not null default false;
 alter table public.inventory_items add column if not exists part_number text not null default '';
 alter table public.inventory_items add column if not exists min_quantity integer not null default 1;
@@ -88,9 +87,46 @@ create table if not exists public.planner_tasks (
 
 create index if not exists planner_tasks_status_idx on public.planner_tasks(status);
 create index if not exists planner_tasks_subsystem_idx on public.planner_tasks(subsystem);
-create index if not exists planner_tasks_due_date_idx on public.planner_tasks(due_date);
 
--- 6. Helper Functions & Triggers
+-- 6. Parts Needed for Robot Table (View: Everyone, Edit: Admin Only)
+create table if not exists public.parts_needed (
+  id uuid primary key default gen_random_uuid(),
+  part_name text not null check (length(trim(part_name)) > 0),
+  subsystem text not null check (subsystem in ('Mechanical', 'Electrical', 'Software', 'Design / CAD', 'General')),
+  quantity integer not null default 1 check (quantity > 0),
+  vendor text not null default '',
+  part_number text not null default '',
+  url text not null default '',
+  priority text not null default 'high' check (priority in ('urgent', 'high', 'medium', 'low')),
+  status text not null default 'needed' check (status in ('needed', 'ordered', 'shipped', 'arrived')),
+  estimated_cost numeric(10,2) not null default 0.00 check (estimated_cost >= 0),
+  notes text not null default '',
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists parts_needed_status_idx on public.parts_needed(status);
+create index if not exists parts_needed_priority_idx on public.parts_needed(priority);
+
+-- 7. Spending & Budget Tracking Table (Admin Only)
+create table if not exists public.spending_records (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (length(trim(title)) > 0),
+  vendor text not null default 'Other',
+  amount numeric(10,2) not null check (amount >= 0),
+  category text not null check (category in ('Robot Hardware', 'Electronics & Control', 'Tools & Equipment', 'Raw Materials', 'Pit & Safety', 'Other')),
+  order_date date not null default current_date,
+  order_number text not null default '',
+  notes text not null default '',
+  created_by uuid references auth.users(id),
+  created_by_name text not null default 'Admin',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists spending_records_order_date_idx on public.spending_records(order_date desc);
+
+-- 8. Helper Functions & Triggers
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
@@ -132,12 +168,14 @@ drop trigger if exists inventory_items_updated_at on public.inventory_items;
 create trigger inventory_items_updated_at before update on public.inventory_items
 for each row execute procedure public.set_inventory_updated_at();
 
--- 7. Row Level Security Policies
+-- 9. Row Level Security Policies
 alter table public.profiles enable row level security;
 alter table public.inventory_items enable row level security;
 alter table public.tool_checkouts enable row level security;
 alter table public.activity_logs enable row level security;
 alter table public.planner_tasks enable row level security;
+alter table public.parts_needed enable row level security;
+alter table public.spending_records enable row level security;
 
 -- Profiles policies
 drop policy if exists "Members read own profile; admins read all" on public.profiles;
@@ -154,33 +192,28 @@ create policy "Admins update member approval" on public.profiles
 for update to authenticated using((select public.is_team_admin()))
 with check((select public.is_team_admin()));
 
--- Inventory items policies:
--- Approved team can READ inventory
+-- Inventory items policies (Only Admins add/edit/delete; approved members read)
 drop policy if exists "Approved team can read inventory" on public.inventory_items;
 create policy "Approved team can read inventory" on public.inventory_items
 for select to authenticated using((select public.is_approved_member()));
 
--- ONLY ADMINS can ADD inventory items
 drop policy if exists "Approved team can add inventory" on public.inventory_items;
 drop policy if exists "Only admins can add inventory" on public.inventory_items;
 create policy "Only admins can add inventory" on public.inventory_items
 for insert to authenticated with check((select public.is_team_admin()));
 
--- ONLY ADMINS can EDIT inventory items
 drop policy if exists "Approved team can edit inventory" on public.inventory_items;
 drop policy if exists "Only admins can edit inventory" on public.inventory_items;
 create policy "Only admins can edit inventory" on public.inventory_items
 for update to authenticated using((select public.is_team_admin()))
 with check((select public.is_team_admin()));
 
--- ONLY ADMINS can DELETE inventory items
 drop policy if exists "Approved team can delete inventory" on public.inventory_items;
 drop policy if exists "Only admins can delete inventory" on public.inventory_items;
 create policy "Only admins can delete inventory" on public.inventory_items
 for delete to authenticated using((select public.is_team_admin()));
 
--- Tool checkouts policies:
--- ANY APPROVED MEMBER can read, borrow (create checkout), and check in (return checkout)
+-- Tool checkouts policies (Anyone approved can borrow and check in)
 drop policy if exists "Approved members can read tool checkouts" on public.tool_checkouts;
 create policy "Approved members can read tool checkouts" on public.tool_checkouts
 for select to authenticated using((select public.is_approved_member()));
@@ -194,7 +227,7 @@ create policy "Approved members can update tool checkouts" on public.tool_checko
 for update to authenticated using((select public.is_approved_member()) and (user_id=(select auth.uid()) or (select public.is_team_admin())))
 with check((select public.is_approved_member()));
 
--- Activity logs policies: ONLY ADMINS CAN READ, approved members can insert
+-- Activity logs policies (Only admins read)
 drop policy if exists "Only admins can read activity logs" on public.activity_logs;
 create policy "Only admins can read activity logs" on public.activity_logs
 for select to authenticated using((select public.is_team_admin()));
@@ -203,31 +236,63 @@ drop policy if exists "Approved members can insert activity logs" on public.acti
 create policy "Approved members can insert activity logs" on public.activity_logs
 for insert to authenticated with check((select public.is_approved_member()));
 
--- Planner tasks policies:
--- Approved members can READ tasks
+-- Planner tasks policies (Admins create/delete; approved members update status)
 drop policy if exists "Approved members can read planner tasks" on public.planner_tasks;
 create policy "Approved members can read planner tasks" on public.planner_tasks
 for select to authenticated using((select public.is_approved_member()));
 
--- ONLY ADMINS can CREATE tasks
 drop policy if exists "Approved members can create planner tasks" on public.planner_tasks;
 drop policy if exists "Only admins can create planner tasks" on public.planner_tasks;
 create policy "Only admins can create planner tasks" on public.planner_tasks
 for insert to authenticated with check((select public.is_team_admin()));
 
--- APPROVED MEMBERS can UPDATE task status or assignment
 drop policy if exists "Approved members can update planner tasks" on public.planner_tasks;
 create policy "Approved members can update planner tasks" on public.planner_tasks
 for update to authenticated using((select public.is_approved_member()))
 with check((select public.is_approved_member()));
 
--- ONLY ADMINS can DELETE planner tasks
 drop policy if exists "Approved members can delete planner tasks" on public.planner_tasks;
 drop policy if exists "Only admins can delete planner tasks" on public.planner_tasks;
 create policy "Only admins can delete planner tasks" on public.planner_tasks
 for delete to authenticated using((select public.is_team_admin()));
 
--- 8. Realtime configuration
+-- Parts Needed for Robot (Everyone approved can view, only admins add/edit/delete)
+drop policy if exists "Approved members can read parts needed" on public.parts_needed;
+create policy "Approved members can read parts needed" on public.parts_needed
+for select to authenticated using((select public.is_approved_member()));
+
+drop policy if exists "Only admins can insert parts needed" on public.parts_needed;
+create policy "Only admins can insert parts needed" on public.parts_needed
+for insert to authenticated with check((select public.is_team_admin()));
+
+drop policy if exists "Only admins can update parts needed" on public.parts_needed;
+create policy "Only admins can update parts needed" on public.parts_needed
+for update to authenticated using((select public.is_team_admin()))
+with check((select public.is_team_admin()));
+
+drop policy if exists "Only admins can delete parts needed" on public.parts_needed;
+create policy "Only admins can delete parts needed" on public.parts_needed
+for delete to authenticated using((select public.is_team_admin()));
+
+-- Spending Records (ONLY ADMINS can read, insert, update, delete)
+drop policy if exists "Only admins can read spending" on public.spending_records;
+create policy "Only admins can read spending" on public.spending_records
+for select to authenticated using((select public.is_team_admin()));
+
+drop policy if exists "Only admins can insert spending" on public.spending_records;
+create policy "Only admins can insert spending" on public.spending_records
+for insert to authenticated with check((select public.is_team_admin()));
+
+drop policy if exists "Only admins can update spending" on public.spending_records;
+create policy "Only admins can update spending" on public.spending_records
+for update to authenticated using((select public.is_team_admin()))
+with check((select public.is_team_admin()));
+
+drop policy if exists "Only admins can delete spending" on public.spending_records;
+create policy "Only admins can delete spending" on public.spending_records
+for delete to authenticated using((select public.is_team_admin()));
+
+-- 10. Realtime configuration
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -242,6 +307,12 @@ begin
     end if;
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'planner_tasks') then
       execute 'alter publication supabase_realtime add table public.planner_tasks';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'parts_needed') then
+      execute 'alter publication supabase_realtime add table public.parts_needed';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'spending_records') then
+      execute 'alter publication supabase_realtime add table public.spending_records';
     end if;
   end if;
 end

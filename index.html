@@ -7,14 +7,14 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#07070c">
-<meta name="description" content="Shared inventory, tool tracking, and team planner for FRC Team 11744 Nyx (San Diego, CA)">
-<title>Nyx 11744 | Team Inventory & Planner</title>
+<meta name="description" content="Shared inventory, tool tracking, robot parts needed, and team workspace for FRC Team 11744 Nyx (San Diego, CA)">
+<title>Nyx 11744 | Team Workspace & Inventory</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-:root {
+:root, [data-theme="dark"] {
   --bg: #07070c;
   --bg-raised: #0e0d16;
   --bg-card: #14121f;
@@ -39,7 +39,7 @@
   --blue-dim: rgba(96, 165, 250, .15);
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --page-max: 1240px;
+  --page-max: 1260px;
   --radius: 12px;
   --radius-lg: 18px;
   color-scheme: dark;
@@ -119,7 +119,7 @@ button:disabled { opacity: .55; cursor: wait; }
   transition: background-color .2s ease;
 }
 [data-theme="light"] .topbar {
-  background: rgba(255, 255, 255, .88);
+  background: rgba(255, 255, 255, .9);
 }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
 .brand-logo {
@@ -131,13 +131,20 @@ button:disabled { opacity: .55; cursor: wait; }
 .brandtext small { font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; color: var(--accent-soft); }
 
 .top-controls { display: flex; align-items: center; gap: 14px; }
-.themetoggle {
-  background: rgba(255, 255, 255, .06); border: 1px solid var(--line); color: var(--text);
-  padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
-  display: inline-flex; align-items: center; gap: 6px; transition: all .15s ease;
+.theme-switch-box {
+  display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; padding: 2px;
+  background: rgba(255, 255, 255, .04);
 }
-.themetoggle:hover { border-color: var(--accent-line); color: var(--accent-bright); }
-[data-theme="light"] .themetoggle { background: #f1f5f9; }
+[data-theme="light"] .theme-switch-box { background: #e2e8f0; border-color: #cbd5e1; }
+.theme-opt-btn {
+  border: 0; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px; transition: all .14s ease; display: inline-flex; align-items: center; gap: 4px;
+}
+.theme-opt-btn.active {
+  background: var(--accent); color: #0b0813; font-weight: 700;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .4);
+}
+[data-theme="light"] .theme-opt-btn.active { color: #ffffff; }
 
 .topnote {
   display: flex; align-items: center; gap: 8px; font-family: var(--font-mono);
@@ -169,7 +176,7 @@ p { margin: 0 0 .8em; color: var(--text-muted); }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 9px 18px; border-radius: 999px; font-weight: 600; font-size: 13px;
-  border: 1px solid transparent; transition: all .15s ease;
+  border: 1px solid transparent; transition: all .15s ease; text-decoration: none;
 }
 .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .btn--primary {
@@ -266,7 +273,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 /* Panel */
 .panel {
   background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+  overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, .3); margin-bottom: 24px;
 }
 .toolbar { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .toolbar-actions { display: flex; gap: 10px; align-items: center; }
@@ -327,12 +334,21 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 .pill.General { color: #cbd5e1; border-color: rgba(148, 163, 184, .3); background: rgba(148, 163, 184, .1); }
 .pill.tool { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
 
-/* Priority pills */
+/* Priority & Status pills */
 .prio { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; font-weight: 700; }
 .prio.urgent { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248, 113, 113, .3); }
 .prio.high { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251, 191, 36, .3); }
 .prio.medium { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96, 165, 250, .3); }
 .prio.low { background: rgba(255, 255, 255, .05); color: var(--text-muted); border: 1px solid var(--line); }
+
+.status-badge {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.status-badge.needed { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248, 113, 113, .3); }
+.status-badge.ordered { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251, 191, 36, .3); }
+.status-badge.shipped { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96, 165, 250, .3); }
+.status-badge.arrived { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74, 222, 128, .3); }
 
 /* Quantity & Actions */
 .quantity { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); }
@@ -399,7 +415,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 .modalback { position: fixed; inset: 0; z-index: 100; background: rgba(7, 7, 12, .85); backdrop-filter: blur(8px); display: grid; place-items: center; padding: 20px; }
 [data-theme="light"] .modalback { background: rgba(15, 23, 42, .6); }
 .modal {
-  width: min(100%, 580px); max-height: 90vh; overflow-y: auto; background: var(--bg-card);
+  width: min(100%, 620px); max-height: 90vh; overflow-y: auto; background: var(--bg-card);
   border: 1px solid var(--line-strong); border-radius: var(--radius-lg); padding: 28px;
   box-shadow: 0 30px 100px rgba(0, 0, 0, .8);
 }
@@ -430,8 +446,17 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 .logaction.PLANNER_TASK_CREATED { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96, 165, 250, .3); }
 .logaction.PLANNER_TASK_UPDATED { background: var(--accent-dim); color: var(--accent-soft); }
 .logaction.PLANNER_TASK_COMPLETED { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74, 222, 128, .3); }
+.logaction.PART_NEEDED_CREATED { background: var(--red-dim); color: var(--red); }
+.logaction.SPENDING_RECORDED { background: var(--green-dim); color: var(--green); }
 .logaction.MEMBER_APPROVED { background: var(--green-dim); color: var(--green); }
 .logaction.MEMBER_REVOKED { background: var(--red-dim); color: var(--red); }
+
+/* Quick FRC dropdown helper container */
+.frc-preset-box {
+  background: var(--accent-dim); border: 1px dashed var(--accent-line); border-radius: 9px;
+  padding: 10px 14px; margin-bottom: 14px;
+}
+.frc-preset-box label { margin-top: 0; color: var(--accent-soft); font-size: 11px; }
 
 /* Toast */
 .toast {
@@ -464,18 +489,21 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 <div class="shell">
   <!-- Topbar -->
   <header class="topbar">
-    <a class="brand" href="#" aria-label="NYX 11744 Inventory & Planner">
+    <a class="brand" href="#" aria-label="NYX 11744 Workspace">
       <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
       <span class="brandtext">
         <strong>NYX 11744</strong>
-        <small>INVENTORY & PLANNER</small>
+        <small>FRC ROBOTICS WORKSPACE</small>
       </span>
     </a>
     
     <div class="top-controls">
-      <button class="themetoggle" id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
-        <span id="theme-icon">☀️</span> <span id="theme-text">Light</span>
-      </button>
+      <!-- 2-state Segmented Theme Toggle -->
+      <div class="theme-switch-box" role="radiogroup" aria-label="Color theme">
+        <button class="theme-opt-btn" id="theme-btn-dark" type="button" aria-checked="true">🌙 Dark</button>
+        <button class="theme-opt-btn" id="theme-btn-light" type="button" aria-checked="false">☀️ Light</button>
+      </div>
+
       <div class="topnote">
         <span class="dot"></span>
         <span>Shop Workspace</span>
@@ -493,12 +521,12 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <span class="eyebrow">FRC TEAM 11744 / SAN DIEGO, CA</span>
       <h1>Built for the build season.<br><em>Ready for the next match.</em></h1>
       <p style="font-size: 17px; max-width: 520px;">
-        Shared inventory, live tool checkouts, and team planner for the engineers who design, machine, wire, and program Nyx.
+        Shared inventory, robot parts tracking, shop tool checkouts, and team planner for the engineers of Nyx.
       </p>
       <div class="metrics">
         <div class="metric"><strong>04</strong><small>SUBSYSTEMS</small></div>
         <div class="metric"><strong>LIVE</strong><small>TOOL TRACKING</small></div>
-        <div class="metric"><strong>TEAM</strong><small>PLANNER</small></div>
+        <div class="metric"><strong>ROBOT</strong><small>PARTS NEEDED</small></div>
       </div>
       <div class="stamp">
         <img src="logo.png" alt="Nyx Logo" width="44" height="44" style="border-radius:8px; object-fit:contain;">
@@ -512,7 +540,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
         <span class="mono small muted">SAN DIEGO</span>
       </div>
       <h2 id="auth-title">Sign in to the shop.</h2>
-      <p id="auth-subtitle" class="muted small">Check stock, borrow tools, and coordinate tasks with your subteam.</p>
+      <p id="auth-subtitle" class="muted small">Check stock, borrow tools, track robot parts, and coordinate build milestones.</p>
       
       <div class="tabs">
         <button type="button" class="tab active" id="show-signin">Sign in</button>
@@ -548,7 +576,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     <div class="card" style="text-align: center; padding: 40px 30px;">
       <span class="eyebrow">REGISTRATION CONFIRMED</span>
       <h2>Waiting for team approval.</h2>
-      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can view inventory and borrow tools.</p>
+      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can access the team workspace.</p>
       <div style="margin-top: 24px;">
         <button class="btn btn--ghost" id="pending-signout" type="button">Sign out</button>
       </div>
@@ -578,9 +606,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   <main id="inventory-screen" class="dashboard hidden">
     <section class="welcome">
       <div>
-        <span class="eyebrow">FRC 11744 / ROBOTICS WORKSHOP</span>
+        <span class="eyebrow">FRC 11744 / ROBOTICS WORKSPACE</span>
         <h1>Team <em>workspace.</em></h1>
-        <p class="muted">Live inventory, equipment checkouts, and collaborative build planning.</p>
+        <p class="muted">Shop inventory, robot parts tracking, equipment checkouts, and build tasks.</p>
       </div>
       <div class="userchip">
         <div class="avatar" id="profile-avatar">N</div>
@@ -597,17 +625,17 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <article class="stat">
         <small>CATALOGED ITEMS</small>
         <strong id="stat-items">0</strong>
-        <p class="muted">Parts & equipment entries</p>
+        <p class="muted">In shop inventory</p>
       </article>
       <article class="stat">
-        <small>TOTAL IN STOCK</small>
-        <strong id="stat-quantity" style="color:var(--accent-bright)">0</strong>
-        <p class="muted">Total pieces counted</p>
+        <small>PARTS NEEDED</small>
+        <strong id="stat-parts-needed" style="color:var(--red)">0</strong>
+        <p class="muted">For current robot build</p>
       </article>
       <article class="stat">
-        <small>TOOLS CHECKED OUT</small>
+        <small>TOOLS IN USE</small>
         <strong id="stat-checkouts" style="color:var(--amber)">0</strong>
-        <p class="muted">Currently in use</p>
+        <p class="muted">Checked out by teammates</p>
       </article>
       <article class="stat">
         <small>ACTIVE TASKS</small>
@@ -619,18 +647,20 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     <!-- Navigation Tabs -->
     <nav class="viewtabs">
       <button class="viewtab active" data-view="inventory">Parts & Tools <span class="badgenum" id="badge-all">0</span></button>
+      <button class="viewtab" data-view="parts-needed">Parts Needed for Robot 🤖 <span class="badgenum" id="badge-parts-needed">0</span></button>
       <button class="viewtab" data-view="checkouts">Active Checkouts <span class="badgenum" id="badge-checkouts">0</span></button>
       <button class="viewtab" data-view="planner">Team Planner 📋 <span class="badgenum" id="badge-planner">0</span></button>
+      <button class="viewtab hidden" id="tab-spending" data-view="spending">Spending & Budget 💰</button>
       <button class="viewtab hidden" id="tab-members" data-view="members">Member Access <span class="badgenum" id="badge-members">0</span></button>
       <button class="viewtab hidden" id="tab-logs" data-view="logs">Audit Logs 🔒</button>
     </nav>
 
-    <!-- INVENTORY VIEW -->
+    <!-- 1. INVENTORY VIEW -->
     <section id="view-inventory" class="panel">
       <div class="toolbar">
         <div>
-          <h2>Inventory Catalog</h2>
-          <p class="muted small">Changes sync in real time across all team devices.</p>
+          <h2>Shop Inventory</h2>
+          <p class="muted small">All members can browse tools & check stock. Admins manage catalog items.</p>
         </div>
         <div class="toolbar-actions">
           <button class="btn btn--primary btn--sm hidden" id="add-item-button" type="button">＋ Add Item (Admin)</button>
@@ -651,7 +681,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 
       <!-- Quick FRC Search Chips -->
       <div class="frc-chips-bar">
-        <span class="frc-chip-label">Quick FRC:</span>
+        <span class="frc-chip-label">Quick Search:</span>
         <button type="button" class="frc-chip" data-query="Kraken">⚡ Kraken / Falcon</button>
         <button type="button" class="frc-chip" data-query="NEO">⚡ NEO / Spark</button>
         <button type="button" class="frc-chip" data-query="RoboRIO">🧠 RoboRIO / CAN</button>
@@ -677,17 +707,52 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       </div>
 
       <div style="border-top:1px solid var(--line); padding:12px 24px; display:flex; justify-content:space-between; font-size:11px;" class="muted">
-        <span><span class="dot"></span> Shared PostgreSQL & Realtime Subscription</span>
+        <span><span class="dot"></span> Live PostgreSQL & Realtime Subscription</span>
         <span id="last-sync">Connecting...</span>
       </div>
     </section>
 
-    <!-- CHECKOUTS VIEW -->
+    <!-- 2. PARTS NEEDED FOR ROBOT (Everyone Views, Admin Edits) -->
+    <section id="view-parts-needed" class="panel hidden">
+      <div class="toolbar">
+        <div>
+          <h2>Parts Needed for Robot 🤖</h2>
+          <p class="muted small">Team-wide Bill of Needs: parts required for current robot mechanisms, ordering queue, and arrival status.</p>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn--primary btn--sm hidden" id="add-part-needed-btn" type="button">＋ Request Robot Part (Admin)</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="tabslist">
+          <button class="catbtn active" data-parts-filter="All">All Statuses</button>
+          <button class="catbtn" data-parts-filter="needed">Needed</button>
+          <button class="catbtn" data-parts-filter="ordered">Ordered</button>
+          <button class="catbtn" data-parts-filter="shipped">Shipped</button>
+          <button class="catbtn" data-parts-filter="arrived">Arrived in Shop</button>
+        </div>
+      </div>
+
+      <div class="tablehead" style="grid-template-columns: minmax(220px, 2.5fr) minmax(110px, 1.2fr) minmax(110px, 1fr) minmax(120px, 1.2fr) minmax(130px, 1.4fr);">
+        <span>PART & DETAILS</span>
+        <span>SUBTEAM</span>
+        <span>QTY & VENDOR</span>
+        <span>ORDER STATUS</span>
+        <span>ACTIONS</span>
+      </div>
+
+      <div id="parts-needed-list">
+        <div style="padding:40px; text-align:center;" class="muted">Loading needed parts…</div>
+      </div>
+    </section>
+
+    <!-- 3. CHECKOUTS VIEW (Anyone Borrows & Returns) -->
     <section id="view-checkouts" class="panel hidden">
       <div class="toolbar">
         <div>
           <h2>Active Tool & Equipment Checkouts</h2>
-          <p class="muted small">Anyone can borrow tools and check them back in when finished.</p>
+          <p class="muted small">Anyone can borrow tools for shop work and return them when done.</p>
         </div>
       </div>
       <div id="checkouts-list">
@@ -695,12 +760,12 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       </div>
     </section>
 
-    <!-- PLANNER VIEW -->
+    <!-- 4. PLANNER VIEW (Admins Add/Delete, Anyone Updates Status) -->
     <section id="view-planner" class="panel hidden">
       <div class="toolbar">
         <div>
           <h2>Team Build & Task Planner 📋</h2>
-          <p class="muted small">Roadmap for build season, CAD deliverables, and pit prep. Anyone can update status; admins manage tasks.</p>
+          <p class="muted small">Collaborative board for milestones, CAD goals, and pit prep. Anyone can advance task progress; admins manage tasks.</p>
         </div>
         <button class="btn btn--primary btn--sm hidden" id="add-task-btn" type="button">＋ Add Task (Admin)</button>
       </div>
@@ -747,7 +812,50 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       </div>
     </section>
 
-    <!-- ADMIN: MEMBERS VIEW -->
+    <!-- 5. ADMIN ONLY: SPENDING & BUDGET -->
+    <section id="view-spending" class="panel hidden">
+      <div class="toolbar">
+        <div>
+          <h2>Team Spending & Budget Tracker 💰</h2>
+          <p class="muted small">Restricted administrative ledger for team orders, vendor invoices, and robot expense tracking.</p>
+        </div>
+        <button class="btn btn--primary btn--sm" id="add-spending-btn" type="button">＋ Record Purchase</button>
+      </div>
+
+      <!-- Spending Summary Metrics -->
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; padding: 0 24px 20px;">
+        <div class="stat" style="padding:14px 18px;">
+          <small>TOTAL SEASON SPENT</small>
+          <strong id="spending-total-amt" style="color:var(--green); font-size:28px;">$0.00</strong>
+          <p class="muted">All recorded purchase orders</p>
+        </div>
+        <div class="stat" style="padding:14px 18px;">
+          <small>RECORDED ORDERS</small>
+          <strong id="spending-total-count" style="font-size:28px;">0</strong>
+          <p class="muted">Invoices & receipts logged</p>
+        </div>
+        <div class="stat" style="padding:14px 18px;">
+          <small>TOP VENDOR</small>
+          <strong id="spending-top-vendor" style="color:var(--accent-bright); font-size:20px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">None</strong>
+          <p class="muted">By total dollar volume</p>
+        </div>
+      </div>
+
+      <div class="tablehead" style="grid-template-columns: 100px minmax(180px, 2fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 110px 80px;">
+        <span>DATE</span>
+        <span>ORDER / TITLE</span>
+        <span>VENDOR</span>
+        <span>CATEGORY</span>
+        <span>AMOUNT</span>
+        <span>ACTIONS</span>
+      </div>
+
+      <div id="spending-list">
+        <div style="padding:40px; text-align:center;" class="muted">Loading spending ledger…</div>
+      </div>
+    </section>
+
+    <!-- 6. ADMIN ONLY: MEMBERS VIEW -->
     <section id="view-members" class="panel hidden">
       <div class="toolbar">
         <div>
@@ -760,12 +868,12 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       </div>
     </section>
 
-    <!-- ADMIN: AUDIT LOGS VIEW -->
+    <!-- 7. ADMIN ONLY: AUDIT LOGS VIEW -->
     <section id="view-logs" class="panel hidden">
       <div class="toolbar">
         <div>
           <h2>Audit & Activity Logs 🔒</h2>
-          <p class="muted small">Protected administrative event log. Tracks all inventory modifications, tool checkouts, and planner activity.</p>
+          <p class="muted small">Protected administrative event log. Tracks all inventory modifications, tool checkouts, planner actions, and spending records.</p>
         </div>
         <button class="btn btn--ghost btn--sm" id="refresh-logs-btn" type="button">↻ Refresh Logs</button>
       </div>
@@ -781,7 +889,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     </section>
   </main>
 
-  <!-- ITEM MODAL (ADD / EDIT) -->
+  <!-- MODAL: ADD / EDIT INVENTORY ITEM (Admin) -->
   <div id="item-modal" class="modalback hidden">
     <div class="modal">
       <div class="modalhead">
@@ -792,33 +900,79 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
         <button class="close" id="close-modal" type="button" aria-label="Close">×</button>
       </div>
 
+      <!-- Quick FRC Preset Dropdown -->
+      <div class="frc-preset-box">
+        <label for="frc-quick-picker">⚡ Quick FRC Component Autofill (Select to Populate Fields):</label>
+        <select id="frc-quick-picker" style="margin-top:6px;">
+          <option value="">-- Choose a standard FRC component or tool --</option>
+          <optgroup label="Motors & Gearboxes">
+            <option value='{"name":"Kraken X60 Motor w/ Talon FX","cat":"Electrical","tool":false,"unit":"pcs","pn":"WCP-0907","notes":"CTRE / WCP Brushless Motor"}'>Kraken X60 Motor w/ Talon FX (WCP-0907)</option>
+            <option value='{"name":"Falcon 500 Motor w/ Talon FX","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-FALCON","notes":"CTRE / VEX Brushless Motor"}'>Falcon 500 Motor (CTRE)</option>
+            <option value='{"name":"NEO Brushless Motor v1.1","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-21-1650","notes":"REV Robotics Brushless Motor"}'>NEO Brushless Motor v1.1 (REV-21-1650)</option>
+            <option value='{"name":"NEO Vortex Brushless Motor","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-21-2800","notes":"High power high RPM brushless"}'>NEO Vortex Motor (REV-21-2800)</option>
+            <option value='{"name":"NEO 550 Motor","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-21-1651","notes":"Compact high RPM brushless"}'>NEO 550 Motor (REV-21-1651)</option>
+            <option value='{"name":"CIM Motor","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-0255","notes":"2.5 in Brushed DC Motor"}'>CIM Motor (am-0255)</option>
+            <option value='{"name":"SPARK MAX Motor Controller","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-2158","notes":"PWM/CAN controller"}'>SPARK MAX Motor Controller (REV-11-2158)</option>
+            <option value='{"name":"SPARK Flex Motor Controller","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-2159","notes":"Direct mount to NEO Vortex"}'>SPARK Flex Controller (REV-11-2159)</option>
+            <option value='{"name":"REV MAXPlanetary Gearbox Base Kit","cat":"Mechanical","tool":false,"unit":"pcs","pn":"REV-21-2100","notes":"Modular planetary gearbox kit"}'>REV MAXPlanetary Gearbox (REV-21-2100)</option>
+          </optgroup>
+          <optgroup label="Control System & Electronics">
+            <option value='{"name":"NI RoboRIO 2.0","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-3000b","notes":"Main robot controller"}'>NI RoboRIO 2.0 (am-3000b)</option>
+            <option value='{"name":"REV Power Distribution Hub (PDH)","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-1850","notes":"20-channel high current PDH"}'>REV Power Distribution Hub (REV-11-1850)</option>
+            <option value='{"name":"CTRE Power Distribution Panel (PDP)","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-2856","notes":"16-channel legacy PDP"}'>CTRE Power Distribution Panel (am-2856)</option>
+            <option value='{"name":"REV Pneumatics Hub (PH)","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-1852","notes":"CAN-controlled solenoid & sensor hub"}'>REV Pneumatics Hub (REV-11-1852)</option>
+            <option value='{"name":"REV Radio Power Module (RPM)","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-1856","notes":"Regulated 12V Ethernet PoE for radio"}'>REV Radio Power Module (REV-11-1856)</option>
+            <option value='{"name":"VH-109 Open-Mesh FRC Radio","cat":"Electrical","tool":false,"unit":"pcs","pn":"VH-109","notes":"Official FRC Wi-Fi 6 Access Point"}'>VH-109 Official FRC Radio</option>
+            <option value='{"name":"CTRE CANivore USB-to-CAN","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-CANIVORE","notes":"High speed CAN FD bus adapter"}'>CTRE CANivore (USB-to-CAN FD)</option>
+            <option value='{"name":"CTRE Pigeon 2.0 9-Axis IMU","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-PIGEON2","notes":"High-precision gyro & accelerometer"}'>CTRE Pigeon 2.0 IMU</option>
+            <option value='{"name":"Limelight 3G Smart Camera","cat":"Electrical","tool":false,"unit":"pcs","pn":"LL-3G","notes":"Global shutter AprilTag / neural camera"}'>Limelight 3G Smart Vision Camera</option>
+            <option value='{"name":"CTRE CANcoder Absolute Encoder","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-CANCODER","notes":"Rotary magnetic absolute encoder"}'>CTRE CANcoder (Magnetic Absolute)</option>
+            <option value='{"name":"Main Breaker 120A (Panel Mount)","cat":"Electrical","tool":false,"unit":"pcs","pn":"CB185-120","notes":"Bussmann 120 Amp Main Breaker"}'>Main Breaker 120A (CB185-120)</option>
+            <option value='{"name":"Snap-Action Breaker 40A","cat":"Electrical","tool":false,"unit":"pcs","pn":"VB3-A40-P","notes":"40 Amp automatic breaker for PDH/PDP"}'>Snap-Action 40A Breaker</option>
+          </optgroup>
+          <optgroup label="Fasteners & Raw Materials">
+            <option value='{"name":"10-32 × 1/2 in Socket Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92196A241","notes":"Black-Oxide Alloy Steel, McMaster"}'>10-32 × 1/2 in Socket Cap Screw</option>
+            <option value='{"name":"10-32 × 3/4 in Socket Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92196A244","notes":"Black-Oxide Alloy Steel, McMaster"}'>10-32 × 3/4 in Socket Cap Screw</option>
+            <option value='{"name":"10-32 × 1.0 in Socket Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92196A248","notes":"Black-Oxide Alloy Steel, McMaster"}'>10-32 × 1.0 in Socket Cap Screw</option>
+            <option value='{"name":"10-32 Steel Nyloc Jam Nut","cat":"Mechanical","tool":false,"unit":"pcs","pn":"90631A011","notes":"Zinc-Plated Steel Locknut"}'>10-32 Steel Nyloc Locknut</option>
+            <option value='{"name":"1/4-20 × 1/2 in Button Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92949A533","notes":"Black-Oxide Alloy Steel"}'>1/4-20 × 1/2 in Button Head Screw</option>
+            <option value='{"name":"1/4-20 Nyloc Nut","cat":"Mechanical","tool":false,"unit":"pcs","pn":"90631A029","notes":"Steel Nylon-Insert Locknut"}'>1/4-20 Nyloc Nut</option>
+            <option value='{"name":"3/16 in Aluminum Pop Rivets (1/4 Grip)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"97524A105","notes":"Dome head blind rivets"}'>3/16 in Aluminum Pop Rivets</option>
+            <option value='{"name":"1/2 in Hex ThunderHex Shaft (3ft)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"WCP-0050","notes":"6061-T6 Aluminum with 0.201in center hole"}'>1/2 in ThunderHex Shaft (3ft)</option>
+            <option value='{"name":"1/2 in Hex Bearing (Flanged, Shielded)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"FR8ZZ-Hex","notes":"Standard FRC hex shaft bearing"}'>1/2 in Hex Flanged Bearing (FR8ZZ)</option>
+          </optgroup>
+          <optgroup label="Swerve & Motion">
+            <option value='{"name":"SDS MK4i Swerve Module Kit","cat":"Mechanical","tool":false,"unit":"pcs","pn":"MK4i-L2","notes":"Swerve Drive Specialties Inverted Swerve"}'>SDS MK4i Swerve Module (L2)</option>
+            <option value='{"name":"REV MAXSwerve Module Kit","cat":"Mechanical","tool":false,"unit":"pcs","pn":"REV-21-3005","notes":"Compact planetary swerve drive"}'>REV MAXSwerve Module</option>
+            <option value='{"name":"Colson Performa Wheel 4×1.5 in","cat":"Mechanical","tool":false,"unit":"pcs","pn":"am-2640","notes":"High traction rubber swerve/drive wheel"}'>Colson 4×1.5 in Wheel</option>
+            <option value='{"name":"#25 Roller Chain (10 ft)","cat":"Mechanical","tool":false,"unit":"ft","pn":"am-0370","notes":"Standard drive and intake chain"}'>#25 Roller Chain (10 ft)</option>
+            <option value='{"name":"HTD 5mm Timing Belt (9mm Width)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"HTD-5M-9","notes":"Pitch 5mm synchronous timing belt"}'>HTD 5mm Timing Belt (9mm wide)</option>
+          </optgroup>
+          <optgroup label="Batteries & Power">
+            <option value='{"name":"12V 18Ah SLA Robot Battery (Interstate)","cat":"Electrical","tool":false,"unit":"pcs","pn":"SLA1116","notes":"Standard FRC competition battery"}'>12V 18Ah SLA Battery (Interstate)</option>
+            <option value='{"name":"SB50 Anderson Battery Connector (Red)","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-0009","notes":"50A quick disconnect for main power"}'>SB50 Anderson Battery Connector</option>
+            <option value='{"name":"4 AWG Flexible Battery Cable (Red/Black)","cat":"Electrical","tool":false,"unit":"ft","pn":"am-0099","notes":"High-strand count battery lead wire"}'>4 AWG Battery Cable (per foot)</option>
+            <option value='{"name":"Anderson Powerpole 45A Contacts & Housings","cat":"Electrical","tool":false,"unit":"set","pn":"am-0878","notes":"Red/Black housings with 45A crimp contacts"}'>Anderson Powerpole 45A (10-pack)</option>
+            <option value='{"name":"WAGO 221 Lever Nuts (3-Conductor)","cat":"Electrical","tool":false,"unit":"pcs","pn":"221-413","notes":"Quick wire splice connector"}'>WAGO 221 Lever Nuts (3-wire)</option>
+          </optgroup>
+          <optgroup label="Shop & Pit Tools">
+            <option value='{"name":"Heavy-Duty Hand Riveter Tool","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-RIVET","notes":"Supports 3/16 and 1/8 in rivets"}'>Heavy-Duty Hand Riveter (Tool)</option>
+            <option value='{"name":"Milwaukee M12 Cordless Drill","cat":"Mechanical","tool":true,"unit":"pcs","pn":"2407-20","notes":"3/8 in chuck compact cordless drill"}'>Milwaukee M12 Cordless Drill (Tool)</option>
+            <option value='{"name":"Milwaukee M12 1/4 in Hex Impact Driver","cat":"Mechanical","tool":true,"unit":"pcs","pn":"2462-20","notes":"Fastener driver for 10-32 & 1/4-20"}'>Milwaukee M12 Impact Driver (Tool)</option>
+            <option value='{"name":"Automatic Wire Stripper 10-24 AWG","cat":"Electrical","tool":true,"unit":"pcs","pn":"TOOL-STRIPPER","notes":"Self-adjusting wire stripper and cutter"}'>Automatic Wire Stripper (Tool)</option>
+            <option value='{"name":"TRIcrimp Anderson Powerpole Crimper","cat":"Electrical","tool":true,"unit":"pcs","pn":"am-3324","notes":"Ratchet crimper for 15/30/45A contacts"}'>Anderson TRIcrimp Crimping Tool</option>
+            <option value='{"name":"T-Handle Hex Key 5/32 in (for 10-32)","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-THANDLE-532","notes":"Shop staple for 10-32 socket screws"}'>T-Handle 5/32 in Hex Key (Tool)</option>
+            <option value='{"name":"T-Handle Hex Key 3/16 in (for 1/4-20)","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-THANDLE-316","notes":"Shop staple for 1/4-20 socket screws"}'>T-Handle 3/16 in Hex Key (Tool)</option>
+            <option value='{"name":"CTRE Battery Beak Battery Analyzer","cat":"Electrical","tool":true,"unit":"pcs","pn":"am-2195","notes":"Instant battery charge & internal resistance tester"}'>CTRE Battery Beak Analyzer (Tool)</option>
+            <option value='{"name":"6-inch Digital Calipers","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-CALIPER","notes":"Stainless steel 0.0005 in accuracy"}'>6-inch Digital Calipers (Tool)</option>
+            <option value='{"name":"Deburring Tool with Swivel Blade","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-DEBURR","notes":"For cleaning cut edges on aluminum and lexan"}'>Deburring Tool w/ Swivel Blade</option>
+          </optgroup>
+        </select>
+      </div>
+
       <form id="item-form">
         <label for="item-name">Item Name *</label>
-        <input id="item-name" maxlength="120" list="frc-suggestions" required placeholder="e.g. Kraken X60 Motor, Falcon 500, 10-32 × 1/2in Bolt">
-        <datalist id="frc-suggestions">
-          <option value="Kraken X60 Motor">
-          <option value="Falcon 500 Motor">
-          <option value="NEO Brushless Motor v1.1">
-          <option value="NEO 550 Motor">
-          <option value="Spark MAX Motor Controller">
-          <option value="Talon FX Motor Controller">
-          <option value="RoboRIO 2.0">
-          <option value="REV Power Distribution Hub (PDH)">
-          <option value="CTRE CANivore USB to CAN">
-          <option value="Limelight 3G Vision Camera">
-          <option value="Pigeon 2.0 9-Axis IMU">
-          <option value="10-32 × 1/2 in Socket Head Screw">
-          <option value="10-32 × 3/4 in Socket Head Screw">
-          <option value="10-32 Nyloc Locknut">
-          <option value="3/16 in Aluminum Pop Rivets">
-          <option value="1/2 in Hex Bearing (Flanged)">
-          <option value="1/2 in ThunderHex Shaft (3ft)">
-          <option value="Anderson Powerpole 45A Connectors">
-          <option value="12 AWG Silicone Wire (Red/Black)">
-          <option value="Pneumatic Air Tank 590ml">
-          <option value="Heavy-Duty Rivet Tool">
-          <option value="Automatic Wire Stripper 10-24 AWG">
-        </datalist>
+        <input id="item-name" maxlength="120" required placeholder="e.g. Kraken X60 Motor, 10-32 × 1/2in Bolt">
 
         <div class="formgrid">
           <div>
@@ -875,7 +1029,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     </div>
   </div>
 
-  <!-- CHECKOUT MODAL -->
+  <!-- MODAL: CHECKOUT TOOL (Anyone) -->
   <div id="checkout-modal" class="modalback hidden">
     <div class="modal">
       <div class="modalhead">
@@ -907,7 +1061,88 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     </div>
   </div>
 
-  <!-- PLANNER TASK MODAL -->
+  <!-- MODAL: ADD / EDIT PART NEEDED (Admin) -->
+  <div id="part-needed-modal" class="modalback hidden">
+    <div class="modal">
+      <div class="modalhead">
+        <div>
+          <span class="eyebrow">ROBOT BUILD ORDERING</span>
+          <h2 id="part-needed-modal-title">Add Part Needed for Robot</h2>
+        </div>
+        <button class="close" id="close-part-needed-modal" type="button" aria-label="Close">×</button>
+      </div>
+
+      <form id="part-needed-form">
+        <label for="pn-part-name">Part Name *</label>
+        <input id="pn-part-name" maxlength="120" required placeholder="e.g. Swerve Colson Wheels 4in, Limelight 3G, 10-32 Bolts">
+
+        <div class="formgrid">
+          <div>
+            <label for="pn-subsystem">Subsystem *</label>
+            <select id="pn-subsystem">
+              <option value="Mechanical">Mechanical</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Software">Software</option>
+              <option value="Design / CAD">Design / CAD</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div>
+            <label for="pn-quantity">Quantity Needed *</label>
+            <input id="pn-quantity" type="number" min="1" step="1" value="1" required>
+          </div>
+        </div>
+
+        <div class="formgrid">
+          <div>
+            <label for="pn-vendor">Vendor / Supplier</label>
+            <input id="pn-vendor" maxlength="60" placeholder="e.g. WCP, REV Robotics, McMaster, AndyMark">
+          </div>
+          <div>
+            <label for="pn-priority">Priority</label>
+            <select id="pn-priority">
+              <option value="urgent">Urgent 🔥</option>
+              <option value="high" selected>High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="formgrid">
+          <div>
+            <label for="pn-status">Current Status</label>
+            <select id="pn-status">
+              <option value="needed" selected>Needed (Not Ordered)</option>
+              <option value="ordered">Ordered</option>
+              <option value="shipped">Shipped (In Transit)</option>
+              <option value="arrived">Arrived in Shop</option>
+            </select>
+          </div>
+          <div>
+            <label for="pn-cost">Estimated Cost ($ USD)</label>
+            <input id="pn-cost" type="number" step="0.01" min="0" value="0.00" placeholder="0.00">
+          </div>
+        </div>
+
+        <label for="pn-part-number">Part Number</label>
+        <input id="pn-part-number" maxlength="60" placeholder="e.g. WCP-0907, 92196A241">
+
+        <label for="pn-url">Product Link / Spec URL</label>
+        <input id="pn-url" type="url" placeholder="https://www.wcproducts.com/...">
+
+        <label for="pn-notes">Notes / Purpose on Robot</label>
+        <textarea id="pn-notes" maxlength="600" rows="2" placeholder="e.g. For indexer intake rollers, need before week 3 scrim"></textarea>
+
+        <div class="modalactions">
+          <button type="button" class="btn btn--ghost" id="cancel-part-needed-modal">Cancel</button>
+          <button type="submit" class="btn btn--primary" id="save-part-needed-btn">Save Part ↗</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT PLANNER TASK (Admin) -->
   <div id="task-modal" class="modalback hidden">
     <div class="modal">
       <div class="modalhead">
@@ -974,6 +1209,64 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     </div>
   </div>
 
+  <!-- MODAL: RECORD SPENDING (Admin) -->
+  <div id="spending-modal" class="modalback hidden">
+    <div class="modal">
+      <div class="modalhead">
+        <div>
+          <span class="eyebrow">BUDGET & PURCHASING</span>
+          <h2>Record Purchase Order</h2>
+        </div>
+        <button class="close" id="close-spending-modal" type="button" aria-label="Close">×</button>
+      </div>
+
+      <form id="spending-form">
+        <label for="spend-title">Order Description / Parts *</label>
+        <input id="spend-title" maxlength="120" required placeholder="e.g. REV Robotics Order - MAXPlanetary & Belts">
+
+        <div class="formgrid">
+          <div>
+            <label for="spend-vendor">Vendor / Supplier *</label>
+            <input id="spend-vendor" maxlength="60" required placeholder="e.g. REV, WCP, McMaster, AndyMark, Amazon">
+          </div>
+          <div>
+            <label for="spend-amount">Amount ($ USD) *</label>
+            <input id="spend-amount" type="number" step="0.01" min="0" required placeholder="142.50">
+          </div>
+        </div>
+
+        <div class="formgrid">
+          <div>
+            <label for="spend-category">Budget Category *</label>
+            <select id="spend-category">
+              <option value="Robot Hardware">Robot Hardware</option>
+              <option value="Electronics & Control">Electronics & Control</option>
+              <option value="Tools & Equipment">Tools & Equipment</option>
+              <option value="Raw Materials">Raw Materials</option>
+              <option value="Pit & Safety">Pit & Safety</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label for="spend-date">Purchase Date *</label>
+            <input id="spend-date" type="date" required>
+          </div>
+        </div>
+
+        <label for="spend-order-number">Order # / PO Reference</label>
+        <input id="spend-order-number" maxlength="60" placeholder="e.g. PO-2026-11744-012">
+
+        <label for="spend-notes">Notes / Grant / Card Details</label>
+        <textarea id="spend-notes" maxlength="600" rows="2" placeholder="Purchased with NASA Grant, invoice saved in Google Drive…"></textarea>
+
+        <div class="modalactions">
+          <button type="button" class="btn btn--ghost" id="cancel-spending-modal">Cancel</button>
+          <button type="submit" class="btn btn--primary" id="save-spending-btn">Save Purchase ↗</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <!-- Footer -->
@@ -999,15 +1292,19 @@ let currentProfile = null;
 let allItems = [];
 let allCheckouts = [];
 let allTasks = [];
+let allPartsNeeded = [];
+let allSpending = [];
 let activeCategory = "All";
 let activePlannerSubsystem = "All";
+let activePartsFilter = "All";
 let currentView = "inventory";
 let editingItemId = null;
 let editingTaskId = null;
+let editingPartNeededId = null;
 let checkingOutItem = null;
 let channel = null;
 
-/* Light/Dark Theme Controller */
+/* Light/Dark Segmented Controller */
 function initTheme() {
   const saved = localStorage.getItem("nyx_theme") || "dark";
   applyTheme(saved);
@@ -1016,22 +1313,25 @@ function initTheme() {
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("nyx_theme", theme);
-  const icon = $("#theme-icon");
-  const text = $("#theme-text");
+  
+  const darkBtn = $("#theme-btn-dark");
+  const lightBtn = $("#theme-btn-light");
+  
   if (theme === "light") {
-    icon.textContent = "🌙";
-    text.textContent = "Dark";
+    lightBtn.classList.add("active");
+    lightBtn.setAttribute("aria-checked", "true");
+    darkBtn.classList.remove("active");
+    darkBtn.setAttribute("aria-checked", "false");
   } else {
-    icon.textContent = "☀️";
-    text.textContent = "Light";
+    darkBtn.classList.add("active");
+    darkBtn.setAttribute("aria-checked", "true");
+    lightBtn.classList.remove("active");
+    lightBtn.setAttribute("aria-checked", "false");
   }
 }
 
-$("#theme-toggle").addEventListener("click", () => {
-  const current = document.documentElement.getAttribute("data-theme") || "dark";
-  applyTheme(current === "dark" ? "light" : "dark");
-});
-
+$("#theme-btn-dark").addEventListener("click", () => applyTheme("dark"));
+$("#theme-btn-light").addEventListener("click", () => applyTheme("light"));
 initTheme();
 
 function esc(v) {
@@ -1077,14 +1377,15 @@ function switchView(viewName) {
   currentView = viewName;
   $$(".viewtab").forEach(tab => tab.classList.toggle("active", tab.dataset.view === viewName));
   $("#view-inventory").classList.toggle("hidden", viewName !== "inventory");
+  $("#view-parts-needed").classList.toggle("hidden", viewName !== "parts-needed");
   $("#view-checkouts").classList.toggle("hidden", viewName !== "checkouts");
   $("#view-planner").classList.toggle("hidden", viewName !== "planner");
+  $("#view-spending").classList.toggle("hidden", viewName !== "spending");
   $("#view-members").classList.toggle("hidden", viewName !== "members");
   $("#view-logs").classList.toggle("hidden", viewName !== "logs");
 
-  if (viewName === "logs" && currentProfile?.is_admin) {
-    loadLogs();
-  }
+  if (viewName === "spending" && currentProfile?.is_admin) loadSpending();
+  if (viewName === "logs" && currentProfile?.is_admin) loadLogs();
 }
 
 async function logAction(action, entityType, entityId, details) {
@@ -1114,6 +1415,8 @@ async function signOut() {
   allItems = [];
   allCheckouts = [];
   allTasks = [];
+  allPartsNeeded = [];
+  allSpending = [];
   screens("auth");
   authMode("signin");
 }
@@ -1146,14 +1449,16 @@ async function checkUser(user) {
 
   // Admin visibility controls
   $("#add-item-button").classList.toggle("hidden", !data.is_admin);
+  $("#add-part-needed-btn").classList.toggle("hidden", !data.is_admin);
   $("#add-task-btn").classList.toggle("hidden", !data.is_admin);
+  $("#tab-spending").classList.toggle("hidden", !data.is_admin);
   $("#tab-members").classList.toggle("hidden", !data.is_admin);
   $("#tab-logs").classList.toggle("hidden", !data.is_admin);
 
-  await Promise.all([loadItems(), loadCheckouts(), loadTasks()]);
+  await Promise.all([loadItems(), loadCheckouts(), loadTasks(), loadPartsNeeded()]);
 
   if (data.is_admin) {
-    await loadMembers();
+    await Promise.all([loadMembers(), loadSpending()]);
   }
 
   // Subscribe to realtime changes
@@ -1165,6 +1470,10 @@ async function checkUser(user) {
         loadItems(true);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "planner_tasks" }, () => loadTasks(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "parts_needed" }, () => loadPartsNeeded(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "spending_records" }, () => {
+        if (currentProfile?.is_admin) loadSpending(true);
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
         if (currentView === "logs" && currentProfile?.is_admin) loadLogs();
       })
@@ -1180,7 +1489,7 @@ async function checkUser(user) {
 async function loadItems(quiet) {
   if (!supabase || !currentUser) return;
   const list = $("#items-list");
-  if (!quiet) list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">Loading shared inventory…</div>';
+  if (!quiet) list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">Loading inventory…</div>';
 
   const { data, error } = await supabase
     .from("inventory_items")
@@ -1197,6 +1506,26 @@ async function loadItems(quiet) {
   allItems = data || [];
   renderItems();
   $("#last-sync").textContent = "Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+/* Load Parts Needed (Everyone views) */
+async function loadPartsNeeded(quiet) {
+  if (!supabase || !currentUser) return;
+  const list = $("#parts-needed-list");
+  if (!quiet) list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">Loading needed parts…</div>';
+
+  const { data, error } = await supabase
+    .from("parts_needed")
+    .select("id, part_name, subsystem, quantity, vendor, part_number, url, priority, status, estimated_cost, notes, updated_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    list.innerHTML = `<div style="padding:40px; text-align:center;" class="muted">Error: ${esc(error.message)}</div>`;
+    return;
+  }
+
+  allPartsNeeded = data || [];
+  renderPartsNeeded();
 }
 
 /* Load Tool Checkouts */
@@ -1228,9 +1557,28 @@ async function loadTasks(quiet) {
   }
 }
 
+/* Load Spending (Admin only) */
+async function loadSpending(quiet) {
+  if (!supabase || !currentProfile?.is_admin) return;
+  const list = $("#spending-list");
+  if (!quiet) list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">Loading spending ledger…</div>';
+
+  const { data, error } = await supabase
+    .from("spending_records")
+    .select("id, title, vendor, amount, category, order_date, order_number, notes, created_by_name, created_at")
+    .order("order_date", { ascending: false });
+
+  if (error) {
+    list.innerHTML = `<div style="padding:40px; text-align:center;" class="muted">Error loading spending: ${esc(error.message)}</div>`;
+    return;
+  }
+
+  allSpending = data || [];
+  renderSpending();
+}
+
 function renderItems() {
   const totalQty = allItems.reduce((n, x) => n + Number(x.quantity || 0), 0);
-  const lowCount = allItems.filter(x => Number(x.quantity) <= Number(x.min_quantity || 1)).length;
   const toolsCount = allItems.filter(x => x.is_tool).length;
 
   $("#stat-items").textContent = allItems.length;
@@ -1314,6 +1662,75 @@ function renderItems() {
             <button class="actionbtn" data-action="edit" data-id="${esc(x.id)}">Edit</button>
             <button class="actionbtn delete" data-action="delete" data-id="${esc(x.id)}">Delete</button>
           ` : ''}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+/* Render Parts Needed (Viewable by everyone, editable by admins) */
+function renderPartsNeeded() {
+  const neededUnarrived = allPartsNeeded.filter(p => p.status !== "arrived");
+  $("#stat-parts-needed").textContent = neededUnarrived.length;
+  $("#badge-parts-needed").textContent = neededUnarrived.length;
+
+  const filtered = allPartsNeeded.filter(p => {
+    if (activePartsFilter === "All") return true;
+    return p.status === activePartsFilter;
+  });
+
+  const list = $("#parts-needed-list");
+  if (!filtered.length) {
+    list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">' +
+      (allPartsNeeded.length ? "No parts match this status filter." : "No robot parts currently in the ordering queue. Admins can add parts needed above!") +
+      '</div>';
+    return;
+  }
+
+  const isAdmin = !!currentProfile?.is_admin;
+
+  list.innerHTML = filtered.map(p => {
+    const subsysClass = p.subsystem.replace(/[\s\/]/g, "");
+    return `
+      <article class="itemrow" style="grid-template-columns: minmax(220px, 2.5fr) minmax(110px, 1.2fr) minmax(110px, 1fr) minmax(120px, 1.2fr) minmax(130px, 1.4fr);">
+        <div>
+          <div class="itemname">
+            ${esc(p.part_name)}
+            <span class="prio ${esc(p.priority)}">${esc(p.priority)}</span>
+          </div>
+          <div class="itemnotes">
+            ${p.part_number ? `PN: ${esc(p.part_number)} · ` : ''}
+            ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">Vendor Link ↗</a> · ` : ''}
+            ${esc(p.notes || "No notes")}
+          </div>
+        </div>
+
+        <div class="subsys">
+          <span class="pill ${esc(subsysClass)}">${esc(p.subsystem)}</span>
+        </div>
+
+        <div>
+          <strong class="mono" style="font-size:14px;">${p.quantity}</strong> pcs
+          <div class="muted small">${esc(p.vendor || "Vendor TBD")}</div>
+        </div>
+
+        <div>
+          <span class="status-badge ${esc(p.status)}">${esc(p.status.toUpperCase())}</span>
+          ${Number(p.estimated_cost) > 0 ? `<div class="mono small muted" style="margin-top:2px;">~$${Number(p.estimated_cost).toFixed(2)}</div>` : ''}
+        </div>
+
+        <div class="actions">
+          ${isAdmin ? `
+            <select class="actionbtn" data-action="quick-status-pn" data-id="${p.id}" style="padding:3px 6px; font-size:11px;">
+              <option value="needed" ${p.status==='needed'?'selected':''}>Needed</option>
+              <option value="ordered" ${p.status==='ordered'?'selected':''}>Ordered</option>
+              <option value="shipped" ${p.status==='shipped'?'selected':''}>Shipped</option>
+              <option value="arrived" ${p.status==='arrived'?'selected':''}>Arrived</option>
+            </select>
+            <button class="actionbtn delete" data-action="delete-pn" data-id="${p.id}" title="Delete request">🗑</button>
+          ` : `
+            <span class="muted small mono">${p.status === 'arrived' ? 'In shop' : 'Pending order'}</span>
+          `}
         </div>
       </article>
     `;
@@ -1422,6 +1839,48 @@ function renderTasks() {
   $("#tasks-done").innerHTML = doneTasks.length ? doneTasks.map(renderCard).join("") : '<div class="muted small" style="text-align:center; padding:30px 10px;">No completed tasks yet</div>';
 }
 
+/* Render Spending (Admin only) */
+function renderSpending() {
+  if (!currentProfile?.is_admin) return;
+  const total = allSpending.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+  $("#spending-total-amt").textContent = "$" + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  $("#spending-total-count").textContent = allSpending.length;
+
+  // Find top vendor
+  const vendorTotals = {};
+  allSpending.forEach(s => {
+    const v = s.vendor || "Other";
+    vendorTotals[v] = (vendorTotals[v] || 0) + Number(s.amount || 0);
+  });
+  let topV = "None", maxV = 0;
+  for (const [v, amt] of Object.entries(vendorTotals)) {
+    if (amt > maxV) { maxV = amt; topV = v; }
+  }
+  $("#spending-top-vendor").textContent = topV + (maxV > 0 ? ` ($${maxV.toFixed(0)})` : '');
+
+  const list = $("#spending-list");
+  if (!allSpending.length) {
+    list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">No purchases recorded yet. Click "＋ Record Purchase" to track orders!</div>';
+    return;
+  }
+
+  list.innerHTML = allSpending.map(s => `
+    <article class="itemrow" style="grid-template-columns: 100px minmax(180px, 2fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 110px 80px;">
+      <div class="mono small muted">${s.order_date || '—'}</div>
+      <div>
+        <div class="itemname">${esc(s.title)}</div>
+        <div class="itemnotes">${s.order_number ? `PO: ${esc(s.order_number)} · ` : ''}${esc(s.notes || "No notes")}</div>
+      </div>
+      <div><b>${esc(s.vendor)}</b></div>
+      <div><span class="pill">${esc(s.category)}</span></div>
+      <div><strong class="mono" style="color:var(--green); font-size:14px;">$${Number(s.amount).toFixed(2)}</strong></div>
+      <div class="actions">
+        <button class="actionbtn delete" data-action="delete-spending" data-id="${s.id}" title="Delete record">🗑</button>
+      </div>
+    </article>
+  `).join("");
+}
+
 /* Load Admin Members List */
 async function loadMembers() {
   if (!supabase || !currentProfile?.is_admin) return;
@@ -1496,7 +1955,9 @@ async function loadLogs() {
   list.innerHTML = data.map(log => {
     let detailsText = "";
     if (log.details?.title) detailsText += `<strong>${esc(log.details.title)}</strong> `;
+    if (log.details?.part_name) detailsText += `<strong>${esc(log.details.part_name)}</strong> `;
     if (log.details?.name) detailsText += `<strong>${esc(log.details.name)}</strong> `;
+    if (log.details?.amount != null) detailsText += `($${Number(log.details.amount).toFixed(2)}) `;
     if (log.details?.qty != null) detailsText += `(Qty: ${esc(log.details.qty)}) `;
     if (log.details?.status) detailsText += `Status: ${esc(log.details.status)} `;
     if (log.details?.notes) detailsText += `— ${esc(log.details.notes)}`;
@@ -1521,6 +1982,7 @@ function openItemModal(item) {
   }
   editingItemId = item ? item.id : null;
   $("#item-form").reset();
+  $("#frc-quick-picker").value = "";
   $("#modal-title").textContent = item ? "Edit Inventory Item" : "Add Inventory Item";
   $("#save-item-button").textContent = item ? "Save Changes ↗" : "Save Item ↗";
   $("#item-name").value = item ? item.name : "";
@@ -1541,6 +2003,23 @@ function closeItemModal() {
   editingItemId = null;
 }
 
+/* Quick FRC Preset Picker Handler */
+$("#frc-quick-picker").addEventListener("change", e => {
+  const val = e.target.value;
+  if (!val) return;
+  try {
+    const data = JSON.parse(val);
+    $("#item-name").value = data.name || "";
+    $("#item-category").value = data.cat || "Mechanical";
+    $("#item-is-tool").value = data.tool ? "true" : "false";
+    $("#item-unit").value = data.unit || "pcs";
+    $("#item-part-number").value = data.pn || "";
+    if (data.notes) $("#item-notes").value = data.notes;
+  } catch (err) {
+    console.error("Preset parse error", err);
+  }
+});
+
 function openCheckoutModal(item) {
   checkingOutItem = item;
   $("#checkout-form").reset();
@@ -1555,6 +2034,19 @@ function openCheckoutModal(item) {
 function closeCheckoutModal() {
   $("#checkout-modal").classList.add("hidden");
   checkingOutItem = null;
+}
+
+function openPartNeededModal() {
+  if (!currentProfile?.is_admin) return;
+  $("#part-needed-form").reset();
+  $("#pn-quantity").value = 1;
+  $("#pn-cost").value = "0.00";
+  $("#part-needed-modal").classList.remove("hidden");
+  $("#pn-part-name").focus();
+}
+
+function closePartNeededModal() {
+  $("#part-needed-modal").classList.add("hidden");
 }
 
 function openTaskModal(task) {
@@ -1580,6 +2072,18 @@ function openTaskModal(task) {
 function closeTaskModal() {
   $("#task-modal").classList.add("hidden");
   editingTaskId = null;
+}
+
+function openSpendingModal() {
+  if (!currentProfile?.is_admin) return;
+  $("#spending-form").reset();
+  $("#spend-date").value = new Date().toISOString().slice(0, 10);
+  $("#spending-modal").classList.remove("hidden");
+  $("#spend-title").focus();
+}
+
+function closeSpendingModal() {
+  $("#spending-modal").classList.add("hidden");
 }
 
 /* Item Save (Admin only) */
@@ -1638,6 +2142,50 @@ async function saveItem(e) {
   toast(editingItemId ? "Item updated." : "Item added to inventory.");
 }
 
+/* Part Needed Save (Admin only) */
+async function savePartNeeded(e) {
+  e.preventDefault();
+  if (!currentProfile?.is_admin) return;
+
+  const part_name = $("#pn-part-name").value.trim();
+  const subsystem = $("#pn-subsystem").value;
+  const quantity = Number($("#pn-quantity").value) || 1;
+  const vendor = $("#pn-vendor").value.trim();
+  const priority = $("#pn-priority").value;
+  const status = $("#pn-status").value;
+  const estimated_cost = Number($("#pn-cost").value) || 0.00;
+  const part_number = $("#pn-part-number").value.trim();
+  const url = $("#pn-url").value.trim();
+  const notes = $("#pn-notes").value.trim();
+
+  if (!part_name) {
+    toast("Part name is required.", true);
+    return;
+  }
+
+  const btn = $("#save-part-needed-btn");
+  btn.disabled = true;
+
+  const payload = {
+    part_name, subsystem, quantity, vendor, priority, status,
+    estimated_cost, part_number, url, notes,
+    created_by: currentUser.id
+  };
+
+  const { error } = await supabase.from("parts_needed").insert(payload);
+  btn.disabled = false;
+
+  if (error) {
+    toast("Failed to save needed part: " + error.message, true);
+    return;
+  }
+
+  await logAction("PART_NEEDED_CREATED", "parts_needed", null, { part_name, quantity, vendor, status });
+  closePartNeededModal();
+  await loadPartsNeeded();
+  toast("Part added to robot ordering queue.");
+}
+
 /* Task Save (Admin only) */
 async function saveTask(e) {
   e.preventDefault();
@@ -1694,6 +2242,47 @@ async function saveTask(e) {
   closeTaskModal();
   await loadTasks();
   toast(editingTaskId ? "Task updated." : "Task added to team planner.");
+}
+
+/* Spending Save (Admin only) */
+async function saveSpending(e) {
+  e.preventDefault();
+  if (!currentProfile?.is_admin) return;
+
+  const title = $("#spend-title").value.trim();
+  const vendor = $("#spend-vendor").value.trim();
+  const amount = Number($("#spend-amount").value);
+  const category = $("#spend-category").value;
+  const order_date = $("#spend-date").value || new Date().toISOString().slice(0, 10);
+  const order_number = $("#spend-order-number").value.trim();
+  const notes = $("#spend-notes").value.trim();
+
+  if (!title || !vendor || isNaN(amount) || amount < 0) {
+    toast("Enter a valid title, vendor, and amount.", true);
+    return;
+  }
+
+  const btn = $("#save-spending-btn");
+  btn.disabled = true;
+
+  const payload = {
+    title, vendor, amount, category, order_date, order_number, notes,
+    created_by: currentUser.id,
+    created_by_name: currentProfile?.full_name || "Admin"
+  };
+
+  const { error } = await supabase.from("spending_records").insert(payload);
+  btn.disabled = false;
+
+  if (error) {
+    toast("Failed to record spending: " + error.message, true);
+    return;
+  }
+
+  await logAction("SPENDING_RECORDED", "spending_records", null, { title, vendor, amount, category });
+  closeSpendingModal();
+  await loadSpending();
+  toast(`Recorded purchase: $${amount.toFixed(2)} at ${vendor}`);
 }
 
 /* Update Quantity Quick Buttons (Admin only) */
@@ -1800,11 +2389,23 @@ $("#close-checkout-modal").addEventListener("click", closeCheckoutModal);
 $("#cancel-checkout-modal").addEventListener("click", closeCheckoutModal);
 $("#checkout-modal").addEventListener("click", e => { if (e.target.id === "checkout-modal") closeCheckoutModal(); });
 
+$("#add-part-needed-btn").addEventListener("click", openPartNeededModal);
+$("#close-part-needed-modal").addEventListener("click", closePartNeededModal);
+$("#cancel-part-needed-modal").addEventListener("click", closePartNeededModal);
+$("#part-needed-modal").addEventListener("click", e => { if (e.target.id === "part-needed-modal") closePartNeededModal(); });
+$("#part-needed-form").addEventListener("submit", savePartNeeded);
+
 $("#add-task-btn").addEventListener("click", () => openTaskModal(null));
 $("#close-task-modal").addEventListener("click", closeTaskModal);
 $("#cancel-task-modal").addEventListener("click", closeTaskModal);
 $("#task-modal").addEventListener("click", e => { if (e.target.id === "task-modal") closeTaskModal(); });
 $("#task-form").addEventListener("submit", saveTask);
+
+$("#add-spending-btn").addEventListener("click", openSpendingModal);
+$("#close-spending-modal").addEventListener("click", closeSpendingModal);
+$("#cancel-spending-modal").addEventListener("click", closeSpendingModal);
+$("#spending-modal").addEventListener("click", e => { if (e.target.id === "spending-modal") closeSpendingModal(); });
+$("#spending-form").addEventListener("submit", saveSpending);
 
 /* Confirm Check Out (All approved members can borrow) */
 $("#checkout-form").addEventListener("submit", async e => {
@@ -1864,6 +2465,10 @@ $$(".catbtn").forEach(b => b.addEventListener("click", () => {
     activePlannerSubsystem = b.dataset.plannerCat;
     $$("[data-planner-cat]").forEach(btn => btn.classList.toggle("active", btn.dataset.plannerCat === activePlannerSubsystem));
     renderTasks();
+  } else if (b.dataset.partsFilter) {
+    activePartsFilter = b.dataset.partsFilter;
+    $$("[data-parts-filter]").forEach(btn => btn.classList.toggle("active", btn.dataset.partsFilter === activePartsFilter));
+    renderPartsNeeded();
   }
 }));
 
@@ -1880,7 +2485,6 @@ $("#items-list").addEventListener("click", async e => {
     const item = allItems.find(x => x.id === id);
     if (item) openItemModal(item);
   } else if (action === "checkout") {
-    // Anyone can borrow
     const item = allItems.find(x => x.id === id);
     if (item) openCheckoutModal(item);
   } else if (action === "qtyplus") {
@@ -1904,7 +2508,6 @@ $("#items-list").addEventListener("click", async e => {
       }
     }
   } else if (action === "return-direct") {
-    // Anyone can check in
     const { error } = await supabase.from("tool_checkouts").update({
       status: "returned",
       returned_at: new Date().toISOString()
@@ -1916,6 +2519,45 @@ $("#items-list").addEventListener("click", async e => {
       await logAction("TOOL_CHECKIN", "tool_checkouts", id, { checkout_id: id });
       await Promise.all([loadCheckouts(true), loadItems(true)]);
       toast("Tool returned to shop.");
+    }
+  }
+});
+
+/* Parts Needed Actions */
+$("#parts-needed-list").addEventListener("change", async e => {
+  if (e.target.dataset.action === "quick-status-pn") {
+    const id = e.target.dataset.id;
+    const newStatus = e.target.value;
+    const { error } = await supabase.from("parts_needed").update({
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    }).eq("id", id);
+
+    if (error) {
+      toast("Failed to update status: " + error.message, true);
+    } else {
+      await logAction("PART_STATUS_UPDATED", "parts_needed", id, { status: newStatus });
+      await loadPartsNeeded(true);
+      toast(`Status updated to ${newStatus}.`);
+    }
+  }
+});
+
+$("#parts-needed-list").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-action]");
+  if (!b) return;
+  const action = b.dataset.action;
+  const id = b.dataset.id;
+
+  if (action === "delete-pn" && currentProfile?.is_admin) {
+    if (confirm("Remove this needed part from the list?")) {
+      const { error } = await supabase.from("parts_needed").delete().eq("id", id);
+      if (error) {
+        toast("Failed to delete: " + error.message, true);
+      } else {
+        await loadPartsNeeded(true);
+        toast("Part removed from queue.");
+      }
     }
   }
 });
@@ -1951,7 +2593,6 @@ $("#view-planner").addEventListener("click", async e => {
   const isAdmin = !!currentProfile?.is_admin;
 
   if (action === "move-status") {
-    // Anyone can advance/move tasks
     const newStatus = b.dataset.newstatus;
     const { error } = await supabase.from("planner_tasks").update({
       status: newStatus,
@@ -1980,6 +2621,22 @@ $("#view-planner").addEventListener("click", async e => {
         await loadTasks(true);
         toast("Task removed.");
       }
+    }
+  }
+});
+
+/* Spending Actions */
+$("#spending-list").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-action='delete-spending']");
+  if (!b || !currentProfile?.is_admin) return;
+  const id = b.dataset.id;
+  if (confirm("Delete this purchase order record?")) {
+    const { error } = await supabase.from("spending_records").delete().eq("id", id);
+    if (error) {
+      toast("Failed to delete record: " + error.message, true);
+    } else {
+      await loadSpending(true);
+      toast("Purchase record deleted.");
     }
   }
 });
