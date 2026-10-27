@@ -1596,10 +1596,10 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 
       <div class="user-controls-block">
         <div style="display:flex; gap:8px; align-items:center;">
-          <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
-            <span>🌐</span> Statbotics.io Teams ↗
+          <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams?year=2026" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
+            <span>🌐</span> Statbotics 2026 Teams ↗
           </a>
-          <button class="btn btn--ghost btn--sm" id="strat-sync-btn" type="button">🔄 Sync Statbotics Data</button>
+          <button class="btn btn--ghost btn--sm" id="strat-sync-btn" type="button">🔄 Sync 2026 Statbotics</button>
         </div>
       </div>
     </section>
@@ -1690,11 +1690,11 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <div class="toolbar">
         <div>
           <h2>2026 REBUILT Team EPA Rankings & Scouting Stats</h2>
-          <p class="muted small">Expected Points Added (EPA), 2026 season estimates, and aggregated live scouting match stats from NYX pit & stands scouts. Sourced from <a href="https://www.statbotics.io/teams" target="_blank" rel="noopener noreferrer" style="color:var(--accent-bright); text-decoration:underline;">statbotics.io/teams</a>.</p>
+          <p class="muted small">Expected Points Added (EPA), 2026 REBUILT season estimates, and aggregated live scouting match stats from NYX pit & stands scouts. Sourced from <a href="https://www.statbotics.io/teams?year=2026" target="_blank" rel="noopener noreferrer" style="color:var(--accent-bright); text-decoration:underline;">statbotics.io/teams?year=2026</a>.</p>
         </div>
         <div class="toolbar-actions" style="display:flex; gap:8px; align-items:center;">
-          <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
-            <span>🌐</span> Open Statbotics Teams ↗
+          <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams?year=2026" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
+            <span>🌐</span> Open 2026 Statbotics Teams ↗
           </a>
           <input class="search" id="strat-team-search" type="search" placeholder="⌕ Search team #, name, city..." style="width:240px;">
         </div>
@@ -2203,19 +2203,24 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
               </div>
             </div>
 
-            <div style="margin-bottom:12px;">
-              <label for="secret-person-role">Primary Role / What They Do For The Team *</label>
-              <input type="text" id="secret-person-role" placeholder="e.g. Main Driver, Operator, Auton Programmer, Drive Coach, Lead Strategist" required>
-            </div>
-
-            <div style="margin-bottom:12px;">
-              <label for="secret-person-intel">Tactical Intelligence & Observations *</label>
-              <textarea id="secret-person-intel" rows="3" placeholder="Detailed intel: habits under pressure, defense reaction, autonomous routines they wrote, human player tendencies, drive signals..." required></textarea>
+            <div style="display:grid; grid-template-columns: 1fr 180px; gap:12px; margin-bottom:12px;">
+              <div>
+                <label for="secret-person-role">Primary Role / What They Do For The Team *</label>
+                <input type="text" id="secret-person-role" placeholder="e.g. Main Driver, Operator, Auton Programmer, Drive Coach, Lead Strategist" required>
+              </div>
+              <div>
+                <label for="secret-ranking-verdict">Secret Ranking Verdict</label>
+                <select id="secret-ranking-verdict" style="width:100%; height:40px;">
+                  <option value="up">▲ Up Ranked (High Priority)</option>
+                  <option value="neutral">● Neutral / Baseline</option>
+                  <option value="down">▼ Down Ranked (DNP / Threat)</option>
+                </select>
+              </div>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span class="muted small" style="color:#fb7185;">🔒 Saved strictly to Secret Admin clearance</span>
-              <button type="submit" class="btn" style="background:#f43f5e; border-color:#f43f5e; color:#ffffff;" id="save-secret-btn">💾 Log Secret Intel</button>
+              <button type="submit" class="btn" style="background:#f43f5e; border-color:#f43f5e; color:#ffffff;" id="save-secret-btn">💾 Log Secret Entry</button>
             </div>
           </form>
         </div>
@@ -4802,18 +4807,21 @@ async function syncStatboticsData() {
   for (const t of frcTeamsData.slice(0, 8)) {
     try {
       const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), 2000);
-      const res = await fetch(`https://api.statbotics.io/v3/team/${t.team}`, { signal: controller.signal });
+      const tid = setTimeout(() => controller.abort(), 2500);
+      let res = await fetch(`https://api.statbotics.io/v3/team_year/${t.team}/2026`, { signal: controller.signal });
+      if (!res.ok) {
+        res = await fetch(`https://api.statbotics.io/v3/team/${t.team}`, { signal: controller.signal });
+      }
       clearTimeout(tid);
       if (res.ok) {
         const d = await res.json();
-        if (d && d.norm_epa?.current) {
-          const scaledEpa = Math.max(25, Math.min(80, (d.norm_epa.current - 1500) / 10 + 40));
-          t.epa = Number(scaledEpa.toFixed(1));
-          t.auto_epa = Number((scaledEpa * 0.25).toFixed(1));
-          t.teleop_epa = Number((scaledEpa * 0.58).toFixed(1));
-          t.endgame_epa = Number((scaledEpa * 0.17).toFixed(1));
-          if (d.record?.winrate) t.winrate = Number((d.record.winrate * 100).toFixed(1));
+        if (d && (d.epa_end || d.epa || d.norm_epa?.current)) {
+          const epaVal = d.epa_end || d.epa || ((d.norm_epa.current - 1500) / 10 + 40);
+          t.epa = Number(Number(epaVal).toFixed(1));
+          t.auto_epa = Number((d.auto_epa_end || d.auto_epa || (epaVal * 0.25)).toFixed(1));
+          t.teleop_epa = Number((d.teleop_epa_end || d.teleop_epa || (epaVal * 0.58)).toFixed(1));
+          t.endgame_epa = Number((d.endgame_epa_end || d.endgame_epa || (epaVal * 0.17)).toFixed(1));
+          if (d.record?.winrate != null) t.winrate = Number((d.record.winrate * 100).toFixed(1));
           updatedCount++;
         }
       }
@@ -4833,12 +4841,12 @@ async function syncStatboticsData() {
    TACTICAL FIELD PLAYBOOK (CANVAS)
    -------------------------------------------------------------------------- */
 function drawField(ctx, width, height) {
-  // Field carpet mat - clean high contrast white/light gray like official FRC diagram
-  ctx.fillStyle = "#ffffff";
+  // Field carpet mat - sleek dark theme to match NYX workspace
+  ctx.fillStyle = "#0c0d12";
   ctx.fillRect(0, 0, width, height);
 
-  // Field carpet subtle grid
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+  // Field carpet subtle tactical grid
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
   ctx.lineWidth = 1;
   const gridSize = 40;
   for (let x = 0; x < width; x += gridSize) {
@@ -4848,33 +4856,37 @@ function drawField(ctx, width, height) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
   }
 
-  // Field Black Perimeter Border
-  ctx.strokeStyle = "#000000";
+  // Field Perimeter Border (Neon Accent & Dark Wall)
+  ctx.strokeStyle = "rgba(168, 85, 247, 0.4)";
   ctx.lineWidth = 4;
   ctx.strokeRect(12, 12, width - 24, height - 24);
 
-  // Center Line (Vertical Gray Divider)
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+  // Inner field background tint
+  ctx.fillStyle = "#12141c";
+  ctx.fillRect(14, 14, width - 28, height - 28);
+
+  // Center Line (Vertical White/Purple Divider)
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(width / 2, 12); ctx.lineTo(width / 2, height - 12); ctx.stroke();
 
   // Auto Line - Red Alliance
-  ctx.strokeStyle = "#dc2626";
+  ctx.strokeStyle = "#ef4444";
   ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(width * 0.31, 12); ctx.lineTo(width * 0.31, height - 12); ctx.stroke();
   // Auto Line - Blue Alliance
-  ctx.strokeStyle = "#2563eb";
+  ctx.strokeStyle = "#3b82f6";
   ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(width * 0.69, 12); ctx.lineTo(width * 0.69, height - 12); ctx.stroke();
 
   // Driver Station Player Area Extensions (Beyond perimeter walls)
   // Red side extension lines
-  ctx.strokeStyle = "#dc2626";
+  ctx.strokeStyle = "#ef4444";
   ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(12, 12); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(12, height - 12); ctx.lineTo(12, height); ctx.stroke();
   // Blue side extension lines
-  ctx.strokeStyle = "#2563eb";
+  ctx.strokeStyle = "#3b82f6";
   ctx.beginPath(); ctx.moveTo(width - 12, 0); ctx.lineTo(width - 12, 12); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(width - 12, height - 12); ctx.lineTo(width - 12, height); ctx.stroke();
 
@@ -4882,8 +4894,9 @@ function drawField(ctx, width, height) {
   const centerW = 76, centerH = 170;
   const cx = width / 2 - centerW / 2;
   const cy = height / 2 - centerH / 2;
-  // Border dashed
-  ctx.strokeStyle = "rgba(202, 138, 4, 0.4)";
+  ctx.fillStyle = "rgba(234, 179, 8, 0.08)";
+  ctx.fillRect(cx, cy, centerW, centerH);
+  ctx.strokeStyle = "rgba(234, 179, 8, 0.5)";
   ctx.lineWidth = 1.5;
   ctx.strokeRect(cx, cy, centerW, centerH);
 
@@ -4912,9 +4925,9 @@ function drawField(ctx, width, height) {
   // 2. CORNER FUEL HOPPERS / DEPOTS (From official diagram)
   function drawFuelDepotBox(x, y, isRed) {
     ctx.save();
-    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
-    ctx.lineWidth = 3;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
+    ctx.lineWidth = 2.5;
+    ctx.fillStyle = isRed ? "rgba(239, 68, 68, 0.15)" : "rgba(59, 130, 246, 0.15)";
     ctx.fillRect(x, y, 32, 42);
     ctx.strokeRect(x, y, 32, 42);
     // Draw fuel inside
@@ -4942,16 +4955,16 @@ function drawField(ctx, width, height) {
   // Blue Outside Driver Station Top Fuel (Top Right)
   drawFuelDepotBox(width - 10, 14, false);
 
-  // 3. DRIVER STATIONS & TOWER CLIMBERS (Black Box Structures on Walls)
+  // 3. DRIVER STATIONS & TOWER CLIMBERS (Dark Box Structures on Walls)
   function drawTowerWallBase(x, y, isRed) {
-    ctx.fillStyle = "#262626";
+    ctx.fillStyle = "#181a24";
     ctx.fillRect(x, y, 48, 56);
-    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
     ctx.lineWidth = 2.5;
     ctx.strokeRect(x, y, 48, 56);
 
     // Diagonal truss lines
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.strokeStyle = isRed ? "rgba(239, 68, 68, 0.4)" : "rgba(59, 130, 246, 0.4)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x, y); ctx.lineTo(x + 48, y + 56);
@@ -4972,13 +4985,13 @@ function drawField(ctx, width, height) {
 
   // Driver Station ID labels
   ctx.font = "bold 11px JetBrains Mono";
-  ctx.fillStyle = "#dc2626";
+  ctx.fillStyle = "#ef4444";
   ctx.textAlign = "left";
   ctx.fillText("R1", 18, 65);
   ctx.fillText("R2", 18, 165);
   ctx.fillText("R3", 18, height - 95);
 
-  ctx.fillStyle = "#2563eb";
+  ctx.fillStyle = "#3b82f6";
   ctx.textAlign = "right";
   ctx.fillText("B3", width - 18, 145);
   ctx.fillText("B2", width - 18, height - 165);
@@ -4987,19 +5000,18 @@ function drawField(ctx, width, height) {
   // 4. VERTICAL FIELD STRUCTURES (BUMPS, HUBS, TRENCHES)
   function drawRebuiltFieldStructure(cx, isRed) {
     ctx.save();
-    const color = isRed ? "#b91c1c" : "#1d4ed8";
+    const color = isRed ? "#991b1b" : "#1e40af";
     const lightColor = isRed ? "#f87171" : "#60a5fa";
-    const topTrenchX = cx;
 
     // Full Vertical Structure Runway (Bump & Trench Platform)
-    ctx.fillStyle = color;
+    ctx.fillStyle = isRed ? "rgba(185, 28, 28, 0.4)" : "rgba(29, 78, 216, 0.4)";
     ctx.fillRect(cx - 26, 95, 52, height - 190);
-    ctx.strokeStyle = isRed ? "#991b1b" : "#1e40af";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
     ctx.lineWidth = 2;
     ctx.strokeRect(cx - 26, 95, 52, height - 190);
 
     // Top & Bottom Outrigger Guide Rails extending beyond field perimeter
-    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
     ctx.lineWidth = 4;
     // Top extension
     ctx.beginPath();
@@ -5017,7 +5029,7 @@ function drawField(ctx, width, height) {
     ctx.arc(cx, height - 95, 9, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
-    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
     ctx.lineWidth = 3;
     ctx.stroke();
 
@@ -5035,8 +5047,8 @@ function drawField(ctx, width, height) {
     // CENTRAL HUB UNIT (Hexagonal Upper Funnel with Lower Collector Catch Basin)
     const hy = height / 2;
 
-    // Outer transparent catch ring
-    ctx.strokeStyle = "rgba(100, 116, 139, 0.7)";
+    // Outer catch ring
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
     ctx.lineWidth = 2.5;
     ctx.strokeRect(cx - 36, hy - 36, 72, 72);
 
@@ -5051,13 +5063,13 @@ function drawField(ctx, width, height) {
       else ctx.lineTo(hx, h_y);
     }
     ctx.closePath();
-    ctx.fillStyle = "rgba(241, 245, 249, 0.85)";
+    ctx.fillStyle = isRed ? "rgba(220, 38, 38, 0.3)" : "rgba(37, 99, 235, 0.3)";
     ctx.fill();
-    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Inner Hexagon Target (Dark Charcoal Opening)
+    // Inner Hexagon Target (Dark Opening)
     ctx.beginPath();
     const rInner = 16;
     for (let i = 0; i < 6; i++) {
@@ -5068,7 +5080,7 @@ function drawField(ctx, width, height) {
       else ctx.lineTo(hx, h_y);
     }
     ctx.closePath();
-    ctx.fillStyle = "#1e293b";
+    ctx.fillStyle = "#0f172a";
     ctx.fill();
     ctx.strokeStyle = "#facc15";
     ctx.lineWidth = 2;
@@ -5090,10 +5102,10 @@ function drawField(ctx, width, height) {
   drawRebuiltFieldStructure(width * 0.67, false);
 
   // Field Watermark
-  ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
   ctx.font = "bold 20px Space Grotesk, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("2026 FIRST REBUILT — OFFICIAL COMPETITION FIELD", width / 2, 42);
+  ctx.fillText("2026 FIRST REBUILT — TACTICAL FIELD", width / 2, 42);
 }
 
 function drawArrowHead(ctx, fromX, fromY, toX, toY, color, width) {
@@ -6412,27 +6424,37 @@ function renderSecretIntel() {
     return;
   }
 
-  list.innerHTML = filtered.map(d => `
-    <article class="card" style="border: 1px solid rgba(244, 63, 94, 0.35); background: rgba(244, 63, 94, 0.02); margin-bottom: 14px; padding: 16px 18px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+  list.innerHTML = filtered.map(d => {
+    const verdict = d.verdict || (d.intel_notes === 'down' ? 'down' : d.intel_notes === 'up' ? 'up' : 'neutral');
+    const isUp = verdict === 'up';
+    const isDown = verdict === 'down';
+    const verdictPill = isUp
+      ? '<span class="pill" style="border-color:#10b981; color:#10b981; font-weight:700; font-size:11px;">▲ UP RANKED (High Priority)</span>'
+      : isDown
+      ? '<span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-weight:700; font-size:11px;">▼ DOWN RANKED (Do Not Pick)</span>'
+      : '<span class="pill" style="border-color:var(--line); color:var(--text-muted); font-size:11px;">● NEUTRAL</span>';
+
+    return `
+    <article class="card" style="border: 1px solid ${isUp ? 'rgba(16, 185, 129, 0.4)' : isDown ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.1)'}; background: ${isUp ? 'rgba(16, 185, 129, 0.04)' : isDown ? 'rgba(244, 63, 94, 0.04)' : 'rgba(255, 255, 255, 0.02)'}; margin-bottom: 14px; padding: 16px 18px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
         <div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="color:#f43f5e; font-size:16px;">Team ${d.team_num}</strong>
+            <strong style="color:${isUp ? '#10b981' : isDown ? '#f43f5e' : 'var(--text)'}; font-size:17px;">Team ${d.team_num}</strong>
             ${d.team_name ? `<span class="muted small">· ${esc(d.team_name)}</span>` : ''}
             <span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-size:10px;">CONFIDENTIAL</span>
+            ${verdictPill}
           </div>
           <div style="margin-top:6px;">
-            <span class="mono small" style="color:var(--accent-bright); font-weight:700; font-size:14px;">Role: ${esc(d.person_role)}</span>
+            <span class="mono small" style="color:var(--accent-bright); font-weight:700; font-size:14px;">Role / Task: ${esc(d.person_role)}</span>
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn--ghost btn--sm" data-action="toggle-verdict" data-id="${d.id}" data-current="${verdict}" style="padding:3px 8px; font-size:11px;">
+            ${isUp ? 'Change to Down ▼' : 'Change to Up ▲'}
+          </button>
           <span class="muted small mono">${new Date(d.created_at).toLocaleDateString()}</span>
           <button class="btn btn--danger btn--sm" data-action="delete-secret-dossier" data-id="${d.id}" style="padding:4px 8px; font-size:11px;">✕</button>
         </div>
-      </div>
-
-      <div style="padding: 10px 14px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); font-size: 13.5px; line-height: 1.5; color: var(--text);">
-        ${esc(d.intel_notes)}
       </div>
 
       <div style="margin-top: 8px; display:flex; justify-content:space-between; font-size:11px;" class="muted mono">
@@ -6440,7 +6462,8 @@ function renderSecretIntel() {
         <span>ID: ${d.id.slice(0, 10)}</span>
       </div>
     </article>
-  `).join("");
+    `;
+  }).join("");
 }
 
 function setupSecretsEvents() {
@@ -6454,10 +6477,10 @@ function setupSecretsEvents() {
     const teamNum = parseInt($("#secret-team-num")?.value, 10);
     const teamName = $("#secret-team-name")?.value.trim() || "";
     const personRole = $("#secret-person-role")?.value.trim() || "";
-    const intelNotes = $("#secret-person-intel")?.value.trim() || "";
+    const verdict = $("#secret-ranking-verdict")?.value || "neutral";
 
-    if (!teamNum || !personRole || !intelNotes) {
-      toast("Please fill in all required intelligence fields.", true);
+    if (!teamNum || !personRole) {
+      toast("Please enter team number and role.", true);
       return;
     }
 
@@ -6467,7 +6490,8 @@ function setupSecretsEvents() {
       team_name: teamName,
       person_name: personRole,
       person_role: personRole,
-      intel_notes: intelNotes,
+      verdict: verdict,
+      intel_notes: verdict,
       logged_by: currentUser.id,
       logged_by_name: currentProfile?.full_name || currentUser.email,
       created_at: new Date().toISOString()
@@ -6485,31 +6509,47 @@ function setupSecretsEvents() {
     }
 
     renderSecretIntel();
-    toast(`Classified dossier on Team ${teamNum} (${personRole}) recorded! 🕵️`);
+    toast(`Classified ${verdict === 'up' ? 'Up-Ranking' : verdict === 'down' ? 'Down-Ranking' : 'entry'} on Team ${teamNum} recorded! 🕵️`);
 
     // Reset form
     $("#secret-scout-form")?.reset();
     $("#secret-team-num")?.focus();
   });
 
-  // Filter input
-  $("#secret-search-input")?.addEventListener("input", renderSecretIntel);
-
-  // Delete dossier
+  // Toggle verdict & delete dossier clicks
   $("#secret-intel-list")?.addEventListener("click", async e => {
+    const toggleBtn = e.target.closest("button[data-action='toggle-verdict']");
+    if (toggleBtn) {
+      const id = toggleBtn.dataset.id;
+      const cur = toggleBtn.dataset.current;
+      const nextVerdict = cur === 'up' ? 'down' : 'up';
+      const item = secretDossiers.find(d => d.id === id);
+      if (item) {
+        item.verdict = nextVerdict;
+        item.intel_notes = nextVerdict;
+        try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (err) {}
+        if (supabase) {
+          supabase.from("secret_personnel_intel").update({ intel_notes: nextVerdict }).eq("id", id).catch(() => {});
+        }
+        renderSecretIntel();
+        toast(`Updated Team ${item.team_num} to ${nextVerdict === 'up' ? 'Up-Ranked ▲' : 'Down-Ranked ▼'}!`);
+      }
+      return;
+    }
+
     const btn = e.target.closest("button[data-action='delete-secret-dossier']");
     if (!btn) return;
     const id = btn.dataset.id;
     if (!id) return;
 
-    if (confirm("Permanently destroy this classified intelligence file?")) {
+    if (confirm("Permanently destroy this classified intelligence entry?")) {
       secretDossiers = secretDossiers.filter(d => d.id !== id);
       try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (e) {}
       if (supabase) {
         supabase.from("secret_personnel_intel").delete().eq("id", id).catch(() => {});
       }
       renderSecretIntel();
-      toast("Dossier deleted.");
+      toast("Entry deleted.");
     }
   });
 }
