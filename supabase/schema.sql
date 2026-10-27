@@ -421,10 +421,13 @@ create table if not exists public.secret_personnel_intel (
   person_name text default '',
   person_role text not null default '',
   intel_notes text not null default '',
+  votes jsonb not null default '{}'::jsonb,
   logged_by uuid references auth.users(id),
   logged_by_name text not null default 'Secret Agent',
   created_at timestamptz not null default now()
 );
+
+alter table public.secret_personnel_intel add column if not exists votes jsonb not null default '{}'::jsonb;
 
 create or replace function public.is_secret_admin()
 returns boolean
@@ -451,6 +454,11 @@ for select to authenticated using((select public.is_secret_admin()));
 drop policy if exists "Secret admins can insert secret intel" on public.secret_personnel_intel;
 create policy "Secret admins can insert secret intel" on public.secret_personnel_intel
 for insert to authenticated with check((select public.is_secret_admin()));
+
+drop policy if exists "Secret admins can update secret intel" on public.secret_personnel_intel;
+create policy "Secret admins can update secret intel" on public.secret_personnel_intel
+for update to authenticated using((select public.is_secret_admin()))
+with check((select public.is_secret_admin()));
 
 drop policy if exists "Secret admins can delete secret intel" on public.secret_personnel_intel;
 create policy "Secret admins can delete secret intel" on public.secret_personnel_intel

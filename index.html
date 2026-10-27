@@ -2203,19 +2203,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 180px; gap:12px; margin-bottom:12px;">
-              <div>
-                <label for="secret-person-role">Primary Role / What They Do For The Team *</label>
-                <input type="text" id="secret-person-role" placeholder="e.g. Main Driver, Operator, Auton Programmer, Drive Coach, Lead Strategist" required>
-              </div>
-              <div>
-                <label for="secret-ranking-verdict">Secret Ranking Verdict</label>
-                <select id="secret-ranking-verdict" style="width:100%; height:40px;">
-                  <option value="up">▲ Up Ranked (High Priority)</option>
-                  <option value="neutral">● Neutral / Baseline</option>
-                  <option value="down">▼ Down Ranked (DNP / Threat)</option>
-                </select>
-              </div>
+            <div style="margin-bottom:12px;">
+              <label for="secret-person-role">Primary Role / What They Do For The Team *</label>
+              <input type="text" id="secret-person-role" placeholder="e.g. Main Driver, Operator, Auton Programmer, Drive Coach, Lead Strategist" required>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -6451,40 +6441,66 @@ function renderSecretIntel() {
   }
 
   list.innerHTML = filtered.map(d => {
-    const verdict = d.verdict || (d.intel_notes === 'down' ? 'down' : d.intel_notes === 'up' ? 'up' : 'neutral');
-    const isUp = verdict === 'up';
-    const isDown = verdict === 'down';
-    const verdictPill = isUp
-      ? '<span class="pill" style="border-color:#10b981; color:#10b981; font-weight:700; font-size:11px;">▲ UP RANKED (High Priority)</span>'
-      : isDown
-      ? '<span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-weight:700; font-size:11px;">▼ DOWN RANKED (Do Not Pick)</span>'
-      : '<span class="pill" style="border-color:var(--line); color:var(--text-muted); font-size:11px;">● NEUTRAL</span>';
+    const isAuthor = d.logged_by === currentUser?.id;
+    const votes = (d.votes && typeof d.votes === "object") ? d.votes : {};
+    
+    // Calculate aggregate score: +1 for each up vote, -1 for each down vote
+    let score = 0;
+    Object.values(votes).forEach(v => {
+      if (v === 1 || v === "up") score += 1;
+      else if (v === -1 || v === "down") score -= 1;
+    });
+
+    const myVote = votes[currentUser?.id]; // 1, -1, or undefined
+    const isUp = score > 0;
+    const isDown = score < 0;
+
+    const scoreColor = isUp ? "#10b981" : isDown ? "#f43f5e" : "var(--text-muted)";
+    const scoreText = score > 0 ? `+${score}` : `${score}`;
 
     return `
     <article class="card" style="border: 1px solid ${isUp ? 'rgba(16, 185, 129, 0.4)' : isDown ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.1)'}; background: ${isUp ? 'rgba(16, 185, 129, 0.04)' : isDown ? 'rgba(244, 63, 94, 0.04)' : 'rgba(255, 255, 255, 0.02)'}; margin-bottom: 14px; padding: 16px 18px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="color:${isUp ? '#10b981' : isDown ? '#f43f5e' : 'var(--text)'}; font-size:17px;">Team ${d.team_num}</strong>
+            <strong style="color:var(--text); font-size:17px;">Team ${d.team_num}</strong>
             ${d.team_name ? `<span class="muted small">· ${esc(d.team_name)}</span>` : ''}
             <span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-size:10px;">CONFIDENTIAL</span>
-            ${verdictPill}
           </div>
-          <div style="margin-top:6px;">
-            <span class="mono small" style="color:var(--accent-bright); font-weight:700; font-size:14px;">Role / Task: ${esc(d.person_role)}</span>
+          <div style="margin-top:4px;">
+            <span class="mono small" style="color:var(--accent-bright); font-weight:700; font-size:14px;">Role / Responsibility: ${esc(d.person_role)}</span>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <button class="btn btn--ghost btn--sm" data-action="toggle-verdict" data-id="${d.id}" data-current="${verdict}" style="padding:3px 8px; font-size:11px;">
-            ${isUp ? 'Change to Down ▼' : 'Change to Up ▲'}
-          </button>
+
+        <div style="display:flex; align-items:center; gap:12px;">
+          <!-- Numerical Voting Controls (Author cannot vote; others can vote Up or Down once) -->
+          <div style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.3); border:1px solid var(--line); border-radius:8px; padding:4px 8px;">
+            ${isAuthor ? `
+              <span class="muted small mono" title="Loggers cannot vote on their own entries" style="padding:0 4px;">Logger (No Vote)</span>
+            ` : `
+              <button class="btn btn--sm ${myVote === 1 || myVote === 'up' ? 'btn--primary' : 'btn--ghost'}" data-action="vote-secret" data-id="${d.id}" data-val="up" style="padding:3px 8px; font-size:12px; ${myVote === 1 || myVote === 'up' ? 'background:#10b981; border-color:#10b981; color:#fff;' : 'color:#10b981;'}" title="Rank Up (+1)">
+                ▲ +1
+              </button>
+            `}
+
+            <span class="mono" style="font-weight:700; font-size:15px; min-width:32px; text-align:center; color:${scoreColor};" title="Total Ranking Score">
+              ${scoreText}
+            </span>
+
+            ${!isAuthor ? `
+              <button class="btn btn--sm ${myVote === -1 || myVote === 'down' ? 'btn--danger' : 'btn--ghost'}" data-action="vote-secret" data-id="${d.id}" data-val="down" style="padding:3px 8px; font-size:12px; ${myVote === -1 || myVote === 'down' ? 'background:#f43f5e; border-color:#f43f5e; color:#fff;' : 'color:#f43f5e;'}" title="Rank Down (-1)">
+                ▼ -1
+              </button>
+            ` : ''}
+          </div>
+
           <span class="muted small mono">${new Date(d.created_at).toLocaleDateString()}</span>
-          <button class="btn btn--danger btn--sm" data-action="delete-secret-dossier" data-id="${d.id}" style="padding:4px 8px; font-size:11px;">✕</button>
+          <button class="btn btn--danger btn--sm" data-action="delete-secret-dossier" data-id="${d.id}" style="padding:4px 8px; font-size:11px;" title="Delete entry">✕</button>
         </div>
       </div>
 
-      <div style="margin-top: 8px; display:flex; justify-content:space-between; font-size:11px;" class="muted mono">
-        <span>Logged by: ${esc(d.logged_by_name || 'Secret Admin')}</span>
+      <div style="margin-top: 10px; display:flex; justify-content:space-between; font-size:11px;" class="muted mono">
+        <span>Logged by: ${esc(d.logged_by_name || 'Secret Admin')} ${isAuthor ? '(You)' : ''}</span>
         <span>ID: ${d.id.slice(0, 10)}</span>
       </div>
     </article>
@@ -6503,10 +6519,9 @@ function setupSecretsEvents() {
     const teamNum = parseInt($("#secret-team-num")?.value, 10);
     const teamName = $("#secret-team-name")?.value.trim() || "";
     const personRole = $("#secret-person-role")?.value.trim() || "";
-    const verdict = $("#secret-ranking-verdict")?.value || "neutral";
 
     if (!teamNum || !personRole) {
-      toast("Please enter team number and role.", true);
+      toast("Please enter team number and role / responsibility.", true);
       return;
     }
 
@@ -6516,8 +6531,8 @@ function setupSecretsEvents() {
       team_name: teamName,
       person_name: personRole,
       person_role: personRole,
-      verdict: verdict,
-      intel_notes: verdict,
+      votes: {}, // Numerical votes map: { userId: 1 or -1 }
+      intel_notes: "",
       logged_by: currentUser.id,
       logged_by_name: currentProfile?.full_name || currentUser.email,
       created_at: new Date().toISOString()
@@ -6535,30 +6550,49 @@ function setupSecretsEvents() {
     }
 
     renderSecretIntel();
-    toast(`Classified ${verdict === 'up' ? 'Up-Ranking' : verdict === 'down' ? 'Down-Ranking' : 'entry'} on Team ${teamNum} recorded! 🕵️`);
+    toast(`Classified entry for Team ${teamNum} recorded! 🕵️`);
 
     // Reset form
     $("#secret-scout-form")?.reset();
     $("#secret-team-num")?.focus();
   });
 
-  // Toggle verdict & delete dossier clicks
+  // Vote (+1 / -1) & delete dossier clicks
   $("#secret-intel-list")?.addEventListener("click", async e => {
-    const toggleBtn = e.target.closest("button[data-action='toggle-verdict']");
-    if (toggleBtn) {
-      const id = toggleBtn.dataset.id;
-      const cur = toggleBtn.dataset.current;
-      const nextVerdict = cur === 'up' ? 'down' : 'up';
+    const voteBtn = e.target.closest("button[data-action='vote-secret']");
+    if (voteBtn) {
+      const id = voteBtn.dataset.id;
+      const val = voteBtn.dataset.val === "up" ? 1 : -1;
       const item = secretDossiers.find(d => d.id === id);
-      if (item) {
-        item.verdict = nextVerdict;
-        item.intel_notes = nextVerdict;
-        try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (err) {}
-        if (supabase) {
-          supabase.from("secret_personnel_intel").update({ intel_notes: nextVerdict }).eq("id", id).catch(() => {});
-        }
-        renderSecretIntel();
-        toast(`Updated Team ${item.team_num} to ${nextVerdict === 'up' ? 'Up-Ranked ▲' : 'Down-Ranked ▼'}!`);
+      if (!item) return;
+
+      if (item.logged_by === currentUser?.id) {
+        toast("Loggers cannot vote on their own entries.", true);
+        return;
+      }
+
+      if (!item.votes || typeof item.votes !== "object") {
+        item.votes = {};
+      }
+
+      const currentVote = item.votes[currentUser?.id];
+      if (currentVote === val) {
+        // Toggle off vote if clicked same button again
+        delete item.votes[currentUser?.id];
+        toast(`Vote removed.`);
+      } else {
+        // Vote once: +1 or -1
+        item.votes[currentUser?.id] = val;
+        toast(val === 1 ? `Ranked Team ${item.team_num} UP (+1)! ▲` : `Ranked Team ${item.team_num} DOWN (-1)! ▼`);
+      }
+
+      // Optimistic instant rerender
+      try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (err) {}
+      renderSecretIntel();
+
+      // Async DB sync
+      if (supabase) {
+        supabase.from("secret_personnel_intel").update({ votes: item.votes }).eq("id", id).catch(() => {});
       }
       return;
     }
