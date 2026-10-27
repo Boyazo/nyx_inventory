@@ -154,25 +154,33 @@ create policy "Admins update member approval" on public.profiles
 for update to authenticated using((select public.is_team_admin()))
 with check((select public.is_team_admin()));
 
--- Inventory items policies
+-- Inventory items policies:
+-- Approved team can READ inventory
 drop policy if exists "Approved team can read inventory" on public.inventory_items;
 create policy "Approved team can read inventory" on public.inventory_items
 for select to authenticated using((select public.is_approved_member()));
 
+-- ONLY ADMINS can ADD inventory items
 drop policy if exists "Approved team can add inventory" on public.inventory_items;
-create policy "Approved team can add inventory" on public.inventory_items
-for insert to authenticated with check((select public.is_approved_member()) and created_by=(select auth.uid()));
+drop policy if exists "Only admins can add inventory" on public.inventory_items;
+create policy "Only admins can add inventory" on public.inventory_items
+for insert to authenticated with check((select public.is_team_admin()));
 
+-- ONLY ADMINS can EDIT inventory items
 drop policy if exists "Approved team can edit inventory" on public.inventory_items;
-create policy "Approved team can edit inventory" on public.inventory_items
-for update to authenticated using((select public.is_approved_member()))
-with check((select public.is_approved_member()));
+drop policy if exists "Only admins can edit inventory" on public.inventory_items;
+create policy "Only admins can edit inventory" on public.inventory_items
+for update to authenticated using((select public.is_team_admin()))
+with check((select public.is_team_admin()));
 
+-- ONLY ADMINS can DELETE inventory items
 drop policy if exists "Approved team can delete inventory" on public.inventory_items;
-create policy "Approved team can delete inventory" on public.inventory_items
-for delete to authenticated using((select public.is_approved_member()));
+drop policy if exists "Only admins can delete inventory" on public.inventory_items;
+create policy "Only admins can delete inventory" on public.inventory_items
+for delete to authenticated using((select public.is_team_admin()));
 
--- Tool checkouts policies
+-- Tool checkouts policies:
+-- ANY APPROVED MEMBER can read, borrow (create checkout), and check in (return checkout)
 drop policy if exists "Approved members can read tool checkouts" on public.tool_checkouts;
 create policy "Approved members can read tool checkouts" on public.tool_checkouts
 for select to authenticated using((select public.is_approved_member()));
@@ -195,23 +203,29 @@ drop policy if exists "Approved members can insert activity logs" on public.acti
 create policy "Approved members can insert activity logs" on public.activity_logs
 for insert to authenticated with check((select public.is_approved_member()));
 
--- Planner tasks policies (All approved members can contribute)
+-- Planner tasks policies:
+-- Approved members can READ tasks
 drop policy if exists "Approved members can read planner tasks" on public.planner_tasks;
 create policy "Approved members can read planner tasks" on public.planner_tasks
 for select to authenticated using((select public.is_approved_member()));
 
+-- ONLY ADMINS can CREATE tasks
 drop policy if exists "Approved members can create planner tasks" on public.planner_tasks;
-create policy "Approved members can create planner tasks" on public.planner_tasks
-for insert to authenticated with check((select public.is_approved_member()) and created_by=(select auth.uid()));
+drop policy if exists "Only admins can create planner tasks" on public.planner_tasks;
+create policy "Only admins can create planner tasks" on public.planner_tasks
+for insert to authenticated with check((select public.is_team_admin()));
 
+-- APPROVED MEMBERS can UPDATE task status or assignment
 drop policy if exists "Approved members can update planner tasks" on public.planner_tasks;
 create policy "Approved members can update planner tasks" on public.planner_tasks
 for update to authenticated using((select public.is_approved_member()))
 with check((select public.is_approved_member()));
 
+-- ONLY ADMINS can DELETE planner tasks
 drop policy if exists "Approved members can delete planner tasks" on public.planner_tasks;
-create policy "Approved members can delete planner tasks" on public.planner_tasks
-for delete to authenticated using((select public.is_approved_member()));
+drop policy if exists "Only admins can delete planner tasks" on public.planner_tasks;
+create policy "Only admins can delete planner tasks" on public.planner_tasks
+for delete to authenticated using((select public.is_team_admin()));
 
 -- 8. Realtime configuration
 do $$

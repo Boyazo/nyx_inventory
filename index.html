@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -44,6 +44,33 @@
   --radius-lg: 18px;
   color-scheme: dark;
 }
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --bg-raised: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --accent: #7c3aed;
+  --accent-bright: #6d28d9;
+  --accent-soft: #8b5cf6;
+  --accent-dim: rgba(124, 58, 237, .1);
+  --accent-line: rgba(124, 58, 237, .25);
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-faint: #94a3b8;
+  --line: rgba(0, 0, 0, .08);
+  --line-strong: rgba(0, 0, 0, .15);
+  --green: #16a34a;
+  --green-dim: rgba(22, 163, 74, .12);
+  --red: #dc2626;
+  --red-dim: rgba(220, 38, 38, .12);
+  --amber: #d97706;
+  --amber-dim: rgba(217, 119, 6, .12);
+  --blue: #2563eb;
+  --blue-dim: rgba(37, 99, 235, .12);
+  color-scheme: light;
+}
+
 *, *:before, *:after { box-sizing: border-box; }
 body {
   margin: 0;
@@ -55,6 +82,7 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   position: relative;
+  transition: background-color .2s ease, color .2s ease;
 }
 body:before {
   content: "";
@@ -66,6 +94,10 @@ body:before {
   pointer-events: none;
   z-index: 0;
 }
+[data-theme="light"] body:before {
+  background: radial-gradient(60% 55% at 50% 30%, rgba(139, 92, 246, .08), transparent 70%);
+}
+
 button, input, select, textarea { font-family: inherit; font-size: inherit; }
 button { cursor: pointer; }
 button:disabled { opacity: .55; cursor: wait; }
@@ -84,6 +116,10 @@ button:disabled { opacity: .55; cursor: wait; }
   top: 0;
   z-index: 50;
   padding: 0 4px;
+  transition: background-color .2s ease;
+}
+[data-theme="light"] .topbar {
+  background: rgba(255, 255, 255, .88);
 }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
 .brand-logo {
@@ -93,6 +129,16 @@ button:disabled { opacity: .55; cursor: wait; }
 }
 .brandtext strong { display: block; font-size: 15px; font-weight: 700; letter-spacing: .06em; line-height: 1.1; }
 .brandtext small { font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; color: var(--accent-soft); }
+
+.top-controls { display: flex; align-items: center; gap: 14px; }
+.themetoggle {
+  background: rgba(255, 255, 255, .06); border: 1px solid var(--line); color: var(--text);
+  padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px; transition: all .15s ease;
+}
+.themetoggle:hover { border-color: var(--accent-line); color: var(--accent-bright); }
+[data-theme="light"] .themetoggle { background: #f1f5f9; }
+
 .topnote {
   display: flex; align-items: center; gap: 8px; font-family: var(--font-mono);
   font-size: 11px; letter-spacing: .12em; color: var(--text-muted); text-transform: uppercase;
@@ -130,6 +176,7 @@ p { margin: 0 0 .8em; color: var(--text-muted); }
   background: linear-gradient(135deg, var(--accent-bright), var(--accent));
   color: #0b0813; font-weight: 700; box-shadow: 0 0 18px rgba(139, 92, 246, .35);
 }
+[data-theme="light"] .btn--primary { color: #ffffff; }
 .btn--ghost {
   border-color: var(--line-strong); color: var(--text); background: rgba(255, 255, 255, .05);
 }
@@ -146,7 +193,10 @@ input, select, textarea {
   color: var(--text); border-radius: 9px; padding: 10px 14px; outline: none; transition: border-color .15s;
 }
 input:focus, select:focus, textarea:focus { border-color: var(--accent-bright); box-shadow: 0 0 0 3px var(--accent-dim); }
-label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margin: 12px 0 6px; }
+[data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea {
+  background: #ffffff; border-color: #cbd5e1;
+}
+label { display: block; font-size: 12px; font-weight: 600; color: var(--text); margin: 12px 0 6px; }
 
 /* Auth Layout */
 .authlayout {
@@ -222,7 +272,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 .toolbar-actions { display: flex; gap: 10px; align-items: center; }
 .filters {
   display: flex; gap: 12px; align-items: center; justify-content: space-between;
-  padding: 0 24px 18px; flex-wrap: wrap;
+  padding: 0 24px 14px; flex-wrap: wrap;
 }
 .tabslist { display: flex; gap: 6px; flex-wrap: wrap; }
 .catbtn {
@@ -233,6 +283,17 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 .catbtn.active { background: var(--accent-dim); color: var(--accent-bright); border-color: var(--accent-line); }
 .catbtn span { margin-left: 4px; font-family: var(--font-mono); font-size: 10px; }
 .search { max-width: 280px; min-width: 180px; }
+
+/* FRC Preset Search Chips */
+.frc-chips-bar {
+  display: flex; gap: 6px; align-items: center; padding: 0 24px 18px; flex-wrap: wrap;
+}
+.frc-chip-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--text-faint); margin-right: 4px; text-transform: uppercase; }
+.frc-chip {
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .03); color: var(--text-muted);
+  font-size: 11px; font-family: var(--font-mono); padding: 3px 9px; border-radius: 6px; transition: all .14s;
+}
+.frc-chip:hover { border-color: var(--accent-line); color: var(--accent-bright); background: var(--accent-dim); }
 
 /* Table */
 .tablehead, .itemrow {
@@ -247,7 +308,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 .itemrow { padding: 16px 24px; border-bottom: 1px solid var(--line); font-size: 13px; transition: background .12s; }
 .itemrow:hover { background: var(--bg-card-hover); }
 .itemrow:last-child { border-bottom: 0; }
-.itemname { font-weight: 700; font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.itemname { font-weight: 700; font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .itemnotes { font-size: 11px; color: var(--text-muted); margin-top: 3px; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .parttag { font-family: var(--font-mono); font-size: 10px; color: var(--accent-soft); background: var(--accent-dim); padding: 2px 6px; border-radius: 4px; }
 
@@ -295,7 +356,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 /* Checkout Row */
 .checkout-banner {
   margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 6px;
-  background: var(--amber-dim); border: 1px solid rgba(251, 191, 36, .25); color: #fde68a;
+  background: var(--amber-dim); border: 1px solid rgba(251, 191, 36, .25); color: var(--amber);
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
 }
 
@@ -307,6 +368,8 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
   background: rgba(255, 255, 255, .02); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 480px;
 }
+[data-theme="light"] .planner-col { background: #f8fafc; }
+
 .col-header {
   display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px;
   border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 12px; font-weight: 700;
@@ -330,9 +393,11 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
   padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
 }
 .task-stepbtn:hover { background: var(--accent); color: #0b0813; }
+[data-theme="light"] .task-stepbtn:hover { color: #ffffff; }
 
 /* Modals */
 .modalback { position: fixed; inset: 0; z-index: 100; background: rgba(7, 7, 12, .85); backdrop-filter: blur(8px); display: grid; place-items: center; padding: 20px; }
+[data-theme="light"] .modalback { background: rgba(15, 23, 42, .6); }
 .modal {
   width: min(100%, 580px); max-height: 90vh; overflow-y: auto; background: var(--bg-card);
   border: 1px solid var(--line-strong); border-radius: var(--radius-lg); padding: 28px;
@@ -406,9 +471,15 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
         <small>INVENTORY & PLANNER</small>
       </span>
     </a>
-    <div class="topnote">
-      <span class="dot"></span>
-      <span>Shop Workspace</span>
+    
+    <div class="top-controls">
+      <button class="themetoggle" id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="theme-icon">☀️</span> <span id="theme-text">Light</span>
+      </button>
+      <div class="topnote">
+        <span class="dot"></span>
+        <span>Shop Workspace</span>
+      </div>
     </div>
   </header>
 
@@ -422,7 +493,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
       <span class="eyebrow">FRC TEAM 11744 / SAN DIEGO, CA</span>
       <h1>Built for the build season.<br><em>Ready for the next match.</em></h1>
       <p style="font-size: 17px; max-width: 520px;">
-        Shared inventory, live tool tracking, and collaborative build planning for the engineers who design, machine, wire, and program Nyx.
+        Shared inventory, live tool checkouts, and team planner for the engineers who design, machine, wire, and program Nyx.
       </p>
       <div class="metrics">
         <div class="metric"><strong>04</strong><small>SUBSYSTEMS</small></div>
@@ -477,7 +548,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     <div class="card" style="text-align: center; padding: 40px 30px;">
       <span class="eyebrow">REGISTRATION CONFIRMED</span>
       <h2>Waiting for team approval.</h2>
-      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can view inventory and contribute to the planner.</p>
+      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can view inventory and borrow tools.</p>
       <div style="margin-top: 24px;">
         <button class="btn btn--ghost" id="pending-signout" type="button">Sign out</button>
       </div>
@@ -562,7 +633,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
           <p class="muted small">Changes sync in real time across all team devices.</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--primary btn--sm" id="add-item-button" type="button">＋ Add Item</button>
+          <button class="btn btn--primary btn--sm hidden" id="add-item-button" type="button">＋ Add Item (Admin)</button>
         </div>
       </div>
 
@@ -576,6 +647,21 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
           <button class="catbtn" data-category="ToolsOnly">🛠 Tools Only <span id="count-tools">0</span></button>
         </div>
         <input class="search" id="search-items" type="search" placeholder="⌕ Search name, location, part #..." aria-label="Search inventory">
+      </div>
+
+      <!-- Quick FRC Search Chips -->
+      <div class="frc-chips-bar">
+        <span class="frc-chip-label">Quick FRC:</span>
+        <button type="button" class="frc-chip" data-query="Kraken">⚡ Kraken / Falcon</button>
+        <button type="button" class="frc-chip" data-query="NEO">⚡ NEO / Spark</button>
+        <button type="button" class="frc-chip" data-query="RoboRIO">🧠 RoboRIO / CAN</button>
+        <button type="button" class="frc-chip" data-query="Limelight">👁 Limelight</button>
+        <button type="button" class="frc-chip" data-query="Battery">🔋 Battery / PDH</button>
+        <button type="button" class="frc-chip" data-query="10-32">🔩 10-32 Bolts</button>
+        <button type="button" class="frc-chip" data-query="Rivet">📎 Rivets</button>
+        <button type="button" class="frc-chip" data-query="Hex">📏 Hex Shaft / Bearing</button>
+        <button type="button" class="frc-chip" data-query="Belt">⚙️ Belts / Gears</button>
+        <button type="button" class="frc-chip" data-query="Stripper">🛠️ Wire Stripper</button>
       </div>
 
       <div class="tablehead">
@@ -601,7 +687,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
       <div class="toolbar">
         <div>
           <h2>Active Tool & Equipment Checkouts</h2>
-          <p class="muted small">Track who is using team tools during build meetings and competitions.</p>
+          <p class="muted small">Anyone can borrow tools and check them back in when finished.</p>
         </div>
       </div>
       <div id="checkouts-list">
@@ -614,9 +700,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
       <div class="toolbar">
         <div>
           <h2>Team Build & Task Planner 📋</h2>
-          <p class="muted small">Collaborative board for build milestones, CAD deliverables, wiring goals, and pit preparation.</p>
+          <p class="muted small">Roadmap for build season, CAD deliverables, and pit prep. Anyone can update status; admins manage tasks.</p>
         </div>
-        <button class="btn btn--primary btn--sm" id="add-task-btn" type="button">＋ Add Task</button>
+        <button class="btn btn--primary btn--sm hidden" id="add-task-btn" type="button">＋ Add Task (Admin)</button>
       </div>
 
       <div class="filters">
@@ -700,7 +786,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     <div class="modal">
       <div class="modalhead">
         <div>
-          <span class="eyebrow">INVENTORY RECORD</span>
+          <span class="eyebrow">ADMIN INVENTORY CONTROL</span>
           <h2 id="modal-title">Add Inventory Item</h2>
         </div>
         <button class="close" id="close-modal" type="button" aria-label="Close">×</button>
@@ -708,7 +794,31 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
 
       <form id="item-form">
         <label for="item-name">Item Name *</label>
-        <input id="item-name" maxlength="120" required placeholder="e.g. Falcon 500 Motor, 3/8in Hex Shaft, Wire Stripper">
+        <input id="item-name" maxlength="120" list="frc-suggestions" required placeholder="e.g. Kraken X60 Motor, Falcon 500, 10-32 × 1/2in Bolt">
+        <datalist id="frc-suggestions">
+          <option value="Kraken X60 Motor">
+          <option value="Falcon 500 Motor">
+          <option value="NEO Brushless Motor v1.1">
+          <option value="NEO 550 Motor">
+          <option value="Spark MAX Motor Controller">
+          <option value="Talon FX Motor Controller">
+          <option value="RoboRIO 2.0">
+          <option value="REV Power Distribution Hub (PDH)">
+          <option value="CTRE CANivore USB to CAN">
+          <option value="Limelight 3G Vision Camera">
+          <option value="Pigeon 2.0 9-Axis IMU">
+          <option value="10-32 × 1/2 in Socket Head Screw">
+          <option value="10-32 × 3/4 in Socket Head Screw">
+          <option value="10-32 Nyloc Locknut">
+          <option value="3/16 in Aluminum Pop Rivets">
+          <option value="1/2 in Hex Bearing (Flanged)">
+          <option value="1/2 in ThunderHex Shaft (3ft)">
+          <option value="Anderson Powerpole 45A Connectors">
+          <option value="12 AWG Silicone Wire (Red/Black)">
+          <option value="Pneumatic Air Tank 590ml">
+          <option value="Heavy-Duty Rivet Tool">
+          <option value="Automatic Wire Stripper 10-24 AWG">
+        </datalist>
 
         <div class="formgrid">
           <div>
@@ -802,7 +912,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margi
     <div class="modal">
       <div class="modalhead">
         <div>
-          <span class="eyebrow">TEAM PLANNER</span>
+          <span class="eyebrow">ADMIN PLANNER CONTROL</span>
           <h2 id="task-modal-title">Add Planner Task</h2>
         </div>
         <button class="close" id="close-task-modal" type="button" aria-label="Close">×</button>
@@ -896,6 +1006,33 @@ let editingItemId = null;
 let editingTaskId = null;
 let checkingOutItem = null;
 let channel = null;
+
+/* Light/Dark Theme Controller */
+function initTheme() {
+  const saved = localStorage.getItem("nyx_theme") || "dark";
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("nyx_theme", theme);
+  const icon = $("#theme-icon");
+  const text = $("#theme-text");
+  if (theme === "light") {
+    icon.textContent = "🌙";
+    text.textContent = "Dark";
+  } else {
+    icon.textContent = "☀️";
+    text.textContent = "Light";
+  }
+}
+
+$("#theme-toggle").addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(current === "dark" ? "light" : "dark");
+});
+
+initTheme();
 
 function esc(v) {
   return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({
@@ -1007,6 +1144,9 @@ async function checkUser(user) {
   $("#profile-avatar").textContent = name.trim().charAt(0).toUpperCase();
   $("#profile-role").textContent = data.is_admin ? "TEAM ADMIN" : "APPROVED MEMBER";
 
+  // Admin visibility controls
+  $("#add-item-button").classList.toggle("hidden", !data.is_admin);
+  $("#add-task-btn").classList.toggle("hidden", !data.is_admin);
   $("#tab-members").classList.toggle("hidden", !data.is_admin);
   $("#tab-logs").classList.toggle("hidden", !data.is_admin);
 
@@ -1118,10 +1258,12 @@ function renderItems() {
 
   if (!shown.length) {
     $("#items-list").innerHTML = '<div style="padding:40px; text-align:center;" class="muted">' +
-      (allItems.length ? "No matching items found." : "No inventory items recorded yet. Add the first tool or part!") +
+      (allItems.length ? "No matching items found. Try another search or filter." : "No inventory items recorded yet.") +
       '</div>';
     return;
   }
+
+  const isAdmin = !!currentProfile?.is_admin;
 
   $("#items-list").innerHTML = shown.map(x => {
     const isLow = Number(x.quantity) <= Number(x.min_quantity || 1);
@@ -1140,7 +1282,7 @@ function renderItems() {
           ${itemCheckouts.length ? `
             <div class="checkout-banner">
               <span>⚠️ ${checkedOutQty} in use (${itemCheckouts.map(c => esc(c.user_name)).join(", ")})</span>
-              ${itemCheckouts.some(c => c.user_id === currentUser.id || currentProfile?.is_admin) ? `
+              ${itemCheckouts.some(c => c.user_id === currentUser.id || isAdmin) ? `
                 <button class="actionbtn" style="padding:2px 6px; font-size:10px;" data-action="return-direct" data-id="${itemCheckouts[0].id}">Return</button>
               ` : ''}
             </div>
@@ -1154,9 +1296,13 @@ function renderItems() {
         <div class="location muted">${esc(x.location || "Shop")}</div>
 
         <div class="quantity">
-          <button class="qtybtn" data-action="qtyminus" data-id="${esc(x.id)}" aria-label="Decrease">−</button>
+          ${isAdmin ? `
+            <button class="qtybtn" data-action="qtyminus" data-id="${esc(x.id)}" aria-label="Decrease">−</button>
+          ` : ''}
           <span class="qtynum ${isLow ? 'low' : ''}">${Number(x.quantity)}</span>
-          <button class="qtybtn" data-action="qtyplus" data-id="${esc(x.id)}" aria-label="Increase">+</button>
+          ${isAdmin ? `
+            <button class="qtybtn" data-action="qtyplus" data-id="${esc(x.id)}" aria-label="Increase">+</button>
+          ` : ''}
           <span class="muted">${esc(x.unit || "pcs")}</span>
         </div>
 
@@ -1164,8 +1310,10 @@ function renderItems() {
           ${x.is_tool ? `
             <button class="actionbtn checkout" data-action="checkout" data-id="${esc(x.id)}">Borrow ↗</button>
           ` : ''}
-          <button class="actionbtn" data-action="edit" data-id="${esc(x.id)}">Edit</button>
-          <button class="actionbtn delete" data-action="delete" data-id="${esc(x.id)}">Delete</button>
+          ${isAdmin ? `
+            <button class="actionbtn" data-action="edit" data-id="${esc(x.id)}">Edit</button>
+            <button class="actionbtn delete" data-action="delete" data-id="${esc(x.id)}">Delete</button>
+          ` : ''}
         </div>
       </article>
     `;
@@ -1230,6 +1378,8 @@ function renderTasks() {
   $("#count-in-progress").textContent = inProgTasks.length;
   $("#count-done").textContent = doneTasks.length;
 
+  const isAdmin = !!currentProfile?.is_admin;
+
   function renderCard(t) {
     const subsysClass = t.subsystem.replace(/[\s\/]/g, "");
     return `
@@ -1256,10 +1406,12 @@ function renderTasks() {
               <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="in_progress">Reopen ↺</button>
             ` : ''}
           </div>
-          <div style="display:flex; gap:4px;">
-            <button class="actionbtn" data-action="edit-task" data-id="${t.id}" title="Edit task">✏️</button>
-            <button class="actionbtn delete" data-action="delete-task" data-id="${t.id}" title="Delete task">🗑</button>
-          </div>
+          ${isAdmin ? `
+            <div style="display:flex; gap:4px;">
+              <button class="actionbtn" data-action="edit-task" data-id="${t.id}" title="Edit task">✏️</button>
+              <button class="actionbtn delete" data-action="delete-task" data-id="${t.id}" title="Delete task">🗑</button>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -1363,6 +1515,10 @@ async function loadLogs() {
 
 /* Modals */
 function openItemModal(item) {
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can add or edit inventory items.", true);
+    return;
+  }
   editingItemId = item ? item.id : null;
   $("#item-form").reset();
   $("#modal-title").textContent = item ? "Edit Inventory Item" : "Add Inventory Item";
@@ -1402,6 +1558,10 @@ function closeCheckoutModal() {
 }
 
 function openTaskModal(task) {
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can create or edit planner tasks.", true);
+    return;
+  }
   editingTaskId = task ? task.id : null;
   $("#task-form").reset();
   $("#task-modal-title").textContent = task ? "Edit Planner Task" : "Add Planner Task";
@@ -1422,9 +1582,14 @@ function closeTaskModal() {
   editingTaskId = null;
 }
 
-/* Item Save */
+/* Item Save (Admin only) */
 async function saveItem(e) {
   e.preventDefault();
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can save inventory items.", true);
+    return;
+  }
+
   const name = $("#item-name").value.trim();
   const category = $("#item-category").value;
   const is_tool = $("#item-is-tool").value === "true";
@@ -1473,9 +1638,14 @@ async function saveItem(e) {
   toast(editingItemId ? "Item updated." : "Item added to inventory.");
 }
 
-/* Task Save */
+/* Task Save (Admin only) */
 async function saveTask(e) {
   e.preventDefault();
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can create or edit tasks.", true);
+    return;
+  }
+
   const title = $("#task-title").value.trim();
   const subsystem = $("#task-subsystem").value;
   const priority = $("#task-priority").value;
@@ -1526,8 +1696,12 @@ async function saveTask(e) {
   toast(editingTaskId ? "Task updated." : "Task added to team planner.");
 }
 
-/* Update Quantity Quick Buttons */
+/* Update Quantity Quick Buttons (Admin only) */
 async function updateQty(id, delta) {
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can adjust inventory quantities directly.", true);
+    return;
+  }
   const item = allItems.find(x => x.id === id);
   if (!item) return;
   const newQty = Math.max(0, Number(item.quantity) + delta);
@@ -1632,7 +1806,7 @@ $("#cancel-task-modal").addEventListener("click", closeTaskModal);
 $("#task-modal").addEventListener("click", e => { if (e.target.id === "task-modal") closeTaskModal(); });
 $("#task-form").addEventListener("submit", saveTask);
 
-/* Confirm Check Out */
+/* Confirm Check Out (All approved members can borrow) */
 $("#checkout-form").addEventListener("submit", async e => {
   e.preventDefault();
   if (!checkingOutItem) return;
@@ -1670,6 +1844,18 @@ $("#checkout-form").addEventListener("submit", async e => {
 });
 
 $("#search-items").addEventListener("input", renderItems);
+
+/* FRC Preset Search Chips Click */
+$$(".frc-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const query = chip.dataset.query;
+    const searchInput = $("#search-items");
+    searchInput.value = query;
+    renderItems();
+    searchInput.focus();
+  });
+});
+
 $$(".catbtn").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.category) {
     activeCategory = b.dataset.category;
@@ -1681,24 +1867,30 @@ $$(".catbtn").forEach(b => b.addEventListener("click", () => {
   }
 }));
 
-/* Item List Actions (Edit, Delete, Check out, Direct return) */
+/* Item List Actions */
 $("#items-list").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action]");
   if (!b) return;
   const action = b.dataset.action;
   const id = b.dataset.id;
+  const isAdmin = !!currentProfile?.is_admin;
 
   if (action === "edit") {
+    if (!isAdmin) return;
     const item = allItems.find(x => x.id === id);
     if (item) openItemModal(item);
   } else if (action === "checkout") {
+    // Anyone can borrow
     const item = allItems.find(x => x.id === id);
     if (item) openCheckoutModal(item);
   } else if (action === "qtyplus") {
+    if (!isAdmin) return;
     await updateQty(id, 1);
   } else if (action === "qtyminus") {
+    if (!isAdmin) return;
     await updateQty(id, -1);
   } else if (action === "delete") {
+    if (!isAdmin) return;
     const item = allItems.find(x => x.id === id);
     if (!item) return;
     if (confirm(`Are you sure you want to delete "${item.name}" from the inventory catalog?`)) {
@@ -1712,6 +1904,7 @@ $("#items-list").addEventListener("click", async e => {
       }
     }
   } else if (action === "return-direct") {
+    // Anyone can check in
     const { error } = await supabase.from("tool_checkouts").update({
       status: "returned",
       returned_at: new Date().toISOString()
@@ -1727,7 +1920,7 @@ $("#items-list").addEventListener("click", async e => {
   }
 });
 
-/* Checkouts View Action: Check In */
+/* Checkouts View Action: Check In (Anyone can return) */
 $("#checkouts-list").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action='checkin']");
   if (!b) return;
@@ -1748,15 +1941,17 @@ $("#checkouts-list").addEventListener("click", async e => {
   }
 });
 
-/* Planner Actions */
+/* Planner Actions: Anyone can update status; only admins edit/delete */
 $("#view-planner").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action]");
   if (!b) return;
   const action = b.dataset.action;
   const id = b.dataset.id;
   const task = allTasks.find(t => t.id === id);
+  const isAdmin = !!currentProfile?.is_admin;
 
   if (action === "move-status") {
+    // Anyone can advance/move tasks
     const newStatus = b.dataset.newstatus;
     const { error } = await supabase.from("planner_tasks").update({
       status: newStatus,
@@ -1772,8 +1967,10 @@ $("#view-planner").addEventListener("click", async e => {
       toast(newStatus === "done" ? "Task marked complete! 🎉" : "Task moved to in progress.");
     }
   } else if (action === "edit-task") {
+    if (!isAdmin) return;
     if (task) openTaskModal(task);
   } else if (action === "delete-task") {
+    if (!isAdmin) return;
     if (confirm(`Delete task "${task?.title}"?`)) {
       const { error } = await supabase.from("planner_tasks").delete().eq("id", id);
       if (error) {
