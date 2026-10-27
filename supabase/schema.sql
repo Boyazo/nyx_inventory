@@ -2,6 +2,7 @@
 -- Run this entire script in Supabase Dashboard -> SQL Editor.
 create extension if not exists pgcrypto;
 
+-- 1. Profiles Table
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null,
@@ -10,6 +11,7 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- 2. Inventory Items Table
 create table if not exists public.inventory_items (
   id uuid primary key default gen_random_uuid(),
   name text not null check (length(trim(name)) > 0),
@@ -18,15 +20,57 @@ create table if not exists public.inventory_items (
   unit text not null default 'pcs',
   location text not null default '',
   notes text not null default '',
+  is_tool boolean not null default false,
+  part_number text not null default '',
+  min_quantity integer not null default 1 check (min_quantity >= 0),
   created_by uuid not null references auth.users(id),
   updated_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+-- Alter existing columns if table already existed prior to update
+alter table public.inventory_items add column if not exists is_tool boolean not null default false;
+alter table public.inventory_items add column if not exists part_number text not null default '';
+alter table public.inventory_items add column if not exists min_quantity integer not null default 1;
+
 create index if not exists inventory_items_category_idx on public.inventory_items(category);
 create index if not exists inventory_items_name_idx on public.inventory_items(name);
+create index if not exists inventory_items_is_tool_idx on public.inventory_items(is_tool);
 
+-- 3. Tool Checkouts Table
+create table if not exists public.tool_checkouts (
+  id uuid primary key default gen_random_uuid(),
+  item_id uuid not null references public.inventory_items(id) on delete cascade,
+  user_id uuid not null references auth.users(id),
+  user_name text not null,
+  quantity integer not null default 1 check (quantity > 0),
+  status text not null default 'checked_out' check (status in ('checked_out', 'returned')),
+  checked_out_at timestamptz not null default now(),
+  returned_at timestamptz,
+  notes text not null default ''
+);
+
+create index if not exists tool_checkouts_item_idx on public.tool_checkouts(item_id);
+create index if not exists tool_checkouts_user_idx on public.tool_checkouts(user_id);
+create index if not exists tool_checkouts_status_idx on public.tool_checkouts(status);
+
+-- 4. Activity & Audit Logs Table (Admin Only View)
+create table if not exists public.activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  action text not null, -- 'ITEM_CREATED', 'ITEM_UPDATED', 'ITEM_DELETED', 'TOOL_CHECKOUT', 'TOOL_CHECKIN', 'MEMBER_APPROVED', 'MEMBER_REVOKED'
+  entity_type text not null, -- 'inventory_items', 'tool_checkouts', 'profiles'
+  entity_id text,
+  details jsonb not null default '{}'::jsonb,
+  user_id uuid references auth.users(id),
+  user_name text not null default 'Team Member',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists activity_logs_created_at_idx on public.activity_logs(created_at desc);
+create index if not exists activity_logs_action_idx on public.activity_logs(action);
+
+-- 5. Helper Functions
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
@@ -68,18 +112,28 @@ drop trigger if exists inventory_items_updated_at on public.inventory_items;
 create trigger inventory_items_updated_at before update on public.inventory_items
 for each row execute procedure public.set_inventory_updated_at();
 
+-- 6. Row Level Security Policies
 alter table public.profiles enable row level security;
 alter table public.inventory_items enable row level security;
+alter table public.tool_checkouts enable row level security;
+alter table public.activity_logs enable row level security;
 
+-- Profiles policies
 drop policy if exists "Members read own profile; admins read all" on public.profiles;
 create policy "Members read own profile; admins read all" on public.profiles
 for select to authenticated using(id=(select auth.uid()) or (select public.is_team_admin()));
+
+drop policy if exists "Members can update their own display name" on public.profiles;
+create policy "Members can update their own display name" on public.profiles
+for update to authenticated using(id=(select auth.uid()))
+with check(id=(select auth.uid()));
 
 drop policy if exists "Admins update member approval" on public.profiles;
 create policy "Admins update member approval" on public.profiles
 for update to authenticated using((select public.is_team_admin()))
 with check((select public.is_team_admin()));
 
+-- Inventory items policies
 drop policy if exists "Approved team can read inventory" on public.inventory_items;
 create policy "Approved team can read inventory" on public.inventory_items
 for select to authenticated using((select public.is_approved_member()));
@@ -97,25 +151,42 @@ drop policy if exists "Approved team can delete inventory" on public.inventory_i
 create policy "Approved team can delete inventory" on public.inventory_items
 for delete to authenticated using((select public.is_approved_member()));
 
--- Bootstrap only the first admin after registering in the app.
--- Find the account UUID in Supabase -> Authentication -> Users and replace the ID below:
--- update public.profiles set is_approved=true,is_admin=true where id='YOUR-AUTH-USER-UUID';
+-- Tool checkouts policies
+drop policy if exists "Approved members can read tool checkouts" on public.tool_checkouts;
+create policy "Approved members can read tool checkouts" on public.tool_checkouts
+for select to authenticated using((select public.is_approved_member()));
 
--- Enable inventory change events for the website's Supabase Realtime subscription.
--- Supabase normally creates the supabase_realtime publication for a project.
--- This block is safe to re-run and adds only inventory_items if it is not listed yet.
+drop policy if exists "Approved members can create tool checkouts" on public.tool_checkouts;
+create policy "Approved members can create tool checkouts" on public.tool_checkouts
+for insert to authenticated with check((select public.is_approved_member()) and user_id=(select auth.uid()));
+
+drop policy if exists "Approved members can update tool checkouts" on public.tool_checkouts;
+create policy "Approved members can update tool checkouts" on public.tool_checkouts
+for update to authenticated using((select public.is_approved_member()) and (user_id=(select auth.uid()) or (select public.is_team_admin())))
+with check((select public.is_approved_member()));
+
+-- Activity logs policies: ONLY ADMINS CAN READ, approved members can insert
+drop policy if exists "Only admins can read activity logs" on public.activity_logs;
+create policy "Only admins can read activity logs" on public.activity_logs
+for select to authenticated using((select public.is_team_admin()));
+
+drop policy if exists "Approved members can insert activity logs" on public.activity_logs;
+create policy "Approved members can insert activity logs" on public.activity_logs
+for insert to authenticated with check((select public.is_approved_member()));
+
+-- 7. Realtime configuration
 do $$
 begin
-  if exists (
-    select 1 from pg_publication where pubname = 'supabase_realtime'
-  ) and not exists (
-    select 1
-    from pg_publication_tables
-    where pubname = 'supabase_realtime'
-      and schemaname = 'public'
-      and tablename = 'inventory_items'
-  ) then
-    execute 'alter publication supabase_realtime add table public.inventory_items';
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'inventory_items') then
+      execute 'alter publication supabase_realtime add table public.inventory_items';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'tool_checkouts') then
+      execute 'alter publication supabase_realtime add table public.tool_checkouts';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'activity_logs') then
+      execute 'alter publication supabase_realtime add table public.activity_logs';
+    end if;
   end if;
 end
 $$;
