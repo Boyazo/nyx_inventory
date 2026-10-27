@@ -129,11 +129,11 @@ create table if not exists public.spending_records (
 
 create index if not exists spending_records_order_date_idx on public.spending_records(order_date desc);
 
--- 8. Department Shifts & Calendar Table (Everyone Can Edit)
+-- 8. Department Shifts & Calendar Table (Admins Schedule/Delete, All Members RSVP)
 create table if not exists public.team_shifts (
   id uuid primary key default gen_random_uuid(),
   title text not null check (length(trim(title)) > 0),
-  department text not null check (department in ('Mechanical', 'Electrical', 'Software', 'All Departments')),
+  department text not null check (department in ('Mechanical', 'Electrical', 'Software', 'Business', 'All Departments')),
   shift_date date not null,
   start_time text not null,
   end_time text not null,
@@ -141,7 +141,7 @@ create table if not exists public.team_shifts (
   attendees text[] not null default array[]::text[],
   notes text not null default '',
   created_by uuid references auth.users(id),
-  created_by_name text not null default 'Team Member',
+  created_by_name text not null default 'Admin',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -321,14 +321,15 @@ drop policy if exists "Only admins can delete spending" on public.spending_recor
 create policy "Only admins can delete spending" on public.spending_records
 for delete to authenticated using((select public.is_team_admin()));
 
--- Team Shifts (EVERYONE approved can read, insert, update, delete)
+-- Team Shifts (Admins schedule and delete; Approved members view & RSVP / update roster)
 drop policy if exists "Approved members can read team shifts" on public.team_shifts;
 create policy "Approved members can read team shifts" on public.team_shifts
 for select to authenticated using((select public.is_approved_member()));
 
 drop policy if exists "Approved members can insert team shifts" on public.team_shifts;
-create policy "Approved members can insert team shifts" on public.team_shifts
-for insert to authenticated with check((select public.is_approved_member()));
+drop policy if exists "Only admins can insert team shifts" on public.team_shifts;
+create policy "Only admins can insert team shifts" on public.team_shifts
+for insert to authenticated with check((select public.is_team_admin()));
 
 drop policy if exists "Approved members can update team shifts" on public.team_shifts;
 create policy "Approved members can update team shifts" on public.team_shifts
@@ -336,8 +337,9 @@ for update to authenticated using((select public.is_approved_member()))
 with check((select public.is_approved_member()));
 
 drop policy if exists "Approved members can delete team shifts" on public.team_shifts;
-create policy "Approved members can delete team shifts" on public.team_shifts
-for delete to authenticated using((select public.is_approved_member()));
+drop policy if exists "Only admins can delete team shifts" on public.team_shifts;
+create policy "Only admins can delete team shifts" on public.team_shifts
+for delete to authenticated using((select public.is_team_admin()));
 
 -- 11. Realtime configuration
 do $$

@@ -688,13 +688,12 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     <!-- Navigation Tabs -->
     <nav class="viewtabs">
       <button class="viewtab active" data-view="inventory">Parts & Tools <span class="badgenum" id="badge-all">0</span></button>
-      <button class="viewtab" data-view="shifts">Shifts & Calendar 📅 <span class="badgenum" id="badge-shifts">0</span></button>
-      <button class="viewtab" data-view="parts-needed">Parts Needed for Robot 🤖 <span class="badgenum" id="badge-parts-needed">0</span></button>
       <button class="viewtab" data-view="checkouts">Active Checkouts <span class="badgenum" id="badge-checkouts">0</span></button>
+      <button class="viewtab" data-view="parts-needed">Parts Needed for Robot 🤖 <span class="badgenum" id="badge-parts-needed">0</span></button>
+      <button class="viewtab" data-view="shifts">Shifts & Calendar 📅 <span class="badgenum" id="badge-shifts">0</span></button>
       <button class="viewtab" data-view="planner">Team Planner 📋 <span class="badgenum" id="badge-planner">0</span></button>
       <button class="viewtab hidden" id="tab-spending" data-view="spending">Spending & Budget 💰</button>
       <button class="viewtab hidden" id="tab-members" data-view="members">Member Access <span class="badgenum" id="badge-members">0</span></button>
-      <button class="viewtab hidden" id="tab-logs" data-view="logs">Audit Logs 🔒</button>
     </nav>
 
     <!-- 1. INVENTORY VIEW -->
@@ -739,15 +738,15 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       </div>
     </section>
 
-    <!-- 2. SHIFTS & CALENDAR VIEW (Everyone can edit & join) -->
+    <!-- 2. SHIFTS & CALENDAR VIEW (Admins schedule, everyone can RSVP) -->
     <section id="view-shifts" class="panel hidden">
       <div class="toolbar">
         <div>
           <h2>Build Shifts & Department Calendar 📅</h2>
-          <p class="muted small">Schedule lab meetings and track attendance for Mechanical, Electrical, and Software departments. Everyone can schedule or sign up!</p>
+          <p class="muted small">Schedule lab meetings and track attendance for Mechanical, Electrical, Software, and Business departments. Admins schedule shifts; all members can sign up!</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--primary btn--sm" id="add-shift-btn" type="button">＋ Schedule Shift</button>
+          <button class="btn btn--primary btn--sm hidden" id="add-shift-btn" type="button">＋ Schedule Shift (Admin)</button>
         </div>
       </div>
 
@@ -757,6 +756,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
           <button class="catbtn" data-shift-dept="Mechanical">Mechanical</button>
           <button class="catbtn" data-shift-dept="Electrical">Electrical</button>
           <button class="catbtn" data-shift-dept="Software">Software</button>
+          <button class="catbtn" data-shift-dept="Business">Business</button>
         </div>
       </div>
 
@@ -975,6 +975,10 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
             <input type="checkbox" name="prof-dept" value="Software">
             <span>💻 Software</span>
           </label>
+          <label class="dept-check-label">
+            <input type="checkbox" name="prof-dept" value="Business">
+            <span>💼 Business</span>
+          </label>
         </div>
 
         <div class="modalactions">
@@ -985,20 +989,20 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     </div>
   </div>
 
-  <!-- MODAL: ADD / EDIT SHIFT (Everyone can schedule) -->
+  <!-- MODAL: ADD / EDIT SHIFT (Admin) -->
   <div id="shift-modal" class="modalback hidden">
     <div class="modal">
       <div class="modalhead">
         <div>
           <span class="eyebrow">BUILD SEASON SCHEDULE</span>
-          <h2 id="shift-modal-title">Schedule Lab Shift</h2>
+          <h2 id="shift-modal-title">Schedule Lab Shift (Admin)</h2>
         </div>
         <button class="close" id="close-shift-modal" type="button" aria-label="Close">×</button>
       </div>
 
       <form id="shift-form">
         <label for="shift-title">Shift Title / Focus *</label>
-        <input id="shift-title" maxlength="120" required placeholder="e.g. Swerve Drive Chassis Assembly, Auto Code Tuning, Sensor Wiring">
+        <input id="shift-title" maxlength="120" required placeholder="e.g. Swerve Drive Chassis Assembly, Auto Code Tuning, Sponsor Pitch Deck">
 
         <div class="formgrid">
           <div>
@@ -1007,6 +1011,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
               <option value="Mechanical">Mechanical</option>
               <option value="Electrical">Electrical</option>
               <option value="Software">Software</option>
+              <option value="Business">Business</option>
               <option value="All Departments">All Departments (Full Team)</option>
             </select>
           </div>
@@ -1528,10 +1533,15 @@ function screens(which) {
 function switchView(viewName) {
   currentView = viewName;
   $$(".viewtab").forEach(tab => tab.classList.toggle("active", tab.dataset.view === viewName));
+  const elAuditBtn = $("#admin-audit-logs-btn");
+  if (elAuditBtn) {
+    elAuditBtn.classList.toggle("btn--primary", viewName === "logs");
+    elAuditBtn.classList.toggle("btn--ghost", viewName !== "logs");
+  }
   $("#view-inventory").classList.toggle("hidden", viewName !== "inventory");
-  $("#view-shifts").classList.toggle("hidden", viewName !== "shifts");
-  $("#view-parts-needed").classList.toggle("hidden", viewName !== "parts-needed");
   $("#view-checkouts").classList.toggle("hidden", viewName !== "checkouts");
+  $("#view-parts-needed").classList.toggle("hidden", viewName !== "parts-needed");
+  $("#view-shifts").classList.toggle("hidden", viewName !== "shifts");
   $("#view-planner").classList.toggle("hidden", viewName !== "planner");
   $("#view-spending").classList.toggle("hidden", viewName !== "spending");
   $("#view-members").classList.toggle("hidden", viewName !== "members");
@@ -1606,9 +1616,9 @@ async function checkUser(user) {
   const elAddItm = $("#add-item-button"); if (elAddItm) elAddItm.classList.toggle("hidden", !data.is_admin);
   const elAddPn = $("#add-part-needed-btn"); if (elAddPn) elAddPn.classList.toggle("hidden", !data.is_admin);
   const elAddTsk = $("#add-task-btn"); if (elAddTsk) elAddTsk.classList.toggle("hidden", !data.is_admin);
+  const elAddShift = $("#add-shift-btn"); if (elAddShift) elAddShift.classList.toggle("hidden", !data.is_admin);
   const elTabSpend = $("#tab-spending"); if (elTabSpend) elTabSpend.classList.toggle("hidden", !data.is_admin);
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
-  const elTabLog = $("#tab-logs"); if (elTabLog) elTabLog.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
 
   await Promise.all([loadItems(), loadCheckouts(), loadTasks(), loadPartsNeeded(), loadShifts()]);
@@ -1863,12 +1873,13 @@ function renderShifts() {
 
   if (!filtered.length) {
     list.innerHTML = '<div style="padding:40px; text-align:center; grid-column:1/-1;" class="muted">' +
-      (allShifts.length ? "No shifts scheduled for this department." : "No upcoming lab shifts scheduled yet. Anyone can click '＋ Schedule Shift' above!") +
+      (allShifts.length ? "No shifts scheduled for this department." : "No upcoming lab shifts scheduled yet. Admins can click '＋ Schedule Shift' above!") +
       '</div>';
     return;
   }
 
   const myName = currentProfile?.full_name || currentUser?.email || "Team Member";
+  const isAdmin = !!currentProfile?.is_admin;
 
   list.innerHTML = filtered.map(s => {
     const attendees = Array.isArray(s.attendees) ? s.attendees : [];
@@ -1892,10 +1903,12 @@ function renderShifts() {
             <span class="pill ${esc(s.department.replace(/\s+/g, ''))}">${esc(s.department)}</span>
             <div class="shift-title" style="margin-top:8px;">${esc(s.title)}</div>
           </div>
-          <div style="display:flex; gap:4px;">
-            <button class="actionbtn" data-action="edit-shift" data-id="${s.id}" title="Edit shift">✏️</button>
-            <button class="actionbtn delete" data-action="delete-shift" data-id="${s.id}" title="Delete shift">🗑</button>
-          </div>
+          ${isAdmin ? `
+            <div style="display:flex; gap:4px;">
+              <button class="actionbtn" data-action="edit-shift" data-id="${s.id}" title="Edit shift (Admin)">✏️</button>
+              <button class="actionbtn delete" data-action="delete-shift" data-id="${s.id}" title="Remove shift (Admin)">🗑</button>
+            </div>
+          ` : ''}
         </div>
 
         <div class="shift-time">
@@ -2261,10 +2274,14 @@ function closeProfileModal() {
 }
 
 function openShiftModal(shift) {
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can schedule or edit shifts.", true);
+    return;
+  }
   editingShiftId = shift ? shift.id : null;
   $("#shift-form").reset();
-  $("#shift-modal-title").textContent = shift ? "Edit Lab Shift" : "Schedule Lab Shift";
-  $("#save-shift-btn").textContent = shift ? "Save Changes ↗" : "Schedule Shift ↗";
+  $("#shift-modal-title").textContent = shift ? "Edit Lab Shift (Admin)" : "Schedule Lab Shift (Admin)";
+  $("#save-shift-btn").textContent = shift ? "Save Changes ↗" : "Schedule Shift (Admin) ↗";
   $("#shift-title").value = shift ? shift.title : "";
   $("#shift-dept").value = shift ? shift.department : (activeShiftDept !== "All" ? activeShiftDept : "Mechanical");
   $("#shift-date").value = shift ? shift.shift_date : new Date().toISOString().slice(0, 10);
@@ -2431,9 +2448,13 @@ $("#profile-form").addEventListener("submit", async e => {
   toast("Profile & departments updated!");
 });
 
-/* Save Shift (Everyone can schedule/edit) */
+/* Save Shift (Admins only) */
 $("#shift-form").addEventListener("submit", async e => {
   e.preventDefault();
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can schedule or edit shifts.", true);
+    return;
+  }
   const title = $("#shift-title").value.trim();
   const department = $("#shift-dept").value;
   const shift_date = $("#shift-date").value;
@@ -2959,13 +2980,22 @@ $("#shifts-list").addEventListener("click", async e => {
       toast(isAttending ? "Removed from shift roster." : "Signed up for shift!");
     }
   } else if (action === "edit-shift" && shift) {
+    if (!currentProfile?.is_admin) {
+      toast("Only admins can edit shifts.", true);
+      return;
+    }
     openShiftModal(shift);
   } else if (action === "delete-shift" && shift) {
+    if (!currentProfile?.is_admin) {
+      toast("Only admins can remove shifts from the schedule.", true);
+      return;
+    }
     if (confirm(`Remove shift "${shift.title}" on ${shift.shift_date}?`)) {
       const { error } = await supabase.from("team_shifts").delete().eq("id", id);
       if (error) {
         toast("Failed to delete shift: " + error.message, true);
       } else {
+        await logAction("SHIFT_DELETED", "team_shifts", id, { title: shift.title, department: shift.department });
         await loadShifts(true);
         toast("Shift removed from calendar.");
       }
