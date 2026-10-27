@@ -36,6 +36,18 @@ A GitHub Actions workflow has been added at `.github/workflows/pages.yml`. It pu
 3. Push/commit the website changes to `main`; check the **Actions** tab to follow deployment.
 4. When the first deployment completes, the Pages address appears in **Settings → Pages** and in the deployment workflow summary.
 5. In Supabase Authentication → URL Configuration, add the published site's URL to allowed redirect URLs. Configure email confirmation to suit team needs.
+6. In Supabase → Database → Publications, confirm `public.inventory_items` is enabled under `supabase_realtime`. The updated SQL attempts to add it automatically when you run the schema.
+
+## 3A. Confirm team sync works
+
+1. Open the published Pages URL in two separate browsers or devices.
+2. Create a member account in each browser. Confirm the email if Supabase requests it.
+3. Promote the first trusted account to admin using the SQL below, then sign out and back in.
+4. Use the admin's Team Access panel to approve the second account.
+5. Sign in on both devices. Add a harmless test item from one and verify it appears on the other. Change its quantity and verify the edit is reflected on both.
+6. If other members don't see updates immediately, refresh once to confirm the common database is working, then check the Realtime publication and the browser's error message.
+
+**How the sync works:** each signed-in browser connects to the same Supabase project URL and public/publishable key. Inventory records live in that one shared PostgreSQL database; they do not live inside each person's browser. Supabase Realtime notifies the other open browsers when `inventory_items` changes. Each user needs their own login; never share passwords.
 
 ### Repository visibility and cost
 
