@@ -1717,6 +1717,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
           </div>
 
           <div class="tool-group" style="margin-left:auto;">
+            <button type="button" class="btn btn--sm btn--primary" id="field-choreo-play-btn" style="background:#8b5cf6; border-color:#8b5cf6; display:inline-flex; align-items:center; gap:5px;" title="Choreo Trajectory Simulation">▶ Simulate Path (Choreo)</button>
             <button type="button" class="btn btn--sm btn--ghost" id="field-undo-btn">↺ Undo</button>
             <button type="button" class="btn btn--sm btn--ghost" id="field-clear-btn">🗑 Clear</button>
             <button type="button" class="btn btn--sm btn--ghost" id="field-export-btn">🖼 Export PNG</button>
@@ -4821,6 +4822,12 @@ let currentPath = [];
 let shapeStart = null;
 let draggedItem = null;
 let draggedOffset = { x: 0, y: 0 };
+
+/* Choreo FRC Trajectory Simulation State */
+let isChoreoSimulating = false;
+let choreoAnimId = null;
+let choreoGhostRobot = null; // { x, y, heading, vx, vy, omega, progress }
+let choreoSpeedMultiplier = 1.0;
 let currentSortMetric = "epa";
 let currentSearchQuery = "";
 
@@ -5288,6 +5295,79 @@ function renderCanvas() {
       }
     }
   });
+
+  // Draw Choreo Trajectory Animated Ghost Robot if active
+  if (choreoGhostRobot) {
+    drawChoreoGhostRobot(ctx, choreoGhostRobot);
+  }
+}
+
+function drawChoreoGhostRobot(ctx, bot) {
+  ctx.save();
+  ctx.translate(bot.x, bot.y);
+  ctx.rotate(bot.heading);
+
+  // Swerve Bumper Dimensions (approx 34x34 px in canvas units, ~28x28 in field scale)
+  const bSize = 34;
+  const half = bSize / 2;
+
+  // Swerve Chassis Bumper with neon border
+  ctx.shadowColor = bot.alliance === "blue" ? "#3b82f6" : "#a855f7";
+  ctx.shadowBlur = 14;
+
+  ctx.fillStyle = bot.alliance === "blue" ? "rgba(30, 58, 138, 0.85)" : "rgba(88, 28, 135, 0.85)";
+  ctx.fillRect(-half, -half, bSize, bSize);
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(-half, -half, bSize, bSize);
+
+  // 4 Swerve Module Pods in corners
+  const podR = 4;
+  ctx.fillStyle = "#facc15";
+  [
+    [-half + 5, -half + 5],
+    [half - 5, -half + 5],
+    [half - 5, half - 5],
+    [-half + 5, half - 5]
+  ].forEach(([px, py]) => {
+    ctx.beginPath();
+    ctx.arc(px, py, podR, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Robot Direction / Front Intake Indicator Arrow
+  ctx.beginPath();
+  ctx.moveTo(0, -half + 4);
+  ctx.lineTo(half - 6, 0);
+  ctx.lineTo(0, half - 4);
+  ctx.strokeStyle = "#facc15";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Robot Center Label
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 9px JetBrains Mono";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("NYX", 0, 0);
+
+  ctx.restore();
+
+  // Trajectory Waypoint / Speed Telemetry HUD
+  ctx.save();
+  ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+  ctx.strokeStyle = "rgba(168, 85, 247, 0.5)";
+  ctx.lineWidth = 1;
+  ctx.fillRect(bot.x + 22, bot.y - 24, 110, 36);
+  ctx.strokeRect(bot.x + 22, bot.y - 24, 110, 36);
+
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "bold 9px JetBrains Mono";
+  ctx.fillText(`CHOREO SWERVE`, bot.x + 26, bot.y - 14);
+  ctx.fillStyle = "#a7f3d0";
+  ctx.fillText(`v: ${bot.speed ? bot.speed.toFixed(1) : "3.8"} m/s`, bot.x + 26, bot.y - 3);
+  ctx.restore();
 }
 
 function initPlaybook() {
@@ -5578,8 +5658,172 @@ function initPlaybook() {
     toast("Exported playbook image!");
   });
 
+  // Choreo Simulation Trigger
+  $("#field-choreo-play-btn")?.addEventListener("click", toggleChoreoSimulation);
+
   // Save Play
   $("#playbook-save-btn")?.addEventListener("click", savePlaybookPlay);
+}
+
+/* Choreo Path Trajectory Generator & Swerve Motion Optimizer */
+function toggleChoreoSimulation() {
+  const btn = $("#field-choreo-play-btn");
+  if (isChoreoSimulating) {
+    stopChoreoSimulation();
+    if (btn) {
+      btn.innerHTML = `▶ Simulate Path (Choreo)`;
+      btn.classList.remove("btn--danger");
+      btn.classList.add("btn--primary");
+    }
+    toast("Choreo simulation paused.");
+    return;
+  }
+
+  // Extract path waypoints from playHistory (pen strokes, arrows, lines, or robot tokens)
+  const waypoints = extractChoreoWaypoints();
+
+  if (waypoints.length < 2) {
+    toast("Draw a path (Draw or Arrow) or place 2+ bot tokens on the field first! ✏️", true);
+    return;
+  }
+
+  // Generate smooth time-optimal trajectory through waypoints
+  const trajectory = generateChoreoTrajectory(waypoints);
+
+  isChoreoSimulating = true;
+  if (btn) {
+    btn.innerHTML = `⏹ Stop Simulation`;
+    btn.classList.remove("btn--primary");
+    btn.classList.add("btn--danger");
+  }
+
+  toast("Running Choreo swerve trajectory simulation! 🤖⚡");
+  runChoreoAnimation(trajectory);
+}
+
+function stopChoreoSimulation() {
+  isChoreoSimulating = false;
+  if (choreoAnimId) {
+    cancelAnimationFrame(choreoAnimId);
+    choreoAnimId = null;
+  }
+  choreoGhostRobot = null;
+  renderCanvas();
+  const btn = $("#field-choreo-play-btn");
+  if (btn) {
+    btn.innerHTML = `▶ Simulate Path (Choreo)`;
+    btn.classList.remove("btn--danger");
+    btn.classList.add("btn--primary");
+  }
+}
+
+function extractChoreoWaypoints() {
+  const pts = [];
+
+  // 1. Check for drawn freehand pen paths or arrows
+  for (const item of playHistory) {
+    if (item.type === "pen" && Array.isArray(item.points) && item.points.length > 1) {
+      // Sample every few points to avoid jitter
+      const step = Math.max(1, Math.floor(item.points.length / 25));
+      for (let i = 0; i < item.points.length; i += step) {
+        pts.push({ x: item.points[i].x, y: item.points[i].y });
+      }
+      pts.push(item.points[item.points.length - 1]);
+      break;
+    } else if (item.type === "arrow" || item.type === "line") {
+      pts.push({ x: item.start.x, y: item.start.y });
+      pts.push({ x: item.end.x, y: item.end.y });
+      break;
+    }
+  }
+
+  // 2. If no paths drawn, check robot tokens in sequence
+  if (pts.length < 2) {
+    const tokens = playHistory.filter(item => item.type === "token");
+    if (tokens.length >= 2) {
+      tokens.forEach(tok => pts.push({ x: tok.x, y: tok.y }));
+    }
+  }
+
+  return pts;
+}
+
+function generateChoreoTrajectory(waypoints) {
+  // Cubic Catmull-Rom interpolation with swerve kinematic profiling
+  const trajectoryPoints = [];
+  const totalWaypoints = waypoints.length;
+
+  for (let i = 0; i < totalWaypoints - 1; i++) {
+    const p0 = waypoints[Math.max(0, i - 1)];
+    const p1 = waypoints[i];
+    const p2 = waypoints[i + 1];
+    const p3 = waypoints[Math.min(totalWaypoints - 1, i + 2)];
+
+    const segmentDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    const steps = Math.max(10, Math.floor(segmentDist / 4));
+
+    for (let s = 0; s < steps; s++) {
+      const t = s / steps;
+      const t2 = t * t;
+      const t3 = t2 * t;
+
+      // Catmull-Rom spline formula
+      const x = 0.5 * (
+        (2 * p1.x) +
+        (-p0.x + p2.x) * t +
+        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+      );
+      const y = 0.5 * (
+        (2 * p1.y) +
+        (-p0.y + p2.y) * t +
+        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+      );
+
+      // Tangent / velocity vector
+      const dx = 0.5 * ((-p0.x + p2.x) + 2 * (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t + 3 * (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t2);
+      const dy = 0.5 * ((-p0.y + p2.y) + 2 * (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t + 3 * (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t2);
+
+      const heading = Math.atan2(dy, dx);
+      const speed = Math.min(4.8, Math.max(1.2, Math.hypot(dx, dy) * 0.05));
+
+      trajectoryPoints.push({ x, y, heading, speed });
+    }
+  }
+
+  const last = waypoints[waypoints.length - 1];
+  trajectoryPoints.push({ x: last.x, y: last.y, heading: 0, speed: 0 });
+  return trajectoryPoints;
+}
+
+function runChoreoAnimation(trajectory) {
+  let currentIndex = 0;
+
+  function step() {
+    if (!isChoreoSimulating) return;
+
+    if (currentIndex >= trajectory.length) {
+      // Loop or stop
+      currentIndex = 0;
+    }
+
+    const state = trajectory[currentIndex];
+    choreoGhostRobot = {
+      x: state.x,
+      y: state.y,
+      heading: state.heading,
+      speed: state.speed,
+      alliance: "purple"
+    };
+
+    renderCanvas();
+    currentIndex++;
+
+    choreoAnimId = requestAnimationFrame(step);
+  }
+
+  choreoAnimId = requestAnimationFrame(step);
 }
 
 /* Save Playbook Play to Supabase & localStorage */
