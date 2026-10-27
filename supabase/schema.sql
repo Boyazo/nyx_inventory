@@ -6,10 +6,13 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null,
+  departments text[] not null default array['Mechanical']::text[],
   is_approved boolean not null default false,
   is_admin boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists departments text[] not null default array['Mechanical']::text[];
 
 -- 2. Inventory Items Table
 create table if not exists public.inventory_items (
@@ -126,13 +129,37 @@ create table if not exists public.spending_records (
 
 create index if not exists spending_records_order_date_idx on public.spending_records(order_date desc);
 
--- 8. Helper Functions & Triggers
+-- 8. Department Shifts & Calendar Table (Everyone Can Edit)
+create table if not exists public.team_shifts (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (length(trim(title)) > 0),
+  department text not null check (department in ('Mechanical', 'Electrical', 'Software', 'All Departments')),
+  shift_date date not null,
+  start_time text not null,
+  end_time text not null,
+  location text not null default 'Main Shop',
+  attendees text[] not null default array[]::text[],
+  notes text not null default '',
+  created_by uuid references auth.users(id),
+  created_by_name text not null default 'Team Member',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists team_shifts_date_idx on public.team_shifts(shift_date);
+create index if not exists team_shifts_department_idx on public.team_shifts(department);
+
+-- 9. Helper Functions & Triggers
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
 begin
-  insert into public.profiles(id,full_name)
-  values(new.id,coalesce(nullif(trim(new.raw_user_meta_data ->> 'full_name'),''),'Team Member'))
+  insert into public.profiles(id, full_name, departments)
+  values(
+    new.id,
+    coalesce(nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''), 'Team Member'),
+    array['Mechanical']::text[]
+  )
   on conflict(id) do nothing;
   return new;
 end;
@@ -168,7 +195,7 @@ drop trigger if exists inventory_items_updated_at on public.inventory_items;
 create trigger inventory_items_updated_at before update on public.inventory_items
 for each row execute procedure public.set_inventory_updated_at();
 
--- 9. Row Level Security Policies
+-- 10. Row Level Security Policies
 alter table public.profiles enable row level security;
 alter table public.inventory_items enable row level security;
 alter table public.tool_checkouts enable row level security;
@@ -176,14 +203,16 @@ alter table public.activity_logs enable row level security;
 alter table public.planner_tasks enable row level security;
 alter table public.parts_needed enable row level security;
 alter table public.spending_records enable row level security;
+alter table public.team_shifts enable row level security;
 
--- Profiles policies
+-- Profiles policies: users can read profiles, and edit their OWN name & departments!
 drop policy if exists "Members read own profile; admins read all" on public.profiles;
 create policy "Members read own profile; admins read all" on public.profiles
 for select to authenticated using(id=(select auth.uid()) or (select public.is_team_admin()));
 
 drop policy if exists "Members can update their own display name" on public.profiles;
-create policy "Members can update their own display name" on public.profiles
+drop policy if exists "Members can update their own profile" on public.profiles;
+create policy "Members can update their own profile" on public.profiles
 for update to authenticated using(id=(select auth.uid()))
 with check(id=(select auth.uid()));
 
@@ -292,7 +321,25 @@ drop policy if exists "Only admins can delete spending" on public.spending_recor
 create policy "Only admins can delete spending" on public.spending_records
 for delete to authenticated using((select public.is_team_admin()));
 
--- 10. Realtime configuration
+-- Team Shifts (EVERYONE approved can read, insert, update, delete)
+drop policy if exists "Approved members can read team shifts" on public.team_shifts;
+create policy "Approved members can read team shifts" on public.team_shifts
+for select to authenticated using((select public.is_approved_member()));
+
+drop policy if exists "Approved members can insert team shifts" on public.team_shifts;
+create policy "Approved members can insert team shifts" on public.team_shifts
+for insert to authenticated with check((select public.is_approved_member()));
+
+drop policy if exists "Approved members can update team shifts" on public.team_shifts;
+create policy "Approved members can update team shifts" on public.team_shifts
+for update to authenticated using((select public.is_approved_member()))
+with check((select public.is_approved_member()));
+
+drop policy if exists "Approved members can delete team shifts" on public.team_shifts;
+create policy "Approved members can delete team shifts" on public.team_shifts
+for delete to authenticated using((select public.is_approved_member()));
+
+-- 11. Realtime configuration
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -313,6 +360,9 @@ begin
     end if;
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'spending_records') then
       execute 'alter publication supabase_realtime add table public.spending_records';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'team_shifts') then
+      execute 'alter publication supabase_realtime add table public.team_shifts';
     end if;
   end if;
 end
