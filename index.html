@@ -1121,6 +1121,10 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
         <span class="sidebar-icon">🎯</span>
         <span class="sidebar-label">Strategy & Scouting</span>
       </button>
+      <button class="sidebar-link hidden" id="sidebar-btn-secrets" data-page="secrets" type="button" style="color:#f43f5e; border-color:rgba(244, 63, 94, 0.2);">
+        <span class="sidebar-icon">🕵️</span>
+        <span class="sidebar-label">Secret Intel</span>
+      </button>
     </nav>
 
     <div class="sidebar-section-title">FRC REBUILT 2026</div>
@@ -2149,6 +2153,91 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     </section>
   </main>
 
+  <!-- ========================================================================
+       PAGE 3: SECRET INTEL (CONFIDENTIAL SCOUTING FOR SECRET ADMINS)
+       ======================================================================== -->
+  <main id="secrets-screen" class="main-content hidden">
+    <section class="welcome" style="border-left: 4px solid #f43f5e; background: linear-gradient(135deg, rgba(244, 63, 94, 0.08), transparent);">
+      <div>
+        <span class="eyebrow" style="color:#f43f5e;">TOP SECRET / EYES ONLY</span>
+        <h1>Secret <em>Intelligence.</em></h1>
+        <p class="slogan-motto" style="color:#fb7185;">“Born in the dark, built to dominate.”</p>
+        <p class="muted">Confidential personnel and team intelligence dossier. Only visible to verified Secret Role admins.</p>
+      </div>
+
+      <div class="user-controls-block">
+        <span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-weight:700;">CLASSIFIED ACCESS</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div>
+          <h2>Personnel & Tactical Intel Dossier</h2>
+          <p class="muted small">Record scouting observations on key team personnel, drivers, strategists, programmers, and their team responsibilities.</p>
+        </div>
+      </div>
+
+      <div style="padding: 20px; max-width: 840px; margin: auto;">
+        <!-- Add Secret Intel Form -->
+        <div class="card" style="border: 1px solid rgba(244, 63, 94, 0.4); background: rgba(244, 63, 94, 0.03); margin-bottom: 24px;">
+          <h3 style="margin-top:0; color:#f43f5e; display:flex; align-items:center; gap:8px;">
+            <span>🕵️</span> Log New Person / Team Dossier
+          </h3>
+
+          <form id="secret-scout-form">
+            <div style="display:grid; grid-template-columns: 140px 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label for="secret-team-num">Team Number *</label>
+                <input type="number" id="secret-team-num" placeholder="e.g. 254" min="1" max="10000" required>
+              </div>
+              <div>
+                <label for="secret-team-name">Team Name</label>
+                <input type="text" id="secret-team-name" placeholder="e.g. The Cheesy Poofs">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label for="secret-person-name">Target Person's Name *</label>
+                <input type="text" id="secret-person-name" placeholder="e.g. Lead Driver, Head Strategist, Mentor..." required>
+              </div>
+              <div>
+                <label for="secret-person-role">Primary Role / What They Do *</label>
+                <input type="text" id="secret-person-role" placeholder="e.g. Main Driver, Operator, Auton Programmer, Drive Coach" required>
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label for="secret-person-intel">What they do for the team / Tactical Intelligence *</label>
+              <textarea id="secret-person-intel" rows="3" placeholder="Detailed intel: habits under pressure, defense reaction, autonomous routines they wrote, human player tendencies, drive signals..." required></textarea>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="muted small" style="color:#fb7185;">🔒 Saved strictly to Secret Admin clearance</span>
+              <button type="submit" class="btn" style="background:#f43f5e; border-color:#f43f5e; color:#ffffff;" id="save-secret-btn">💾 Log Secret Intel</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Secret Intel List -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div>
+              <span class="eyebrow" style="color:#f43f5e;">CONFIDENTIAL DOSSIERS</span>
+              <h3 style="margin:0;">Classified Personnel Database (<span id="secret-dossier-count">0</span>)</h3>
+            </div>
+            <input type="search" id="secret-search-input" placeholder="⌕ Search intel..." style="width:200px; font-size:13px;">
+          </div>
+
+          <div id="secret-intel-list">
+            <div style="padding:40px; text-align:center;" class="muted">No classified dossiers logged yet. Use the form above to log observations.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
   <!-- MODAL: USER PROFILE & DEPARTMENTS -->
   <div id="profile-modal" class="modalback hidden">
     <div class="modal">
@@ -2750,8 +2839,8 @@ function authMode(mode) {
   $("#auth-message").classList.add("hidden");
 }
 
-let currentAppPage = "dashboard"; // "dashboard" or "strategy"
-let currentStratTab = "playbook"; // "playbook", "rankings", "simulator", "lookup"
+let currentAppPage = "dashboard"; // "dashboard", "strategy", or "secrets"
+let currentStratTab = "playbook"; // "playbook", "rankings", "scouting", "simulator", "lookup"
 
 function screens(which) {
   const isWorkspace = which === "inventory";
@@ -2765,15 +2854,24 @@ function screens(which) {
   } else {
     $("#inventory-screen")?.classList.add("hidden");
     $("#strategy-screen")?.classList.add("hidden");
+    $("#secrets-screen")?.classList.add("hidden");
   }
 }
 
 function switchPage(pageName) {
+  // Guard secrets page
+  if (pageName === "secrets" && (!currentProfile?.is_admin || !currentProfile?.is_secret)) {
+    toast("Restricted Area: Secret Admin Role required.", true);
+    pageName = "dashboard";
+  }
+
   currentAppPage = pageName;
   $("#sidebar-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#sidebar-btn-strategy")?.classList.toggle("active", pageName === "strategy");
+  $("#sidebar-btn-secrets")?.classList.toggle("active", pageName === "secrets");
   $("#inventory-screen")?.classList.toggle("hidden", pageName !== "dashboard");
   $("#strategy-screen")?.classList.toggle("hidden", pageName !== "strategy");
+  $("#secrets-screen")?.classList.toggle("hidden", pageName !== "secrets");
 
   // Close mobile sidebar drawer if open
   $("#app-sidebar")?.classList.remove("open");
@@ -2781,6 +2879,8 @@ function switchPage(pageName) {
 
   if (pageName === "strategy") {
     initStrategyCenter();
+  } else if (pageName === "secrets") {
+    initSecretsCenter();
   }
 }
 
@@ -2843,7 +2943,7 @@ async function signOut() {
 async function checkUser(user) {
   currentUser = user;
   const { data, error } = await supabase.from("profiles")
-    .select("id, full_name, departments, is_approved, is_admin")
+    .select("id, full_name, departments, is_approved, is_admin, is_secret")
     .eq("id", user.id)
     .single();
 
@@ -2863,15 +2963,16 @@ async function checkUser(user) {
   screens("inventory");
   const name = data.full_name || user.email || "Team Member";
   const depts = (data.departments && data.departments.length) ? data.departments.join(" · ").toUpperCase() : "GENERAL";
+  const roleLabel = data.is_secret ? "SECRET ADMIN" : data.is_admin ? "ADMIN" : "MEMBER";
   const elName = $("#profile-name"); if (elName) elName.textContent = name;
   const elAvatar = $("#profile-avatar"); if (elAvatar) elAvatar.textContent = name.trim().charAt(0).toUpperCase();
-  const elRole = $("#profile-role"); if (elRole) elRole.textContent = `${depts} · ${data.is_admin ? "ADMIN" : "MEMBER"}`;
+  const elRole = $("#profile-role"); if (elRole) elRole.textContent = `${depts} · ${roleLabel}`;
 
   const elSideName = $("#sidebar-username"); if (elSideName) elSideName.textContent = name;
   const elSideAvatar = $("#sidebar-avatar"); if (elSideAvatar) elSideAvatar.textContent = name.trim().charAt(0).toUpperCase();
-  const elSideDept = $("#sidebar-userdept"); if (elSideDept) elSideDept.textContent = `${depts} · ${data.is_admin ? "ADMIN" : "MEMBER"}`;
+  const elSideDept = $("#sidebar-userdept"); if (elSideDept) elSideDept.textContent = `${depts} · ${roleLabel}`;
 
-  // Admin visibility controls
+  // Admin & Secret visibility controls
   const elAddItm = $("#add-item-button"); if (elAddItm) elAddItm.classList.toggle("hidden", !data.is_admin);
   const elAddPn = $("#add-part-needed-btn"); if (elAddPn) elAddPn.classList.toggle("hidden", !data.is_admin);
   const elAddTsk = $("#add-task-btn"); if (elAddTsk) elAddTsk.classList.toggle("hidden", !data.is_admin);
@@ -2879,11 +2980,15 @@ async function checkUser(user) {
   const elTabSpend = $("#tab-spending"); if (elTabSpend) elTabSpend.classList.toggle("hidden", !data.is_admin);
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
+  const elSecretSideBtn = $("#sidebar-btn-secrets"); if (elSecretSideBtn) elSecretSideBtn.classList.toggle("hidden", !(data.is_admin && data.is_secret));
 
   await Promise.all([loadItems(), loadCheckouts(), loadTasks(), loadPartsNeeded(), loadShifts()]);
 
   if (data.is_admin) {
     await Promise.all([loadMembers(), loadSpending()]);
+  }
+  if (data.is_admin && data.is_secret) {
+    loadSecretIntel();
   }
 
   // Subscribe to realtime changes
@@ -3441,7 +3546,7 @@ function renderSpending() {
 async function loadMembers() {
   if (!supabase || !currentProfile?.is_admin) return;
   const list = $("#admin-members-list");
-  const { data, error } = await supabase.from("profiles").select("id, full_name, departments, is_approved, is_admin, created_at").order("created_at");
+  const { data, error } = await supabase.from("profiles").select("id, full_name, departments, is_approved, is_admin, is_secret, created_at").order("created_at");
   if (error) {
     if (list) list.innerHTML = `<div style="padding:20px;" class="muted">Could not load members: ${esc(error.message)}</div>`;
     return;
@@ -3473,16 +3578,28 @@ async function loadMembers() {
   html += '<div style="padding:14px 20px; background:rgba(255,255,255,.02); font-weight:700; font-size:12px; border-bottom:1px solid var(--line);">APPROVED TEAM MEMBERS (' + active.length + ')</div>';
   html += active.map(p => {
     const depts = (p.departments && p.departments.length) ? p.departments.join(", ") : "Mechanical";
+    const isSecretAdmin = !!p.is_secret;
     return `
       <div class="itemrow" style="grid-template-columns: 2fr 1.5fr auto;">
         <div>
-          <b>${esc(p.full_name)}</b> ${p.is_admin ? '<span class="pill" style="border-color:var(--accent-bright); color:var(--accent-bright)">Admin</span>' : ''}
+          <b>${esc(p.full_name)}</b>
+          ${p.is_admin ? '<span class="pill" style="border-color:var(--accent-bright); color:var(--accent-bright); font-size:10px;">Admin</span>' : ''}
+          ${isSecretAdmin ? '<span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-size:10px;">🕵️ Secret</span>' : ''}
           <div class="muted small mono">${depts} ${p.id === currentUser.id ? '· (You)' : ''}</div>
         </div>
-        <span class="muted small mono">Approved</span>
+        <div>
+          <span class="muted small mono">Approved</span>
+          ${currentProfile?.is_admin ? `
+            <div style="margin-top:4px;">
+              <button class="btn btn--ghost btn--sm" data-action="toggle-secret-role" data-id="${p.id}" data-name="${esc(p.full_name)}" data-secret="${isSecretAdmin ? 'true' : 'false'}" style="padding:3px 8px; font-size:10px; color:${isSecretAdmin ? '#f43f5e' : 'var(--text-muted)'};">
+                ${isSecretAdmin ? 'Remove Secret Role' : 'Grant Secret Role 🕵️'}
+              </button>
+            </div>
+          ` : ''}
+        </div>
         <div>
           ${p.id !== currentUser.id ? `
-            <button class="btn btn--danger btn--sm" data-action="revoke-member" data-id="${p.id}" data-name="${esc(p.full_name)}">Revoke Access</button>
+            <button class="btn btn--danger btn--sm" data-action="revoke-member" data-id="${p.id}" data-name="${esc(p.full_name)}">Revoke</button>
           ` : ''}
         </div>
       </div>
@@ -4497,15 +4614,33 @@ $("#admin-members-list").addEventListener("click", async e => {
   if (!b) return;
   const id = b.dataset.id;
   const name = b.dataset.name;
-  const approve = b.dataset.action === "approve-member";
+  const action = b.dataset.action;
 
-  const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("id", id);
-  if (error) {
-    toast("Member update failed: " + error.message, true);
-  } else {
-    await logAction(approve ? "MEMBER_APPROVED" : "MEMBER_REVOKED", "profiles", id, { member_name: name });
-    await loadMembers();
-    toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
+  if (action === "approve-member" || action === "revoke-member") {
+    const approve = action === "approve-member";
+    const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("id", id);
+    if (error) {
+      toast("Member update failed: " + error.message, true);
+    } else {
+      await logAction(approve ? "MEMBER_APPROVED" : "MEMBER_REVOKED", "profiles", id, { member_name: name });
+      await loadMembers();
+      toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
+    }
+  } else if (action === "toggle-secret-role") {
+    const currentSecret = b.dataset.secret === "true";
+    const newSecret = !currentSecret;
+    const { error } = await supabase.from("profiles").update({ is_secret: newSecret, is_admin: true }).eq("id", id);
+    if (error) {
+      toast("Secret role update failed: " + error.message, true);
+    } else {
+      await logAction("SECRET_ROLE_UPDATED", "profiles", id, { member_name: name, is_secret: newSecret });
+      await loadMembers();
+      toast(newSecret ? `Granted Secret Role to ${name}! 🕵️` : `Removed Secret Role from ${name}.`);
+      if (id === currentUser?.id) {
+        currentProfile.is_secret = newSecret;
+        $("#sidebar-btn-secrets")?.classList.toggle("hidden", !newSecret);
+      }
+    }
   }
 });
 
@@ -4722,12 +4857,12 @@ async function syncStatboticsData() {
    TACTICAL FIELD PLAYBOOK (CANVAS)
    -------------------------------------------------------------------------- */
 function drawField(ctx, width, height) {
-  // Background field mat
-  ctx.fillStyle = "#0c0e18";
+  // Field carpet mat - clean high contrast white/light gray like official FRC diagram
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  // Field carpet grid
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.035)";
+  // Field carpet subtle grid
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
   ctx.lineWidth = 1;
   const gridSize = 40;
   for (let x = 0; x < width; x += gridSize) {
@@ -4737,241 +4872,252 @@ function drawField(ctx, width, height) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
   }
 
-  // Field perimeter walls
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  // Field Black Perimeter Border
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(12, 12, width - 24, height - 24);
+
+  // Center Line (Vertical Gray Divider)
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(width / 2, 12); ctx.lineTo(width / 2, height - 12); ctx.stroke();
+
+  // Auto Line - Red Alliance
+  ctx.strokeStyle = "#dc2626";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(width * 0.31, 12); ctx.lineTo(width * 0.31, height - 12); ctx.stroke();
+  // Auto Line - Blue Alliance
+  ctx.strokeStyle = "#2563eb";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(width * 0.69, 12); ctx.lineTo(width * 0.69, height - 12); ctx.stroke();
+
+  // Driver Station Player Area Extensions (Beyond perimeter walls)
+  // Red side extension lines
+  ctx.strokeStyle = "#dc2626";
   ctx.lineWidth = 3;
-  ctx.strokeRect(10, 10, width - 20, height - 20);
+  ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(12, 12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12, height - 12); ctx.lineTo(12, height); ctx.stroke();
+  // Blue side extension lines
+  ctx.strokeStyle = "#2563eb";
+  ctx.beginPath(); ctx.moveTo(width - 12, 0); ctx.lineTo(width - 12, 12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(width - 12, height - 12); ctx.lineTo(width - 12, height); ctx.stroke();
 
-  // Top Scoring Table (Border Zone)
-  ctx.fillStyle = "#161824";
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  // 1. CENTER FUEL STACK (Yellow Fuel Matrix in Center Field)
+  const centerW = 76, centerH = 170;
+  const cx = width / 2 - centerW / 2;
+  const cy = height / 2 - centerH / 2;
+  // Border dashed
+  ctx.strokeStyle = "rgba(202, 138, 4, 0.4)";
   ctx.lineWidth = 1.5;
-  ctx.fillRect(width / 2 - 130, 10, 260, 28);
-  ctx.strokeRect(width / 2 - 130, 10, 260, 28);
-  ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 10px JetBrains Mono, monospace";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("◀ SCORING TABLE ▶", width / 2, 24);
+  ctx.strokeRect(cx, cy, centerW, centerH);
 
-  // Blue Alliance Zone (Right side in official match view, Left side for whiteboard orientation)
-  const gradBlue = ctx.createLinearGradient(width - 10, 0, width - 300, 0);
-  gradBlue.addColorStop(0, "rgba(59, 130, 246, 0.16)");
-  gradBlue.addColorStop(1, "transparent");
-  ctx.fillStyle = gradBlue;
-  ctx.fillRect(width - 300, 10, 290, height - 20);
+  // Center dividing line between upper/lower fuel matrix
+  ctx.beginPath(); ctx.moveTo(cx, height / 2); ctx.lineTo(cx + centerW, height / 2); ctx.stroke();
 
-  // Red Alliance Zone (Left side)
-  const gradRed = ctx.createLinearGradient(10, 0, 300, 0);
-  gradRed.addColorStop(0, "rgba(239, 68, 68, 0.16)");
-  gradRed.addColorStop(1, "transparent");
-  ctx.fillStyle = gradRed;
-  ctx.fillRect(10, 10, 290, height - 20);
-
-  // Auto Starting Lines
-  ctx.strokeStyle = "rgba(248, 113, 113, 0.6)";
-  ctx.setLineDash([8, 6]);
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(170, 10); ctx.lineTo(170, height - 10); ctx.stroke();
-
-  ctx.strokeStyle = "rgba(96, 165, 250, 0.6)";
-  ctx.beginPath(); ctx.moveTo(width - 170, 10); ctx.lineTo(width - 170, height - 10); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Field Center Divider Line
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(width / 2, 10); ctx.lineTo(width / 2, height - 10); ctx.stroke();
-
-  // Watermark
-  ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
-  ctx.font = "bold 24px Space Grotesk, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("2026 FIRST REBUILT — OFFICIAL FIELD LAYOUT", width / 2, height / 2 - 140);
-
-  // Center Fuel Carpet Stacks (Yellow fuel array)
-  ctx.fillStyle = "rgba(234, 179, 8, 0.18)";
-  ctx.strokeStyle = "rgba(234, 179, 8, 0.5)";
-  ctx.lineWidth = 1.5;
-  ctx.fillRect(width / 2 - 50, height / 2 - 40, 100, 80);
-  ctx.strokeRect(width / 2 - 50, height / 2 - 40, 100, 80);
-  // Grid of fuel dots inside
-  ctx.fillStyle = "#facc15";
-  for (let fx = width / 2 - 40; fx <= width / 2 + 40; fx += 16) {
-    for (let fy = height / 2 - 30; fy <= height / 2 + 30; fy += 15) {
+  // Draw fuel ball matrix
+  ctx.fillStyle = "#eab308";
+  ctx.strokeStyle = "#ca8a04";
+  ctx.lineWidth = 1;
+  const cols = 6;
+  const rows = 16;
+  const stepX = centerW / (cols + 1);
+  const stepY = centerH / (rows + 1);
+  for (let c = 1; c <= cols; c++) {
+    for (let r = 1; r <= rows; r++) {
+      const bx = cx + c * stepX;
+      const by = cy + r * stepY;
       ctx.beginPath();
-      ctx.arc(fx, fy, 4, 0, Math.PI * 2);
+      ctx.arc(bx, by, 3.8, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
     }
   }
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 9px JetBrains Mono";
-  ctx.textAlign = "center";
-  ctx.fillText("CENTER FUEL DEPOT", width / 2, height / 2 + 52);
 
-  // 1. TOWERS (Climbing Truss on Driver Station Walls)
-  function drawTowerStructure(x, y, color, label) {
+  // 2. CORNER FUEL HOPPERS / DEPOTS (From official diagram)
+  function drawFuelDepotBox(x, y, isRed) {
     ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = color === "red" ? "rgba(239, 68, 68, 0.25)" : "rgba(59, 130, 246, 0.25)";
-    ctx.strokeStyle = color === "red" ? "#ef4444" : "#3b82f6";
-    ctx.lineWidth = 2.5;
-
-    // Truss uprights
-    ctx.strokeRect(-18, -48, 36, 96);
-    ctx.fillRect(-18, -48, 36, 96);
-
-    // Levels L1, L2, L3 rungs
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
-    [-24, 0, 24].forEach((pos, idx) => {
-      ctx.beginPath();
-      ctx.moveTo(-18, pos);
-      ctx.lineTo(18, pos);
-      ctx.stroke();
-    });
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 9px JetBrains Mono";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("TOWER", 0, -2);
-    ctx.font = "bold 8px JetBrains Mono";
-    ctx.fillStyle = color === "red" ? "#fca5a5" : "#93c5fd";
-    ctx.fillText(label, 0, 12);
+    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.lineWidth = 3;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillRect(x, y, 32, 42);
+    ctx.strokeRect(x, y, 32, 42);
+    // Draw fuel inside
+    ctx.fillStyle = "#eab308";
+    ctx.strokeStyle = "#ca8a04";
+    ctx.lineWidth = 1;
+    for (let c = 0; c < 3; c++) {
+      for (let r = 0; r < 4; r++) {
+        ctx.beginPath();
+        ctx.arc(x + 6 + c * 10, y + 6 + r * 10, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
     ctx.restore();
   }
 
-  // Red Tower (driver wall area)
-  drawTowerStructure(140, height / 2 - 45, "red", "RED TOWER");
-  // Blue Tower
-  drawTowerStructure(width - 140, height / 2 + 45, "blue", "BLUE TOWER");
+  // Red Left Wall Fuel Depot (Upper Left)
+  drawFuelDepotBox(12, 105, true);
+  // Red Outside Driver Station Bottom Fuel (Bottom Left)
+  drawFuelDepotBox(-22, height - 54, true);
 
-  // 2. HUBS with RAMPS, BUMPS, and TRENCHES
-  function drawHubUnit(cx, cy, color, isRed) {
-    ctx.save();
-    ctx.translate(cx, cy);
+  // Blue Right Wall Fuel Depot (Lower Right)
+  drawFuelDepotBox(width - 44, height - 147, false);
+  // Blue Outside Driver Station Top Fuel (Top Right)
+  drawFuelDepotBox(width - 10, 14, false);
 
-    // HUB STRUCTURE
-    ctx.fillStyle = isRed ? "#7f1d1d" : "#1e3a8a";
-    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
-    ctx.lineWidth = 3;
-    ctx.fillRect(-35, -35, 70, 70);
-    ctx.strokeRect(-35, -35, 70, 70);
-
-    // Upper Funnel Opening
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
-    ctx.fillStyle = isRed ? "#991b1b" : "#1e40af";
-    ctx.fill();
-    ctx.strokeStyle = "#facc15";
+  // 3. DRIVER STATIONS & TOWER CLIMBERS (Black Box Structures on Walls)
+  function drawTowerWallBase(x, y, isRed) {
+    ctx.fillStyle = "#262626";
+    ctx.fillRect(x, y, 48, 56);
+    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
     ctx.lineWidth = 2.5;
-    ctx.stroke();
+    ctx.strokeRect(x, y, 48, 56);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 9px JetBrains Mono";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("HUB", 0, -4);
-    ctx.font = "bold 8px JetBrains Mono";
-    ctx.fillStyle = "#facc15";
-    ctx.fillText("FUEL", 0, 8);
-
-    // BUMP (Angled Field Ramp on Lower Side)
-    ctx.fillStyle = isRed ? "rgba(239, 68, 68, 0.45)" : "rgba(59, 130, 246, 0.45)";
-    ctx.strokeStyle = isRed ? "#f87171" : "#60a5fa";
+    // Diagonal truss lines
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(-55, 35);
-    ctx.lineTo(55, 35);
-    ctx.lineTo(40, 75);
-    ctx.lineTo(-40, 75);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(x, y); ctx.lineTo(x + 48, y + 56);
+    ctx.moveTo(x + 48, y); ctx.lineTo(x, y + 56);
     ctx.stroke();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 8px JetBrains Mono";
-    ctx.fillText("BUMP (RAMP)", 0, 55);
 
-    // TRENCH (Low Obstacle Passage on Upper Side)
-    ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
-    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("TOWER", x + 24, y + 28);
+  }
+
+  // Red driver wall tower base (Mid-left)
+  drawTowerWallBase(12, height / 2 - 28, true);
+  // Blue driver wall tower base (Mid-right)
+  drawTowerWallBase(width - 60, height / 2 - 28, false);
+
+  // Driver Station ID labels
+  ctx.font = "bold 11px JetBrains Mono";
+  ctx.fillStyle = "#dc2626";
+  ctx.textAlign = "left";
+  ctx.fillText("R1", 18, 65);
+  ctx.fillText("R2", 18, 165);
+  ctx.fillText("R3", 18, height - 95);
+
+  ctx.fillStyle = "#2563eb";
+  ctx.textAlign = "right";
+  ctx.fillText("B3", width - 18, 145);
+  ctx.fillText("B2", width - 18, height - 165);
+  ctx.fillText("B1", width - 18, height - 65);
+
+  // 4. VERTICAL FIELD STRUCTURES (BUMPS, HUBS, TRENCHES)
+  function drawRebuiltFieldStructure(cx, isRed) {
+    ctx.save();
+    const color = isRed ? "#b91c1c" : "#1d4ed8";
+    const lightColor = isRed ? "#f87171" : "#60a5fa";
+    const topTrenchX = cx;
+
+    // Full Vertical Structure Runway (Bump & Trench Platform)
+    ctx.fillStyle = color;
+    ctx.fillRect(cx - 26, 95, 52, height - 190);
+    ctx.strokeStyle = isRed ? "#991b1b" : "#1e40af";
     ctx.lineWidth = 2;
+    ctx.strokeRect(cx - 26, 95, 52, height - 190);
+
+    // Top & Bottom Outrigger Guide Rails extending beyond field perimeter
+    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.lineWidth = 4;
+    // Top extension
     ctx.beginPath();
-    ctx.moveTo(-45, -35);
-    ctx.lineTo(45, -35);
-    ctx.lineTo(58, -65);
-    ctx.lineTo(-58, -65);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, 95);
     ctx.stroke();
-    ctx.fillStyle = isRed ? "#fca5a5" : "#93c5fd";
-    ctx.fillText("TRENCH", 0, -50);
+    // Bottom extension
+    ctx.beginPath();
+    ctx.moveTo(cx, height - 95);
+    ctx.lineTo(cx, height);
+    ctx.stroke();
+
+    // Bottom Catch / Cradle Ring
+    ctx.beginPath();
+    ctx.arc(cx, height - 95, 9, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Top Notch / Entry Guide
+    ctx.fillStyle = isRed ? "#7f1d1d" : "#1e3a8a";
+    ctx.fillRect(cx - 26, 95, 52, 14);
+
+    // Labels for Trench & Bump
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.fillText("TRENCH", cx, 125);
+    ctx.fillText("BUMP", cx, height - 120);
+
+    // CENTRAL HUB UNIT (Hexagonal Upper Funnel with Lower Collector Catch Basin)
+    const hy = height / 2;
+
+    // Outer transparent catch ring
+    ctx.strokeStyle = "rgba(100, 116, 139, 0.7)";
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(cx - 36, hy - 36, 72, 72);
+
+    // Outer Hexagon
+    ctx.beginPath();
+    const rOuter = 28;
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const hx = cx + rOuter * Math.cos(angle);
+      const h_y = hy + rOuter * Math.sin(angle);
+      if (i === 0) ctx.moveTo(hx, h_y);
+      else ctx.lineTo(hx, h_y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "rgba(241, 245, 249, 0.85)";
+    ctx.fill();
+    ctx.strokeStyle = isRed ? "#dc2626" : "#2563eb";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Inner Hexagon Target (Dark Charcoal Opening)
+    ctx.beginPath();
+    const rInner = 16;
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const hx = cx + rInner * Math.cos(angle);
+      const h_y = hy + rInner * Math.sin(angle);
+      if (i === 0) ctx.moveTo(hx, h_y);
+      else ctx.lineTo(hx, h_y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "#1e293b";
+    ctx.fill();
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Center Hub Text
+    ctx.fillStyle = "#facc15";
+    ctx.font = "bold 8px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("HUB", cx, hy);
 
     ctx.restore();
   }
 
-  // Red Hub (Left-Center)
-  drawHubUnit(width / 2 - 130, height / 2, "red", true);
-  // Blue Hub (Right-Center)
-  drawHubUnit(width / 2 + 130, height / 2, "blue", false);
+  // Red Side Vertical Structure (Left)
+  drawRebuiltFieldStructure(width * 0.33, true);
+  // Blue Side Vertical Structure (Right)
+  drawRebuiltFieldStructure(width * 0.67, false);
 
-  // 3. HUMAN PLAYER DEPOTS (Corner Fuel Stations)
-  function drawCornerDepot(x, y, label, isRed) {
-    ctx.fillStyle = isRed ? "rgba(239, 68, 68, 0.22)" : "rgba(59, 130, 246, 0.22)";
-    ctx.strokeStyle = isRed ? "#f87171" : "#60a5fa";
-    ctx.lineWidth = 2;
-    ctx.fillRect(x, y, 78, 36);
-    ctx.strokeRect(x, y, 78, 36);
-
-    // Fuel dots inside depot
-    ctx.fillStyle = "#facc15";
-    ctx.beginPath();
-    ctx.arc(x + 14, y + 18, 4, 0, Math.PI * 2);
-    ctx.arc(x + 24, y + 18, 4, 0, Math.PI * 2);
-    ctx.arc(x + 34, y + 18, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 8px JetBrains Mono";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillText(label, x + 42, y + 18);
-  }
-
-  // Red corner depots
-  drawCornerDepot(14, 14, "DEPOT", true);
-  drawCornerDepot(14, height - 50, "DEPOT", true);
-  // Blue corner depots
-  drawCornerDepot(width - 92, 14, "DEPOT", false);
-  drawCornerDepot(width - 92, height - 50, "DEPOT", false);
-
-  // 4. OUTPOSTS (Midfield Driver/Human Station Portals)
-  function drawOutpost(x, y, label, isRed) {
-    ctx.fillStyle = isRed ? "rgba(239, 68, 68, 0.28)" : "rgba(59, 130, 246, 0.28)";
-    ctx.strokeStyle = isRed ? "#ef4444" : "#3b82f6";
-    ctx.lineWidth = 2;
-    ctx.fillRect(x, y, 68, 28);
-    ctx.strokeRect(x, y, 68, 28);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 8px JetBrains Mono";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(label, x + 34, y + 14);
-  }
-
-  drawOutpost(14, height / 2 - 14, "OUTPOST", true);
-  drawOutpost(width - 82, height / 2 - 14, "OUTPOST", false);
-
-  // Alliance Labels
-  ctx.fillStyle = "rgba(248, 113, 113, 0.7)";
-  ctx.font = "bold 11px JetBrains Mono";
-  ctx.textAlign = "left";
-  ctx.fillText("RED ALLIANCE TERRITORY", 20, height / 2 - 95);
-
-  ctx.fillStyle = "rgba(96, 165, 250, 0.7)";
-  ctx.textAlign = "right";
-  ctx.fillText("BLUE ALLIANCE TERRITORY", width - 20, height / 2 - 95);
+  // Field Watermark
+  ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+  ctx.font = "bold 20px Space Grotesk, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("2026 FIRST REBUILT — OFFICIAL COMPETITION FIELD", width / 2, 42);
 }
 
 function drawArrowHead(ctx, fromX, fromY, toX, toY, color, width) {
@@ -6114,7 +6260,9 @@ function renderScoutingRecords() {
     return;
   }
 
-  list.innerHTML = scoutingRecords.map(r => `
+  list.innerHTML = scoutingRecords.map(r => {
+    const isAdmin = !!currentProfile?.is_admin;
+    return `
     <article class="itemrow" style="grid-template-columns: 70px 70px 80px 80px 85px 80px 70px 80px 1fr 60px;">
       <div class="mono" style="font-weight:700;">${r.match_type?.toUpperCase() || 'Q'}${r.match_num}</div>
       <div>
@@ -6136,24 +6284,31 @@ function renderScoutingRecords() {
         ${esc(r.notes || '—')}
       </div>
       <div>
-        <button class="btn btn--danger btn--sm" data-action="delete-scout-log" data-id="${r.id}" style="padding:4px 8px; font-size:11px;">✕</button>
+        ${isAdmin ? `
+          <button class="btn btn--danger btn--sm" data-action="delete-scout-log" data-id="${r.id}" style="padding:4px 8px; font-size:11px;" title="Delete match log (Admin only)">✕</button>
+        ` : '<span class="muted small mono">—</span>'}
       </div>
     </article>
-  `).join("");
+    `;
+  }).join("");
 }
 
-// Delete scout record
+// Delete scout record (Restricted to Admins)
 $("#scout-records-list")?.addEventListener("click", async e => {
   const btn = e.target.closest("button[data-action='delete-scout-log']");
   if (!btn) return;
+  if (!currentProfile?.is_admin) {
+    toast("Permission Denied: Only team admins can delete scouting logs.", true);
+    return;
+  }
   const id = btn.dataset.id;
   if (!id) return;
 
-  if (confirm("Delete this scouting record?")) {
+  if (confirm("Delete this scouting record? This action will update team ranking stats.")) {
     scoutingRecords = scoutingRecords.filter(r => r.id !== id);
     try { localStorage.setItem("nyx_scouting_records", JSON.stringify(scoutingRecords)); } catch (e) {}
     if (supabase) {
-      supabase.from("match_scouting_logs").delete().eq("id", id).catch(() => {});
+      await supabase.from("match_scouting_logs").delete().eq("id", id).catch(() => {});
     }
     incorporateScoutingIntoRankings();
     renderScoutingRecords();
@@ -6185,9 +6340,183 @@ function exportScoutingCSV() {
   toast("Exported scouting CSV!");
 }
 
+/* --------------------------------------------------------------------------
+   SECRET INTEL SYSTEM (RESTRICTED TO SECRET ROLE ADMINS)
+   -------------------------------------------------------------------------- */
+let secretDossiers = [];
+
+function initSecretsCenter() {
+  if (!currentProfile?.is_admin || !currentProfile?.is_secret) {
+    toast("Restricted access: Secret Admin clearance required.", true);
+    return;
+  }
+  loadSecretIntel();
+  setupSecretsEvents();
+}
+
+function loadSecretIntel() {
+  try {
+    const raw = localStorage.getItem("nyx_secret_intel");
+    if (raw) secretDossiers = JSON.parse(raw);
+  } catch (err) {
+    secretDossiers = [];
+  }
+  renderSecretIntel();
+
+  // Load from Supabase if table exists
+  if (supabase && currentUser) {
+    supabase.from("secret_personnel_intel")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data && data.length) {
+          const localIds = new Set(secretDossiers.map(d => d.id));
+          let changed = false;
+          data.forEach(rem => {
+            if (!localIds.has(rem.id)) {
+              secretDossiers.push(rem);
+              changed = true;
+            }
+          });
+          if (changed) {
+            try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers.slice(0, 100))); } catch (e) {}
+            renderSecretIntel();
+          }
+        }
+      })
+      .catch(() => {});
+  }
+}
+
+function renderSecretIntel() {
+  const list = $("#secret-intel-list");
+  const countBadge = $("#secret-dossier-count");
+  if (countBadge) countBadge.textContent = secretDossiers.length;
+  if (!list) return;
+
+  const q = ($("#secret-search-input")?.value || "").toLowerCase().trim();
+  const filtered = secretDossiers.filter(d => {
+    if (!q) return true;
+    return (
+      String(d.team_num).includes(q) ||
+      (d.team_name || "").toLowerCase().includes(q) ||
+      (d.person_name || "").toLowerCase().includes(q) ||
+      (d.person_role || "").toLowerCase().includes(q) ||
+      (d.intel_notes || "").toLowerCase().includes(q)
+    );
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:40px; text-align:center;" class="muted">${secretDossiers.length === 0 ? 'No classified dossiers logged yet. Use the form above to log observations.' : 'No dossiers match your search filter.'}</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(d => `
+    <article class="card" style="border: 1px solid rgba(244, 63, 94, 0.35); background: rgba(244, 63, 94, 0.02); margin-bottom: 14px; padding: 16px 18px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="color:#f43f5e; font-size:16px;">Team ${d.team_num}</strong>
+            ${d.team_name ? `<span class="muted small">· ${esc(d.team_name)}</span>` : ''}
+            <span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-size:10px;">CONFIDENTIAL</span>
+          </div>
+          <h3 style="margin:4px 0 2px; font-size:17px; color:var(--text);">${esc(d.person_name)}</h3>
+          <span class="mono small" style="color:var(--accent-bright); font-weight:700;">Role: ${esc(d.person_role)}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="muted small mono">${new Date(d.created_at).toLocaleDateString()}</span>
+          <button class="btn btn--danger btn--sm" data-action="delete-secret-dossier" data-id="${d.id}" style="padding:4px 8px; font-size:11px;">✕</button>
+        </div>
+      </div>
+
+      <div style="padding: 10px 14px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); font-size: 13.5px; line-height: 1.5; color: var(--text);">
+        ${esc(d.intel_notes)}
+      </div>
+
+      <div style="margin-top: 8px; display:flex; justify-content:space-between; font-size:11px;" class="muted mono">
+        <span>Logged by: ${esc(d.logged_by_name || 'Secret Admin')}</span>
+        <span>ID: ${d.id.slice(0, 10)}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+function setupSecretsEvents() {
+  $("#secret-scout-form")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!currentProfile?.is_admin || !currentProfile?.is_secret) {
+      toast("Access Denied: Secret clearance required.", true);
+      return;
+    }
+
+    const teamNum = parseInt($("#secret-team-num")?.value, 10);
+    const teamName = $("#secret-team-name")?.value.trim() || "";
+    const personName = $("#secret-person-name")?.value.trim() || "";
+    const personRole = $("#secret-person-role")?.value.trim() || "";
+    const intelNotes = $("#secret-person-intel")?.value.trim() || "";
+
+    if (!teamNum || !personName || !personRole || !intelNotes) {
+      toast("Please fill in all required intelligence fields.", true);
+      return;
+    }
+
+    const dossier = {
+      id: "sec_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+      team_num: teamNum,
+      team_name: teamName,
+      person_name: personName,
+      person_role: personRole,
+      intel_notes: intelNotes,
+      logged_by: currentUser.id,
+      logged_by_name: currentProfile?.full_name || currentUser.email,
+      created_at: new Date().toISOString()
+    };
+
+    // 1. Local persistence
+    secretDossiers.unshift(dossier);
+    try {
+      localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers.slice(0, 100)));
+    } catch (err) {}
+
+    // 2. Supabase persistence
+    if (supabase) {
+      supabase.from("secret_personnel_intel").insert(dossier).catch(() => {});
+    }
+
+    renderSecretIntel();
+    toast(`Classified dossier on ${personName} (Team ${teamNum}) recorded! 🕵️`);
+
+    // Reset form
+    $("#secret-scout-form")?.reset();
+    $("#secret-team-num")?.focus();
+  });
+
+  // Filter input
+  $("#secret-search-input")?.addEventListener("input", renderSecretIntel);
+
+  // Delete dossier
+  $("#secret-intel-list")?.addEventListener("click", async e => {
+    const btn = e.target.closest("button[data-action='delete-secret-dossier']");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+
+    if (confirm("Permanently destroy this classified intelligence file?")) {
+      secretDossiers = secretDossiers.filter(d => d.id !== id);
+      try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (e) {}
+      if (supabase) {
+        supabase.from("secret_personnel_intel").delete().eq("id", id).catch(() => {});
+      }
+      renderSecretIntel();
+      toast("Dossier deleted.");
+    }
+  });
+}
+
 /* Sidebar & Mobile Navigation listeners */
 $("#sidebar-btn-dashboard")?.addEventListener("click", () => switchPage("dashboard"));
 $("#sidebar-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
+$("#sidebar-btn-secrets")?.addEventListener("click", () => switchPage("secrets"));
 $("#sidebar-open-profile-btn")?.addEventListener("click", openProfileModal);
 
 $("#sidebar-toggle-btn")?.addEventListener("click", () => {

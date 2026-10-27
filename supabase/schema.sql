@@ -9,10 +9,12 @@ create table if not exists public.profiles (
   departments text[] not null default array['Mechanical']::text[],
   is_approved boolean not null default false,
   is_admin boolean not null default false,
+  is_secret boolean not null default false,
   created_at timestamptz not null default now()
 );
 
 alter table public.profiles add column if not exists departments text[] not null default array['Mechanical']::text[];
+alter table public.profiles add column if not exists is_secret boolean not null default false;
 
 -- 2. Inventory Items Table
 create table if not exists public.inventory_items (
@@ -409,7 +411,50 @@ for insert to authenticated with check((select public.is_approved_member()));
 
 drop policy if exists "Admins or authors can delete scouting records" on public.match_scouting_logs;
 create policy "Admins or authors can delete scouting records" on public.match_scouting_logs
-for delete to authenticated using((select public.is_team_admin()) or created_by = auth.uid());
+for delete to authenticated using((select public.is_team_admin()));
+
+-- 11. Secret Personnel Intel (Secret Admin Role Only)
+create table if not exists public.secret_personnel_intel (
+  id text primary key,
+  team_num integer not null,
+  team_name text not null default '',
+  person_name text not null check (length(trim(person_name)) > 0),
+  person_role text not null default '',
+  intel_notes text not null default '',
+  logged_by uuid references auth.users(id),
+  logged_by_name text not null default 'Secret Agent',
+  created_at timestamptz not null default now()
+);
+
+create or replace function public.is_secret_admin()
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and is_approved = true
+      and is_admin = true
+      and is_secret = true
+  );
+$$;
+
+alter table public.secret_personnel_intel enable row level security;
+
+drop policy if exists "Secret admins can select secret intel" on public.secret_personnel_intel;
+create policy "Secret admins can select secret intel" on public.secret_personnel_intel
+for select to authenticated using((select public.is_secret_admin()));
+
+drop policy if exists "Secret admins can insert secret intel" on public.secret_personnel_intel;
+create policy "Secret admins can insert secret intel" on public.secret_personnel_intel
+for insert to authenticated with check((select public.is_secret_admin()));
+
+drop policy if exists "Secret admins can delete secret intel" on public.secret_personnel_intel;
+create policy "Secret admins can delete secret intel" on public.secret_personnel_intel
+for delete to authenticated using((select public.is_secret_admin()));
 
 -- 12. Realtime configuration
 do $$
