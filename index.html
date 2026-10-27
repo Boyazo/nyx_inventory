@@ -4823,10 +4823,10 @@ let shapeStart = null;
 let draggedItem = null;
 let draggedOffset = { x: 0, y: 0 };
 
-/* Choreo FRC Trajectory Simulation State */
+/* Choreo FRC Multi-Trajectory Simulation State */
 let isChoreoSimulating = false;
 let choreoAnimId = null;
-let choreoGhostRobot = null; // { x, y, heading, vx, vy, omega, progress }
+let choreoSimRobots = []; // Array of active simulating robots: [{ x, y, heading, speed, label, color, trajectory, currentIndex }]
 let choreoSpeedMultiplier = 1.0;
 let currentSortMetric = "epa";
 let currentSearchQuery = "";
@@ -5296,9 +5296,9 @@ function renderCanvas() {
     }
   });
 
-  // Draw Choreo Trajectory Animated Ghost Robot if active
-  if (choreoGhostRobot) {
-    drawChoreoGhostRobot(ctx, choreoGhostRobot);
+  // Draw all Choreo Multi-Trajectory Simulated Robots
+  if (Array.isArray(choreoSimRobots) && choreoSimRobots.length > 0) {
+    choreoSimRobots.forEach(bot => drawChoreoGhostRobot(ctx, bot));
   }
 }
 
@@ -5307,15 +5307,15 @@ function drawChoreoGhostRobot(ctx, bot) {
   ctx.translate(bot.x, bot.y);
   ctx.rotate(bot.heading);
 
-  // Swerve Bumper Dimensions (approx 34x34 px in canvas units, ~28x28 in field scale)
   const bSize = 34;
   const half = bSize / 2;
+  const botColor = bot.color || (bot.alliance === "blue" ? "#3b82f6" : "#a855f7");
 
   // Swerve Chassis Bumper with neon border
-  ctx.shadowColor = bot.alliance === "blue" ? "#3b82f6" : "#a855f7";
+  ctx.shadowColor = botColor;
   ctx.shadowBlur = 14;
 
-  ctx.fillStyle = bot.alliance === "blue" ? "rgba(30, 58, 138, 0.85)" : "rgba(88, 28, 135, 0.85)";
+  ctx.fillStyle = botColor === "#3b82f6" ? "rgba(30, 58, 138, 0.9)" : botColor === "#ef4444" ? "rgba(153, 27, 27, 0.9)" : "rgba(88, 28, 135, 0.9)";
   ctx.fillRect(-half, -half, bSize, bSize);
 
   ctx.strokeStyle = "#ffffff";
@@ -5345,28 +5345,28 @@ function drawChoreoGhostRobot(ctx, bot) {
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Robot Center Label
+  // Robot Center Label (e.g. R1, R2, B1, NYX)
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 9px JetBrains Mono";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("NYX", 0, 0);
+  ctx.fillText(bot.label || "BOT", 0, 0);
 
   ctx.restore();
 
   // Trajectory Waypoint / Speed Telemetry HUD
   ctx.save();
-  ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
-  ctx.strokeStyle = "rgba(168, 85, 247, 0.5)";
+  ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+  ctx.strokeStyle = botColor;
   ctx.lineWidth = 1;
-  ctx.fillRect(bot.x + 22, bot.y - 24, 110, 36);
-  ctx.strokeRect(bot.x + 22, bot.y - 24, 110, 36);
+  ctx.fillRect(bot.x + 20, bot.y - 24, 105, 36);
+  ctx.strokeRect(bot.x + 20, bot.y - 24, 105, 36);
 
   ctx.fillStyle = "#38bdf8";
   ctx.font = "bold 9px JetBrains Mono";
-  ctx.fillText(`CHOREO SWERVE`, bot.x + 26, bot.y - 14);
+  ctx.fillText(`${bot.label || "CHOREO"} SWERVE`, bot.x + 24, bot.y - 14);
   ctx.fillStyle = "#a7f3d0";
-  ctx.fillText(`v: ${bot.speed ? bot.speed.toFixed(1) : "3.8"} m/s`, bot.x + 26, bot.y - 3);
+  ctx.fillText(`v: ${bot.speed ? bot.speed.toFixed(1) : "3.8"} m/s`, bot.x + 24, bot.y - 3);
   ctx.restore();
 }
 
@@ -5665,7 +5665,7 @@ function initPlaybook() {
   $("#playbook-save-btn")?.addEventListener("click", savePlaybookPlay);
 }
 
-/* Choreo Path Trajectory Generator & Swerve Motion Optimizer */
+/* Choreo Multi-Robot Trajectory Solver & Swerve Optimizer */
 function toggleChoreoSimulation() {
   const btn = $("#field-choreo-play-btn");
   if (isChoreoSimulating) {
@@ -5679,26 +5679,39 @@ function toggleChoreoSimulation() {
     return;
   }
 
-  // Extract path waypoints from playHistory (pen strokes, arrows, lines, or robot tokens)
-  const waypoints = extractChoreoWaypoints();
+  // Discover all paths associated with robots or drawn freehand
+  const robotTracks = extractAllChoreoRobotTracks();
 
-  if (waypoints.length < 2) {
-    toast("Draw a path (Draw or Arrow) or place 2+ bot tokens on the field first! ✏️", true);
+  if (!robotTracks.length) {
+    toast("Place a robot token (Red Bot / Blue Bot) and draw a line/arrow from it! 🤖✏️", true);
     return;
   }
 
-  // Generate smooth time-optimal trajectory through waypoints
-  const trajectory = generateChoreoTrajectory(waypoints);
+  // Build optimized Choreo trajectories for each robot track
+  choreoSimRobots = robotTracks.map(track => {
+    const trajectory = generateChoreoTrajectory(track.waypoints);
+    return {
+      label: track.label,
+      color: track.color,
+      alliance: track.alliance,
+      trajectory: trajectory,
+      currentIndex: 0,
+      x: trajectory[0].x,
+      y: trajectory[0].y,
+      heading: trajectory[0].heading,
+      speed: trajectory[0].speed
+    };
+  });
 
   isChoreoSimulating = true;
   if (btn) {
-    btn.innerHTML = `⏹ Stop Simulation`;
+    btn.innerHTML = `⏹ Stop Simulation (${choreoSimRobots.length} bot${choreoSimRobots.length > 1 ? "s" : ""})`;
     btn.classList.remove("btn--primary");
     btn.classList.add("btn--danger");
   }
 
-  toast("Running Choreo swerve trajectory simulation! 🤖⚡");
-  runChoreoAnimation(trajectory);
+  toast(`Running Choreo simulation for ${choreoSimRobots.length} robot${choreoSimRobots.length > 1 ? "s" : ""} simultaneously! 🤖⚡`);
+  runMultiChoreoAnimation();
 }
 
 function stopChoreoSimulation() {
@@ -5707,7 +5720,7 @@ function stopChoreoSimulation() {
     cancelAnimationFrame(choreoAnimId);
     choreoAnimId = null;
   }
-  choreoGhostRobot = null;
+  choreoSimRobots = [];
   renderCanvas();
   const btn = $("#field-choreo-play-btn");
   if (btn) {
@@ -5717,35 +5730,93 @@ function stopChoreoSimulation() {
   }
 }
 
-function extractChoreoWaypoints() {
-  const pts = [];
+function extractAllChoreoRobotTracks() {
+  const tracks = [];
+  const tokens = playHistory.filter(item => item.type === "token");
+  const drawnPaths = playHistory.filter(item => item.type === "pen" || item.type === "arrow" || item.type === "line");
+  const usedDrawnIndices = new Set();
 
-  // 1. Check for drawn freehand pen paths or arrows
-  for (const item of playHistory) {
-    if (item.type === "pen" && Array.isArray(item.points) && item.points.length > 1) {
-      // Sample every few points to avoid jitter
-      const step = Math.max(1, Math.floor(item.points.length / 25));
-      for (let i = 0; i < item.points.length; i += step) {
-        pts.push({ x: item.points[i].x, y: item.points[i].y });
+  // 1. For every robot token on field, check if a drawn line/path starts from or near it (within 45px)
+  tokens.forEach((tok, tokIdx) => {
+    const matchingPaths = [];
+
+    drawnPaths.forEach((path, pIdx) => {
+      let startPt = null;
+      let waypoints = [];
+
+      if (path.type === "pen" && path.points && path.points.length > 1) {
+        startPt = path.points[0];
+        const step = Math.max(1, Math.floor(path.points.length / 25));
+        for (let i = 0; i < path.points.length; i += step) {
+          waypoints.push({ x: path.points[i].x, y: path.points[i].y });
+        }
+        waypoints.push(path.points[path.points.length - 1]);
+      } else if (path.type === "arrow" || path.type === "line") {
+        startPt = path.start;
+        waypoints = [{ x: path.start.x, y: path.start.y }, { x: path.end.x, y: path.end.y }];
       }
-      pts.push(item.points[item.points.length - 1]);
-      break;
-    } else if (item.type === "arrow" || item.type === "line") {
-      pts.push({ x: item.start.x, y: item.start.y });
-      pts.push({ x: item.end.x, y: item.end.y });
-      break;
+
+      if (startPt && Math.hypot(startPt.x - tok.x, startPt.y - tok.y) <= 45) {
+        usedDrawnIndices.add(pIdx);
+        // Prepend exact robot position as start of path
+        waypoints.unshift({ x: tok.x, y: tok.y });
+        matchingPaths.push(waypoints);
+      }
+    });
+
+    if (matchingPaths.length > 0) {
+      // Robot has at least one path leading from it
+      matchingPaths.forEach((pts, pSubIdx) => {
+        tracks.push({
+          label: tok.label || (tok.color === "#3b82f6" ? `B${tokIdx + 1}` : `R${tokIdx + 1}`),
+          color: tok.color || (tok.label?.startsWith("B") ? "#3b82f6" : "#ef4444"),
+          alliance: tok.label?.startsWith("B") || tok.color === "#3b82f6" ? "blue" : "red",
+          waypoints: pts
+        });
+      });
     }
+  });
+
+  // 2. If no robot tokens were paired with drawn paths, assign any remaining drawn paths to autonomous robots
+  drawnPaths.forEach((path, pIdx) => {
+    if (usedDrawnIndices.has(pIdx)) return;
+
+    const waypoints = [];
+    if (path.type === "pen" && path.points && path.points.length > 1) {
+      const step = Math.max(1, Math.floor(path.points.length / 25));
+      for (let i = 0; i < path.points.length; i += step) {
+        waypoints.push({ x: path.points[i].x, y: path.points[i].y });
+      }
+      waypoints.push(path.points[path.points.length - 1]);
+    } else if (path.type === "arrow" || path.type === "line") {
+      waypoints.push({ x: path.start.x, y: path.start.y });
+      waypoints.push({ x: path.end.x, y: path.end.y });
+    }
+
+    if (waypoints.length >= 2) {
+      const trackNum = tracks.length + 1;
+      const pathColor = path.color || "#a855f7";
+      tracks.push({
+        label: `BOT ${trackNum}`,
+        color: pathColor,
+        alliance: pathColor === "#3b82f6" ? "blue" : pathColor === "#ef4444" ? "red" : "purple",
+        waypoints: waypoints
+      });
+    }
+  });
+
+  // 3. If there are robot tokens but no lines drawn, connect tokens in sequence
+  if (tracks.length === 0 && tokens.length >= 2) {
+    const waypoints = tokens.map(tok => ({ x: tok.x, y: tok.y }));
+    tracks.push({
+      label: tokens[0].label || "BOT 1",
+      color: tokens[0].color || "#a855f7",
+      alliance: tokens[0].label?.startsWith("B") ? "blue" : "red",
+      waypoints: waypoints
+    });
   }
 
-  // 2. If no paths drawn, check robot tokens in sequence
-  if (pts.length < 2) {
-    const tokens = playHistory.filter(item => item.type === "token");
-    if (tokens.length >= 2) {
-      tokens.forEach(tok => pts.push({ x: tok.x, y: tok.y }));
-    }
-  }
-
-  return pts;
+  return tracks;
 }
 
 function generateChoreoTrajectory(waypoints) {
@@ -5797,29 +5868,23 @@ function generateChoreoTrajectory(waypoints) {
   return trajectoryPoints;
 }
 
-function runChoreoAnimation(trajectory) {
-  let currentIndex = 0;
-
+function runMultiChoreoAnimation() {
   function step() {
-    if (!isChoreoSimulating) return;
+    if (!isChoreoSimulating || !choreoSimRobots.length) return;
 
-    if (currentIndex >= trajectory.length) {
-      // Loop or stop
-      currentIndex = 0;
-    }
-
-    const state = trajectory[currentIndex];
-    choreoGhostRobot = {
-      x: state.x,
-      y: state.y,
-      heading: state.heading,
-      speed: state.speed,
-      alliance: "purple"
-    };
+    choreoSimRobots.forEach(bot => {
+      if (bot.currentIndex >= bot.trajectory.length) {
+        bot.currentIndex = 0;
+      }
+      const state = bot.trajectory[bot.currentIndex];
+      bot.x = state.x;
+      bot.y = state.y;
+      bot.heading = state.heading;
+      bot.speed = state.speed;
+      bot.currentIndex++;
+    });
 
     renderCanvas();
-    currentIndex++;
-
     choreoAnimId = requestAnimationFrame(step);
   }
 
