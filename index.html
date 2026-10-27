@@ -391,9 +391,18 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   border-top: 1px solid var(--line); padding-top: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;
 }
 .attendee-pill {
-  display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--accent-dim);
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; background: var(--accent-dim);
   border: 1px solid var(--accent-line); color: var(--accent-soft); font-size: 11px; font-family: var(--font-mono); margin: 2px;
 }
+.attendee-pill.is-me {
+  background: rgba(139, 92, 246, .25); border-color: var(--accent); color: #ffffff;
+}
+.attendee-remove-btn {
+  background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0; line-height: 1;
+  font-size: 13px; font-weight: 700; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  transition: color .15s ease, transform .15s ease;
+}
+.attendee-remove-btn:hover { color: var(--red); transform: scale(1.2); }
 
 /* Planner Board */
 .planner-grid {
@@ -1924,12 +1933,28 @@ function renderShifts() {
         <div class="shift-roster">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <b class="mono small" style="color:var(--text-muted)">ROSTER (${attendees.length})</b>
-            <button class="btn btn--sm ${isAttending ? 'btn--ghost' : 'btn--primary'}" data-action="toggle-attend-shift" data-id="${s.id}">
-              ${isAttending ? '✓ Attending' : '＋ Join Shift'}
-            </button>
+            ${isAttending ? `
+              <button class="btn btn--sm btn--ghost" data-action="toggle-attend-shift" data-id="${s.id}" style="color:var(--red); border-color:rgba(248,113,113,.3);" title="Remove yourself from this shift">
+                ✕ Leave Shift
+              </button>
+            ` : `
+              <button class="btn btn--sm btn--primary" data-action="toggle-attend-shift" data-id="${s.id}">
+                ＋ Join Shift
+              </button>
+            `}
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
-            ${attendees.length ? attendees.map(a => `<span class="attendee-pill">${esc(a)}</span>`).join('') : '<span class="muted small">No members signed up yet</span>'}
+            ${attendees.length ? attendees.map(a => {
+              const canRemove = isAdmin || a === myName;
+              return `
+                <span class="attendee-pill ${a === myName ? 'is-me' : ''}">
+                  ${esc(a)}${a === myName ? ' (You)' : ''}
+                  ${canRemove ? `
+                    <button class="attendee-remove-btn" type="button" data-action="remove-attendee" data-id="${s.id}" data-attendee="${esc(a)}" title="${a === myName ? 'Leave shift' : `Remove ${esc(a)} (Admin)`}">×</button>
+                  ` : ''}
+                </span>
+              `;
+            }).join('') : '<span class="muted small">No members signed up yet</span>'}
           </div>
         </div>
       </article>
@@ -2977,7 +3002,27 @@ $("#shifts-list").addEventListener("click", async e => {
       toast("Failed to update roster: " + error.message, true);
     } else {
       await loadShifts(true);
-      toast(isAttending ? "Removed from shift roster." : "Signed up for shift!");
+      toast(isAttending ? "Removed yourself from shift roster." : "Signed up for shift!");
+    }
+  } else if (action === "remove-attendee" && shift) {
+    const target = b.dataset.attendee;
+    const isAdmin = !!currentProfile?.is_admin;
+    if (!isAdmin && target !== myName) {
+      toast("Only admins can remove other members from the shift roster.", true);
+      return;
+    }
+    const attendees = (Array.isArray(shift.attendees) ? shift.attendees : []).filter(a => a !== target);
+    const { error } = await supabase.from("team_shifts").update({
+      attendees,
+      updated_at: new Date().toISOString()
+    }).eq("id", id);
+
+    if (error) {
+      toast("Failed to remove attendee: " + error.message, true);
+    } else {
+      await logAction("SHIFT_ATTENDEE_REMOVED", "team_shifts", id, { shift_title: shift.title, removed_attendee: target });
+      await loadShifts(true);
+      toast(target === myName ? "Removed yourself from shift roster." : `Removed ${target} from shift roster.`);
     }
   } else if (action === "edit-shift" && shift) {
     if (!currentProfile?.is_admin) {
