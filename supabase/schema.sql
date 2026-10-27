@@ -100,3 +100,22 @@ for delete to authenticated using((select public.is_approved_member()));
 -- Bootstrap only the first admin after registering in the app.
 -- Find the account UUID in Supabase -> Authentication -> Users and replace the ID below:
 -- update public.profiles set is_approved=true,is_admin=true where id='YOUR-AUTH-USER-UUID';
+
+-- Enable inventory change events for the website's Supabase Realtime subscription.
+-- Supabase normally creates the supabase_realtime publication for a project.
+-- This block is safe to re-run and adds only inventory_items if it is not listed yet.
+do $$
+begin
+  if exists (
+    select 1 from pg_publication where pubname = 'supabase_realtime'
+  ) and not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'inventory_items'
+  ) then
+    execute 'alter publication supabase_realtime add table public.inventory_items';
+  end if;
+end
+$$;
