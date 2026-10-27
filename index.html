@@ -4714,28 +4714,30 @@ async function initSupabase() {
    ========================================================================== */
 
 let frcTeamsData = [
-  { team: 11744, name: "NYX Robotics", location: "San Diego, CA, USA", epa: 38.6, auto_epa: 8.4, teleop_epa: 21.2, endgame_epa: 9.0, winrate: 65.2, rank: 340, record: "18-10-0", rookie: 2024 },
-  { team: 254, name: "The Cheesy Poofs", location: "San Jose, CA, USA", epa: 68.4, auto_epa: 18.2, teleop_epa: 38.5, endgame_epa: 11.7, winrate: 91.4, rank: 1, record: "58-5-1", rookie: 1999 },
-  { team: 4414, name: "HighTide", location: "Ventura, CA, USA", epa: 67.5, auto_epa: 18.0, teleop_epa: 37.9, endgame_epa: 11.6, winrate: 90.1, rank: 2, record: "55-6-0", rookie: 2022 },
-  { team: 1678, name: "Citrus Circuits", location: "Davis, CA, USA", epa: 66.8, auto_epa: 17.8, teleop_epa: 37.4, endgame_epa: 11.6, winrate: 89.2, rank: 3, record: "62-7-0", rookie: 2005 },
-  { team: 1323, name: "MadTown Robotics", location: "Madera, CA, USA", epa: 65.2, auto_epa: 16.5, teleop_epa: 37.1, endgame_epa: 11.6, winrate: 87.8, rank: 4, record: "52-8-0", rookie: 2004 },
-  { team: 2056, name: "OP Robotics", location: "Stoney Creek, ON, Canada", epa: 64.9, auto_epa: 17.1, teleop_epa: 36.4, endgame_epa: 11.4, winrate: 88.0, rank: 5, record: "55-7-0", rookie: 2007 },
-  { team: 2910, name: "Jack in the Bot", location: "Mill Creek, WA, USA", epa: 63.8, auto_epa: 16.2, teleop_epa: 36.1, endgame_epa: 11.5, winrate: 86.5, rank: 6, record: "48-7-1", rookie: 2009 },
-  { team: 118, name: "The Robonauts", location: "Houston, TX, USA", epa: 62.1, auto_epa: 15.6, teleop_epa: 35.1, endgame_epa: 11.4, winrate: 85.0, rank: 7, record: "47-8-0", rookie: 1997 },
-  { team: 971, name: "Spartan Robotics", location: "Mountain View, CA, USA", epa: 61.4, auto_epa: 15.0, teleop_epa: 35.2, endgame_epa: 11.2, winrate: 84.0, rank: 8, record: "45-9-0", rookie: 2002 },
-  { team: 1114, name: "Simbotics", location: "St. Catharines, ON, Canada", epa: 60.5, auto_epa: 15.2, teleop_epa: 34.1, endgame_epa: 11.2, winrate: 83.0, rank: 9, record: "46-9-0", rookie: 2003 },
-  { team: 3310, name: "Black Hawk Robotics", location: "Heath, TX, USA", epa: 60.1, auto_epa: 14.8, teleop_epa: 34.1, endgame_epa: 11.2, winrate: 82.5, rank: 10, record: "44-9-1", rookie: 2010 },
-  { team: 148, name: "Robowranglers", location: "Greenville, TX, USA", epa: 59.5, auto_epa: 14.2, teleop_epa: 34.0, endgame_epa: 11.3, winrate: 81.2, rank: 11, record: "42-10-0", rookie: 1992 },
-  { team: 973, name: "Greybots", location: "Atascadero, CA, USA", epa: 58.7, auto_epa: 14.0, teleop_epa: 33.5, endgame_epa: 11.2, winrate: 80.2, rank: 12, record: "40-10-0", rookie: 2002 },
-  { team: 3476, name: "Code Orange", location: "Irvine, CA, USA", epa: 58.2, auto_epa: 13.8, teleop_epa: 33.4, endgame_epa: 11.0, winrate: 79.5, rank: 13, record: "38-10-0", rookie: 2010 },
-  { team: 359, name: "Hawaiian Kids", location: "Waialua, HI, USA", epa: 57.4, auto_epa: 13.5, teleop_epa: 32.9, endgame_epa: 11.0, winrate: 78.9, rank: 14, record: "39-11-0", rookie: 2000 },
-  { team: 604, name: "Quixilver", location: "San Jose, CA, USA", epa: 56.8, auto_epa: 13.1, teleop_epa: 32.7, endgame_epa: 11.0, winrate: 78.4, rank: 15, record: "37-10-1", rookie: 2001 },
-  { team: 1538, name: "The Holy Cows", location: "San Diego, CA, USA", epa: 55.4, auto_epa: 12.5, teleop_epa: 32.1, endgame_epa: 10.8, winrate: 77.0, rank: 16, record: "35-11-0", rookie: 2005 },
-  { team: 2485, name: "WARLords", location: "San Diego, CA, USA", epa: 54.1, auto_epa: 12.0, teleop_epa: 31.5, endgame_epa: 10.6, winrate: 75.4, rank: 17, record: "33-11-0", rookie: 2008 },
-  { team: 3128, name: "Aluminum Narwhals", location: "San Diego, CA, USA", epa: 53.6, auto_epa: 11.8, teleop_epa: 31.2, endgame_epa: 10.6, winrate: 74.8, rank: 18, record: "32-11-1", rookie: 2009 },
-  { team: 5804, name: "TORCH", location: "Richmond, VA, USA", epa: 53.1, auto_epa: 11.5, teleop_epa: 31.0, endgame_epa: 10.6, winrate: 74.0, rank: 19, record: "31-11-0", rookie: 2016 },
-  { team: 2102, name: "Team Paradox", location: "Encinitas, CA, USA", epa: 51.2, auto_epa: 11.0, teleop_epa: 29.8, endgame_epa: 10.4, winrate: 72.0, rank: 20, record: "30-12-0", rookie: 2007 },
-  { team: 2827, name: "Crown City Robotics", location: "Coronado, CA, USA", epa: 46.5, auto_epa: 9.8, teleop_epa: 27.2, endgame_epa: 9.5, winrate: 68.0, rank: 25, record: "26-12-0", rookie: 2009 }
+  { team: 4414, name: "HighTide", location: "Ventura, CA, USA", epa: 356.9, auto_epa: 75.1, teleop_epa: 195.9, endgame_epa: 86.0, winrate: 97.2, rank: 1, record: "70-2-0", rookie: 2022 },
+  { team: 254, name: "The Cheesy Poofs", location: "San Jose, CA, USA", epa: 328.1, auto_epa: 78.5, teleop_epa: 169.9, endgame_epa: 79.8, winrate: 91.5, rank: 2, record: "65-6-0", rookie: 1999 },
+  { team: 7769, name: "The CREW", location: "Sterling Heights, MI, USA", epa: 311.6, auto_epa: 67.8, teleop_epa: 175.4, endgame_epa: 68.5, winrate: 93.3, rank: 3, record: "70-5-0", rookie: 2019 },
+  { team: 1323, name: "MadTown Robotics", location: "Madera, CA, USA", epa: 310.0, auto_epa: 73.8, teleop_epa: 169.6, endgame_epa: 66.6, winrate: 94.5, rank: 4, record: "69-4-0", rookie: 2004 },
+  { team: 2056, name: "OP Robotics", location: "Stoney Creek, ON, Canada", epa: 302.2, auto_epa: 83.9, teleop_epa: 169.0, endgame_epa: 49.3, winrate: 86.3, rank: 5, record: "63-10-0", rookie: 2007 },
+  { team: 1690, name: "Orbit", location: "Binyamina, Israel", epa: 295.4, auto_epa: 67.5, teleop_epa: 165.9, endgame_epa: 62.1, winrate: 80.0, rank: 6, record: "16-4-0", rookie: 2005 },
+  { team: 27, name: "Team RUSH", location: "Clarkston, MI, USA", epa: 295.1, auto_epa: 74.0, teleop_epa: 154.6, endgame_epa: 66.6, winrate: 88.2, rank: 7, record: "58-8-0", rookie: 1997 },
+  { team: 1114, name: "Simbotics", location: "St. Catharines, ON, Canada", epa: 287.6, auto_epa: 73.1, teleop_epa: 140.5, endgame_epa: 73.9, winrate: 89.9, rank: 8, record: "62-7-0", rookie: 2003 },
+  { team: 2481, name: "Roboteers", location: "Tremont, IL, USA", epa: 285.0, auto_epa: 62.6, teleop_epa: 152.8, endgame_epa: 69.6, winrate: 86.8, rank: 9, record: "54-8-1", rookie: 2008 },
+  { team: 5687, name: "The Outliers", location: "Bath, ME, USA", epa: 282.7, auto_epa: 74.0, teleop_epa: 155.1, endgame_epa: 53.6, winrate: 83.8, rank: 10, record: "62-12-1", rookie: 2015 },
+  { team: 1678, name: "Citrus Circuits", location: "Davis, CA, USA", epa: 290.7, auto_epa: 61.7, teleop_epa: 159.4, endgame_epa: 69.6, winrate: 87.5, rank: 11, record: "59-8-0", rookie: 2005 },
+  { team: 2910, name: "Jack in the Bot", location: "Mill Creek, WA, USA", epa: 278.4, auto_epa: 64.2, teleop_epa: 148.5, endgame_epa: 65.7, winrate: 84.1, rank: 12, record: "49-9-1", rookie: 2009 },
+  { team: 118, name: "The Robonauts", location: "Houston, TX, USA", epa: 275.2, auto_epa: 62.1, teleop_epa: 147.0, endgame_epa: 66.1, winrate: 83.0, rank: 13, record: "48-10-0", rookie: 1997 },
+  { team: 971, name: "Spartan Robotics", location: "Mountain View, CA, USA", epa: 271.8, auto_epa: 60.5, teleop_epa: 146.2, endgame_epa: 65.1, winrate: 82.0, rank: 14, record: "45-10-0", rookie: 2002 },
+  { team: 3310, name: "Black Hawk Robotics", location: "Heath, TX, USA", epa: 268.5, auto_epa: 59.8, teleop_epa: 144.5, endgame_epa: 64.2, winrate: 81.5, rank: 15, record: "44-10-1", rookie: 2010 },
+  { team: 148, name: "Robowranglers", location: "Greenville, TX, USA", epa: 265.4, auto_epa: 58.0, teleop_epa: 143.2, endgame_epa: 64.2, winrate: 80.5, rank: 16, record: "42-10-0", rookie: 1992 },
+  { team: 973, name: "Greybots", location: "Atascadero, CA, USA", epa: 262.1, auto_epa: 57.5, teleop_epa: 141.0, endgame_epa: 63.6, winrate: 79.5, rank: 17, record: "40-11-0", rookie: 2002 },
+  { team: 3476, name: "Code Orange", location: "Irvine, CA, USA", epa: 259.6, auto_epa: 56.4, teleop_epa: 140.2, endgame_epa: 63.0, winrate: 78.5, rank: 18, record: "38-11-0", rookie: 2010 },
+  { team: 359, name: "Hawaiian Kids", location: "Waialua, HI, USA", epa: 256.3, auto_epa: 55.2, teleop_epa: 138.5, endgame_epa: 62.6, winrate: 78.0, rank: 19, record: "39-11-0", rookie: 2000 },
+  { team: 604, name: "Quixilver", location: "San Jose, CA, USA", epa: 253.7, auto_epa: 54.8, teleop_epa: 137.1, endgame_epa: 61.8, winrate: 77.2, rank: 20, record: "37-11-1", rookie: 2001 },
+  { team: 11744, name: "NYX Robotics", location: "San Diego, CA, USA", epa: 215.4, auto_epa: 48.6, teleop_epa: 112.5, endgame_epa: 54.3, winrate: 72.5, rank: 140, record: "22-8-0", rookie: 2026 },
+  { team: 1538, name: "The Holy Cows", location: "San Diego, CA, USA", epa: 248.2, auto_epa: 53.0, teleop_epa: 134.5, endgame_epa: 60.7, winrate: 76.0, rank: 22, record: "35-11-0", rookie: 2005 },
+  { team: 2485, name: "WARLords", location: "San Diego, CA, USA", epa: 242.5, auto_epa: 51.5, teleop_epa: 132.0, endgame_epa: 59.0, winrate: 74.8, rank: 24, record: "33-11-0", rookie: 2008 },
+  { team: 3128, name: "Aluminum Narwhals", location: "San Diego, CA, USA", epa: 239.1, auto_epa: 50.8, teleop_epa: 130.4, endgame_epa: 57.9, winrate: 74.0, rank: 26, record: "32-11-1", rookie: 2009 }
 ];
 
 let strategyPlays = [];
@@ -6373,6 +6375,7 @@ function exportScoutingCSV() {
    SECRET INTEL SYSTEM (RESTRICTED TO SECRET ROLE ADMINS)
    -------------------------------------------------------------------------- */
 let secretDossiers = [];
+let secretsEventsBound = false;
 
 function initSecretsCenter() {
   if (!currentProfile?.is_admin || !currentProfile?.is_secret) {
@@ -6380,7 +6383,10 @@ function initSecretsCenter() {
     return;
   }
   loadSecretIntel();
-  setupSecretsEvents();
+  if (!secretsEventsBound) {
+    setupSecretsEvents();
+    secretsEventsBound = true;
+  }
 }
 
 function loadSecretIntel() {
@@ -6538,16 +6544,11 @@ function setupSecretsEvents() {
       created_at: new Date().toISOString()
     };
 
-    // 1. Local persistence
+    // 1. Local persistence & instant UI update
     secretDossiers.unshift(dossier);
     try {
       localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers.slice(0, 100)));
     } catch (err) {}
-
-    // 2. Supabase persistence
-    if (supabase) {
-      supabase.from("secret_personnel_intel").insert(dossier).catch(() => {});
-    }
 
     renderSecretIntel();
     toast(`Classified entry for Team ${teamNum} recorded! 🕵️`);
@@ -6555,6 +6556,13 @@ function setupSecretsEvents() {
     // Reset form
     $("#secret-scout-form")?.reset();
     $("#secret-team-num")?.focus();
+
+    // 2. Background Supabase persistence
+    if (supabase) {
+      supabase.from("secret_personnel_intel").insert(dossier).catch(err => {
+        console.warn("Secret intel db sync:", err);
+      });
+    }
   });
 
   // Vote (+1 / -1) & delete dossier clicks
