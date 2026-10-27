@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root, [data-theme="dark"] {
   --bg: #07070c;
@@ -2663,11 +2664,38 @@ $("#admin-members-list").addEventListener("click", async e => {
 $("#refresh-logs-btn").addEventListener("click", loadLogs);
 
 /* Supabase Initialization */
-if (configured) {
+async function initSupabase() {
+  if (!configured) {
+    $("#setup-notice").classList.remove("hidden");
+    return;
+  }
+
   $("#setup-notice").classList.add("hidden");
+
   try {
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
+    let createClientFn = window.supabase?.createClient;
+    if (!createClientFn) {
+      try {
+        const mod = await import("https://esm.sh/@supabase/supabase-js@2");
+        createClientFn = mod.createClient;
+      } catch (importErr) {
+        // Fallback: unpkg
+        await new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = "https://unpkg.com/@supabase/supabase-js@2";
+          s.onload = resolve;
+          s.onerror = reject;
+          document.head.appendChild(s);
+        });
+        createClientFn = window.supabase?.createClient;
+      }
+    }
+
+    if (!createClientFn) {
+      throw new Error("Could not load Supabase client library from CDN.");
+    }
+
+    supabase = createClientFn(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
@@ -2681,17 +2709,22 @@ if (configured) {
       }
     });
 
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn("Session check notice:", error.message);
+    }
+    if (data?.session) {
       await checkUser(data.session.user);
     }
   } catch (err) {
+    console.error("Supabase init error:", err);
     $("#setup-notice").classList.remove("hidden");
+    $("#setup-notice").innerHTML = `<b>Database connection issue:</b> ${esc(err.message || err)}`;
     message("Could not initialize Supabase: " + err.message, true);
   }
-} else {
-  $("#setup-notice").classList.remove("hidden");
 }
+
+initSupabase();
 </script>
 </body>
 </html>
