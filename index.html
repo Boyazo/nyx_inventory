@@ -4367,12 +4367,17 @@ $("#items-list").addEventListener("click", async e => {
     const item = allItems.find(x => x.id === id);
     if (!item) return;
     if (confirm(`Are you sure you want to delete "${item.name}" from the inventory catalog?`)) {
+      // Optimistic instant UI update
+      allItems = allItems.filter(x => x.id !== id);
+      renderItems();
+      renderStats();
+
       const { error } = await supabase.from("inventory_items").delete().eq("id", id);
       if (error) {
         toast("Delete failed: " + error.message, true);
+        await loadItems(true);
       } else {
         await logAction("ITEM_DELETED", "inventory_items", id, { name: item.name });
-        await loadItems(true);
         toast("Item deleted.");
       }
     }
@@ -4464,6 +4469,14 @@ $("#shifts-list").addEventListener("click", async e => {
     }
 
     let error;
+    // Optimistic instant UI update
+    if (deleteAll) {
+      allShifts = allShifts.filter(s => !(s.title === shift.title && s.department === shift.department && s.shift_date >= shift.shift_date));
+    } else {
+      allShifts = allShifts.filter(s => s.id !== id);
+    }
+    renderShifts();
+
     if (deleteAll) {
       const res = await supabase.from("team_shifts")
         .delete()
@@ -4478,9 +4491,9 @@ $("#shifts-list").addEventListener("click", async e => {
 
     if (error) {
       toast("Failed to delete shift: " + error.message, true);
+      await loadShifts(true);
     } else {
       await logAction("SHIFT_DELETED", "team_shifts", id, { title: shift.title, department: shift.department, series: deleteAll });
-      await loadShifts(true);
       toast(deleteAll ? "All upcoming weekly shifts removed." : "Shift removed from calendar.");
     }
   }
@@ -4514,11 +4527,15 @@ $("#parts-needed-list").addEventListener("click", async e => {
 
   if (action === "delete-pn" && currentProfile?.is_admin) {
     if (confirm("Remove this needed part from the list?")) {
+      // Optimistic instant UI update
+      allPartsNeeded = allPartsNeeded.filter(p => p.id !== id);
+      renderPartsNeeded();
+
       const { error } = await supabase.from("parts_needed").delete().eq("id", id);
       if (error) {
         toast("Failed to delete: " + error.message, true);
-      } else {
         await loadPartsNeeded(true);
+      } else {
         toast("Part removed from queue.");
       }
     }
@@ -4576,12 +4593,16 @@ $("#view-planner").addEventListener("click", async e => {
   } else if (action === "delete-task") {
     if (!isAdmin) return;
     if (confirm(`Delete task "${task?.title}"?`)) {
+      // Optimistic instant UI update
+      allTasks = allTasks.filter(t => t.id !== id);
+      renderTasks();
+
       const { error } = await supabase.from("planner_tasks").delete().eq("id", id);
       if (error) {
         toast("Delete failed: " + error.message, true);
+        await loadTasks(true);
       } else {
         await logAction("PLANNER_TASK_DELETED", "planner_tasks", id, { title: task?.title });
-        await loadTasks(true);
         toast("Task removed.");
       }
     }
@@ -4594,11 +4615,15 @@ $("#spending-list").addEventListener("click", async e => {
   if (!b || !currentProfile?.is_admin) return;
   const id = b.dataset.id;
   if (confirm("Delete this purchase order record?")) {
+    // Optimistic instant UI update
+    allSpending = allSpending.filter(s => s.id !== id);
+    renderSpending();
+
     const { error } = await supabase.from("spending_records").delete().eq("id", id);
     if (error) {
       toast("Failed to delete record: " + error.message, true);
-    } else {
       await loadSpending(true);
+    } else {
       toast("Purchase record deleted.");
     }
   }
@@ -6300,6 +6325,10 @@ $("#scout-records-list")?.addEventListener("click", async e => {
   if (!id) return;
 
   if (confirm("Delete this scouting record? This action will update team ranking stats.")) {
+    // Instant DOM removal
+    const rowEl = btn.closest(".itemrow") || btn.closest("article");
+    if (rowEl) rowEl.remove();
+
     scoutingRecords = scoutingRecords.filter(r => String(r.id) !== String(id));
     try {
       localStorage.setItem("nyx_scouting_records", JSON.stringify(scoutingRecords));
@@ -6312,20 +6341,17 @@ $("#scout-records-list")?.addEventListener("click", async e => {
       }
     } catch (e) {}
 
-    if (supabase) {
-      try {
-        const { error } = await supabase.from("match_scouting_logs").delete().eq("id", id);
-        if (error) {
-          console.warn("Supabase scouting delete error:", error.message);
-        }
-      } catch (err) {
-        console.warn("Supabase scouting delete error:", err);
-      }
-    }
-
+    // Instant local rerender & badge recalculation
     incorporateScoutingIntoRankings();
     renderScoutingRecords();
     toast("Scouting record deleted.");
+
+    // Background asynchronous DB removal
+    if (supabase) {
+      supabase.from("match_scouting_logs").delete().eq("id", id).then(({ error }) => {
+        if (error) console.warn("Supabase scouting delete warning:", error.message);
+      }).catch(err => console.warn(err));
+    }
   }
 });
 
@@ -6543,13 +6569,18 @@ function setupSecretsEvents() {
     if (!id) return;
 
     if (confirm("Permanently destroy this classified intelligence entry?")) {
+      // Instant DOM removal
+      const cardEl = btn.closest(".card") || btn.closest("article");
+      if (cardEl) cardEl.remove();
+
       secretDossiers = secretDossiers.filter(d => d.id !== id);
       try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (e) {}
+      renderSecretIntel();
+      toast("Entry deleted.");
+
       if (supabase) {
         supabase.from("secret_personnel_intel").delete().eq("id", id).catch(() => {});
       }
-      renderSecretIntel();
-      toast("Entry deleted.");
     }
   });
 }
