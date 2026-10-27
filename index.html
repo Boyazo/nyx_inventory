@@ -403,6 +403,17 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   transition: color .15s ease, transform .15s ease;
 }
 .attendee-remove-btn:hover { color: var(--red); transform: scale(1.2); }
+.slogan-motto {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  letter-spacing: .08em; color: var(--accent-bright); margin: 6px 0 10px; text-transform: uppercase;
+}
+.pill.pill-weekly {
+  color: var(--accent-bright); border-color: var(--accent-line); background: var(--accent-dim); font-weight: 700;
+}
+.recurrence-box {
+  background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px 14px; margin: 14px 0 4px;
+}
 
 /* Planner Board */
 .planner-grid {
@@ -533,7 +544,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
       <span class="brandtext">
         <strong>NYX 11744</strong>
-        <small>FRC ROBOTICS WORKSPACE</small>
+        <small>BORN IN THE DARK, BUILT TO DOMINATE</small>
       </span>
     </a>
     
@@ -560,7 +571,8 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     <section>
       <span class="eyebrow">FRC TEAM 11744 / SAN DIEGO, CA</span>
       <h1>Built for the build season.<br><em>Ready for the next match.</em></h1>
-      <p style="font-size: 17px; max-width: 520px;">
+      <p class="slogan-motto">“Born in the dark, built to dominate.”</p>
+      <p style="font-size: 16px; max-width: 520px;">
         Shared inventory, robot parts tracking, shop shifts calendar, tool checkouts, and team planner for the engineers of Nyx.
       </p>
       <div class="metrics">
@@ -570,7 +582,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       </div>
       <div class="stamp">
         <img src="logo.png" alt="Nyx Logo" width="44" height="44" style="border-radius:8px; object-fit:contain;">
-        <span class="mono" style="font-size:11px; letter-spacing:.15em; color:var(--text-muted);">NYX ROBOTICS 11744<br>ENGINEERED TOGETHER</span>
+        <span class="mono" style="font-size:11px; letter-spacing:.15em; color:var(--text-muted);">NYX ROBOTICS 11744<br>BORN IN THE DARK, BUILT TO DOMINATE</span>
       </div>
     </section>
 
@@ -648,6 +660,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <div>
         <span class="eyebrow">FRC 11744 / ROBOTICS WORKSHOP</span>
         <h1>Team <em>workspace.</em></h1>
+        <p class="slogan-motto">“Born in the dark, built to dominate.”</p>
         <p class="muted">Shop inventory, department shifts calendar, robot parts tracking, and equipment checkouts.</p>
       </div>
 
@@ -1046,6 +1059,23 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 
         <label for="shift-notes">Shift Goals & Notes</label>
         <textarea id="shift-notes" maxlength="600" rows="2" placeholder="e.g. Bring safety glasses, finish intake gearbox assembly before scrim"></textarea>
+
+        <!-- Repeat Weekly Option -->
+        <div class="recurrence-box" id="shift-recurrence-row">
+          <label class="dept-check-label" style="margin: 0; cursor: pointer;">
+            <input type="checkbox" id="shift-repeat-weekly">
+            <span>🔁 Repeat weekly</span>
+          </label>
+          <div id="shift-repeat-options" class="hidden" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+            <label for="shift-repeat-count" style="margin: 0; font-size: 12px; white-space: nowrap;">Repeat for:</label>
+            <select id="shift-repeat-count" style="width: auto; padding: 6px 12px;">
+              <option value="4">4 weeks</option>
+              <option value="6">6 weeks</option>
+              <option value="8" selected>8 weeks (Build Season)</option>
+              <option value="12">12 weeks</option>
+            </select>
+          </div>
+        </div>
 
         <div class="modalactions">
           <button type="button" class="btn btn--ghost" id="cancel-shift-modal">Cancel</button>
@@ -1905,11 +1935,17 @@ function renderShifts() {
     const dateObj = new Date(s.shift_date + "T00:00:00");
     const dateStr = dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 
+    const isWeekly = s.notes && s.notes.includes("[🔁 Weekly Shift]");
+    const cleanNotes = s.notes ? s.notes.replace("[🔁 Weekly Shift]", "").trim() : "";
+
     return `
       <article class="shift-card" data-shift-id="${s.id}">
         <div class="shift-header">
           <div>
-            <span class="pill ${esc(s.department.replace(/\s+/g, ''))}">${esc(s.department)}</span>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span class="pill ${esc(s.department.replace(/\s+/g, ''))}">${esc(s.department)}</span>
+              ${isWeekly ? `<span class="pill pill-weekly" title="Repeats weekly series">🔁 Weekly</span>` : ''}
+            </div>
             <div class="shift-title" style="margin-top:8px;">${esc(s.title)}</div>
           </div>
           ${isAdmin ? `
@@ -1928,7 +1964,7 @@ function renderShifts() {
           <span>📍 ${esc(s.location || "Main Shop")}</span>
         </div>
 
-        ${s.notes ? `<div class="muted small">${esc(s.notes)}</div>` : ''}
+        ${cleanNotes ? `<div class="muted small">${esc(cleanNotes)}</div>` : ''}
 
         <div class="shift-roster">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -2313,7 +2349,15 @@ function openShiftModal(shift) {
   $("#shift-start").value = shift ? shift.start_time : "16:00";
   $("#shift-end").value = shift ? shift.end_time : "19:30";
   $("#shift-location").value = shift ? (shift.location || "Main Shop") : "Main Shop";
-  $("#shift-notes").value = shift ? (shift.notes || "") : "";
+  $("#shift-notes").value = shift ? (shift.notes || "").replace("[🔁 Weekly Shift]", "").trim() : "";
+
+  const recurrenceRow = $("#shift-recurrence-row");
+  if (recurrenceRow) recurrenceRow.classList.toggle("hidden", !!shift);
+  const repeatCb = $("#shift-repeat-weekly");
+  if (repeatCb) repeatCb.checked = false;
+  const repeatOpts = $("#shift-repeat-options");
+  if (repeatOpts) repeatOpts.classList.add("hidden");
+
   $("#shift-modal").classList.remove("hidden");
   $("#shift-title").focus();
 }
@@ -2473,6 +2517,13 @@ $("#profile-form").addEventListener("submit", async e => {
   toast("Profile & departments updated!");
 });
 
+function addDaysToDateString(dateStr, days) {
+  const parts = dateStr.split("-").map(Number);
+  const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
 /* Save Shift (Admins only) */
 $("#shift-form").addEventListener("submit", async e => {
   e.preventDefault();
@@ -2493,6 +2544,9 @@ $("#shift-form").addEventListener("submit", async e => {
     return;
   }
 
+  const repeatWeekly = !editingShiftId && !!$("#shift-repeat-weekly")?.checked;
+  const repeatCount = repeatWeekly ? (parseInt($("#shift-repeat-count")?.value, 10) || 8) : 1;
+
   const btn = $("#save-shift-btn");
   btn.disabled = true;
 
@@ -2504,6 +2558,29 @@ $("#shift-form").addEventListener("submit", async e => {
   let result;
   if (editingShiftId) {
     result = await supabase.from("team_shifts").update(payload).eq("id", editingShiftId);
+  } else if (repeatWeekly) {
+    const seriesTag = "[🔁 Weekly Shift]";
+    const fullNotes = notes ? (notes.includes(seriesTag) ? notes : `${notes} ${seriesTag}`) : seriesTag;
+    const shiftsToInsert = [];
+    const myName = currentProfile?.full_name || currentUser.email || "Team Member";
+
+    for (let i = 0; i < repeatCount; i++) {
+      const weekDate = addDaysToDateString(shift_date, i * 7);
+      shiftsToInsert.push({
+        title,
+        department,
+        shift_date: weekDate,
+        start_time,
+        end_time,
+        location,
+        notes: fullNotes,
+        attendees: i === 0 ? [myName] : [],
+        created_by: currentUser.id,
+        created_by_name: myName,
+        updated_at: new Date().toISOString()
+      });
+    }
+    result = await supabase.from("team_shifts").insert(shiftsToInsert);
   } else {
     const myName = currentProfile?.full_name || currentUser.email || "Team Member";
     result = await supabase.from("team_shifts").insert({
@@ -2520,10 +2597,10 @@ $("#shift-form").addEventListener("submit", async e => {
     return;
   }
 
-  await logAction("SHIFT_CREATED", "team_shifts", editingShiftId || "new", { title, department, shift_date });
+  await logAction("SHIFT_CREATED", "team_shifts", editingShiftId || "new", { title, department, shift_date, repeatWeekly, repeatCount });
   closeShiftModal();
   await loadShifts();
-  toast(editingShiftId ? "Shift updated." : "Shift scheduled!");
+  toast(editingShiftId ? "Shift updated." : (repeatWeekly ? `Scheduled ${repeatCount} weekly shifts!` : "Shift scheduled!"));
 });
 
 /* Item Save (Admin only) */
@@ -2846,6 +2923,9 @@ $("#add-shift-btn").addEventListener("click", () => openShiftModal(null));
 $("#close-shift-modal").addEventListener("click", closeShiftModal);
 $("#cancel-shift-modal").addEventListener("click", closeShiftModal);
 $("#shift-modal").addEventListener("click", e => { if (e.target.id === "shift-modal") closeShiftModal(); });
+$("#shift-repeat-weekly")?.addEventListener("change", e => {
+  $("#shift-repeat-options")?.classList.toggle("hidden", !e.target.checked);
+});
 
 $("#add-part-needed-btn").addEventListener("click", openPartNeededModal);
 $("#close-part-needed-modal").addEventListener("click", closePartNeededModal);
@@ -3035,15 +3115,36 @@ $("#shifts-list").addEventListener("click", async e => {
       toast("Only admins can remove shifts from the schedule.", true);
       return;
     }
-    if (confirm(`Remove shift "${shift.title}" on ${shift.shift_date}?`)) {
-      const { error } = await supabase.from("team_shifts").delete().eq("id", id);
-      if (error) {
-        toast("Failed to delete shift: " + error.message, true);
-      } else {
-        await logAction("SHIFT_DELETED", "team_shifts", id, { title: shift.title, department: shift.department });
-        await loadShifts(true);
-        toast("Shift removed from calendar.");
+    const isWeekly = shift.notes && shift.notes.includes("[🔁 Weekly Shift]");
+    let deleteAll = false;
+    if (isWeekly) {
+      deleteAll = confirm(`"${shift.title}" is part of a recurring weekly series.\n\nClick OK to remove this and ALL upcoming weekly shifts for "${shift.title}".\n\nClick CANCEL if you only want to remove this single date (${shift.shift_date}).`);
+      if (!deleteAll) {
+        if (!confirm(`Remove ONLY the shift on ${shift.shift_date}?`)) return;
       }
+    } else {
+      if (!confirm(`Remove shift "${shift.title}" on ${shift.shift_date}?`)) return;
+    }
+
+    let error;
+    if (deleteAll) {
+      const res = await supabase.from("team_shifts")
+        .delete()
+        .eq("title", shift.title)
+        .eq("department", shift.department)
+        .gte("shift_date", shift.shift_date);
+      error = res.error;
+    } else {
+      const res = await supabase.from("team_shifts").delete().eq("id", id);
+      error = res.error;
+    }
+
+    if (error) {
+      toast("Failed to delete shift: " + error.message, true);
+    } else {
+      await logAction("SHIFT_DELETED", "team_shifts", id, { title: shift.title, department: shift.department, series: deleteAll });
+      await loadShifts(true);
+      toast(deleteAll ? "All upcoming weekly shifts removed." : "Shift removed from calendar.");
     }
   }
 });

@@ -1,4 +1,4 @@
--- NYX 11744 shared inventory database.
+-- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
 -- Run this entire script in Supabase Dashboard -> SQL Editor.
 create extension if not exists pgcrypto;
 
