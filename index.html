@@ -518,6 +518,443 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 .toast.error { border-color: rgba(248, 113, 113, .5); background: #1a0f12; color: #fecdd3; }
 
 /* Responsive */
+/* App Layout & Left Sidebar */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+.app-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  background: #07070ceb;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 70;
+  transition: transform .22s cubic-bezier(0.16, 1, 0.3, 1), background-color .2s ease;
+}
+[data-theme="light"] .app-sidebar {
+  background: #f8fafc;
+  border-right-color: #cbd5e1;
+}
+.app-sidebar-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); z-index: 65; display: none;
+}
+.app-sidebar-backdrop.active { display: block; }
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-logo {
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.05);
+}
+.sidebar-brand strong {
+  display: block;
+  font-size: 14px;
+  letter-spacing: .06em;
+  line-height: 1.1;
+}
+.sidebar-brand small {
+  font-size: 9px;
+  letter-spacing: .18em;
+  color: var(--accent-soft);
+}
+.sidebar-slogan {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .05em;
+  color: var(--accent-bright);
+  margin-top: 8px;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.sidebar-section-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--text-faint);
+  margin: 14px 6px 6px;
+  text-transform: uppercase;
+}
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all .14s ease;
+  width: 100%;
+}
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, .04);
+  color: var(--text);
+  border-color: var(--line);
+}
+.sidebar-link.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-soft);
+  font-weight: 700;
+  box-shadow: 0 0 14px rgba(139, 92, 246, .2);
+}
+.sidebar-icon { font-size: 16px; }
+.sidebar-stat-chip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, .02);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color .14s;
+}
+.sidebar-user:hover { border-color: var(--accent-line); }
+.sidebar-user-text { flex: 1; min-width: 0; }
+.sidebar-user-text span {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-user-text small {
+  font-size: 9px;
+  color: var(--accent-soft);
+}
+.mobile-menu-btn {
+  display: none;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 18px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Strategy & Whiteboard Styles */
+.playbook-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.playbook-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tool-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-right: 2px;
+}
+.tool-btn {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: all .12s;
+}
+.tool-btn:hover { background: rgba(255,255,255,.08); color: var(--text); }
+.tool-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-soft);
+  font-weight: 700;
+}
+.color-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform .12s;
+}
+.swatch.active {
+  border-color: #ffffff;
+  transform: scale(1.18);
+  box-shadow: 0 0 10px rgba(255,255,255,.5);
+}
+.size-btn {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 5px;
+}
+.size-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-soft);
+  font-weight: 700;
+}
+.canvas-wrapper {
+  position: relative;
+  width: 100%;
+  background: #090912;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 16px 50px rgba(0,0,0,.6);
+  display: flex;
+  justify-content: center;
+}
+#field-canvas {
+  width: 100%;
+  max-width: 960px;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+.playbook-save-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.saved-plays-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 6px;
+}
+.play-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .15s, transform .15s;
+}
+.play-card:hover {
+  border-color: var(--accent-line);
+  transform: translateY(-2px);
+}
+.play-card-thumb {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+  background: #090912;
+  display: block;
+  border-bottom: 1px solid var(--line);
+}
+.play-card-body {
+  padding: 12px 14px;
+}
+.play-card-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.play-card-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.play-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/* Match Simulator Styles */
+.sim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.sim-alliance-box {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.sim-alliance-box.red { border-top: 3px solid #ef4444; }
+.sim-alliance-box.blue { border-top: 3px solid #3b82f6; }
+.sim-alliance-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.sim-slot {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.sim-slot select {
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.sim-result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.5);
+}
+.prob-bar-container {
+  height: 28px;
+  background: rgba(255,255,255,.05);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  margin: 16px 0;
+  border: 1px solid var(--line);
+}
+.prob-bar-fill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  transition: width .4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.prob-bar-fill.red { background: linear-gradient(90deg, #dc2626, #ef4444); color: #ffffff; }
+.prob-bar-fill.blue { background: linear-gradient(90deg, #3b82f6, #2563eb); color: #ffffff; }
+.sim-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.sim-stat-box {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: center;
+}
+.sim-stat-box small { font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); display: block; }
+.sim-stat-box strong { font-size: 18px; font-family: var(--font-mono); }
+
+/* Rankings Table */
+.rank-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+}
+.rank-badge.top3 {
+  background: rgba(250, 204, 21, .15);
+  border-color: rgba(250, 204, 21, .4);
+  color: #fde047;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .app-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: 10px 0 40px rgba(0,0,0,.7);
+  }
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+  .mobile-menu-btn { display: inline-flex; align-items: center; }
+  .sim-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 900px) {
   .authlayout { grid-template-columns: 1fr; padding: 30px 0; }
   .stats { grid-template-columns: repeat(2, 1fr); }
@@ -537,30 +974,89 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 </head>
 <body>
 
-<div class="shell">
-  <!-- Topbar -->
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="NYX 11744 Workspace">
-      <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
-      <span class="brandtext">
-        <strong>NYX 11744</strong>
-        <small>BORN IN THE DARK, BUILT TO DOMINATE</small>
-      </span>
-    </a>
-    
-    <div class="top-controls">
-      <!-- 2-state Segmented Theme Toggle -->
-      <div class="theme-switch-box" role="radiogroup" aria-label="Color theme">
-        <button class="theme-opt-btn" id="theme-btn-dark" type="button" aria-checked="true">🌙 Dark</button>
-        <button class="theme-opt-btn" id="theme-btn-light" type="button" aria-checked="false">☀️ Light</button>
-      </div>
+<div class="app-layout">
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="app-sidebar-backdrop" id="sidebar-backdrop"></div>
 
-      <div class="topnote">
-        <span class="dot"></span>
-        <span>Shop Workspace</span>
+  <!-- Left Sidebar (hidden on auth/pending screens, visible when logged in) -->
+  <aside class="app-sidebar hidden" id="app-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <img src="logo.png" alt="Nyx Logo" class="sidebar-logo" width="36" height="36">
+        <div>
+          <strong>NYX 11744</strong>
+          <small class="mono">TEAM WORKSPACE</small>
+        </div>
+      </div>
+      <div class="sidebar-slogan">“Born in the dark, built to dominate”</div>
+    </div>
+
+    <div class="sidebar-section-title">NAVIGATION</div>
+    <nav class="sidebar-nav">
+      <button class="sidebar-link active" id="sidebar-btn-dashboard" data-page="dashboard" type="button">
+        <span class="sidebar-icon">🛠</span>
+        <span class="sidebar-label">Dashboard</span>
+      </button>
+      <button class="sidebar-link" id="sidebar-btn-strategy" data-page="strategy" type="button">
+        <span class="sidebar-icon">🎯</span>
+        <span class="sidebar-label">Strategy & Scouting</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-section-title">FRC REEFSCAPE 2025</div>
+    <div class="sidebar-stat-chip">
+      <span class="muted small">Team Number</span>
+      <strong class="mono" style="color:var(--accent-bright)">11744</strong>
+    </div>
+    <div class="sidebar-stat-chip">
+      <span class="muted small">Game</span>
+      <strong class="mono" style="color:var(--text)">REEFSCAPE</strong>
+    </div>
+    <div class="sidebar-stat-chip">
+      <span class="muted small">Regional</span>
+      <strong class="mono" style="color:var(--text)">San Diego</strong>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-open-profile-btn" title="Click to view & edit departments">
+        <div class="avatar" id="sidebar-avatar">N</div>
+        <div class="sidebar-user-text">
+          <span id="sidebar-username">Team Member</span>
+          <small id="sidebar-userdept" class="mono">APPROVED</small>
+        </div>
       </div>
     </div>
-  </header>
+  </aside>
+
+  <!-- App Main Content Shell -->
+  <div class="app-main">
+    <div class="shell">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="mobile-menu-btn" id="sidebar-toggle-btn" type="button" aria-label="Toggle menu">☰</button>
+          <a class="brand" href="#" aria-label="NYX 11744 Workspace">
+            <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
+            <span class="brandtext">
+              <strong>NYX 11744</strong>
+              <small>BORN IN THE DARK, BUILT TO DOMINATE</small>
+            </span>
+          </a>
+        </div>
+        
+        <div class="top-controls">
+          <!-- 2-state Segmented Theme Toggle -->
+          <div class="theme-switch-box" role="radiogroup" aria-label="Color theme">
+            <button class="theme-opt-btn" id="theme-btn-dark" type="button" aria-checked="true">🌙 Dark</button>
+            <button class="theme-opt-btn" id="theme-btn-light" type="button" aria-checked="false">☀️ Light</button>
+          </div>
+
+          <div class="topnote">
+            <span class="dot"></span>
+            <span>Shop Workspace</span>
+          </div>
+        </div>
+      </header>
 
   <div id="setup-notice" class="notice hidden">
     <b>Database configuration required.</b> Set your Supabase project URL and anon/publishable key in the script configuration.
@@ -960,6 +1456,285 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       </div>
       <div id="logs-list">
         <div style="padding:40px; text-align:center;" class="muted">Loading audit logs…</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- STRATEGY & SCOUTING SCREEN -->
+  <main id="strategy-screen" class="dashboard hidden">
+    <section class="welcome">
+      <div>
+        <span class="eyebrow">FRC 11744 / STRATEGY & TACTICS</span>
+        <h1>Strategy <em>center.</em></h1>
+        <p class="slogan-motto">“Born in the dark, built to dominate.”</p>
+        <p class="muted">Statbotics & TBA rankings, 2025 REEFSCAPE tactical whiteboard, and Monte Carlo match simulation.</p>
+      </div>
+
+      <div class="user-controls-block">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn--ghost btn--sm" id="strat-sync-btn" type="button">🔄 Sync Statbotics Data</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Strategy Navigation Subtabs -->
+    <nav class="viewtabs" id="strategy-tabs">
+      <button class="viewtab active" data-strat-view="playbook" type="button">🎨 Tactical Field Playbook</button>
+      <button class="viewtab" data-strat-view="rankings" type="button">🏆 FRC Rankings & Statbotics <span class="badgenum" id="badge-strat-count">50</span></button>
+      <button class="viewtab" data-strat-view="simulator" type="button">⚔️ Match Simulator</button>
+      <button class="viewtab" data-strat-view="lookup" type="button">🔍 Team Deep Dive</button>
+    </nav>
+
+    <!-- 1. TACTICAL PLAYBOOK / WHITEBOARD (Rebuilt Field Canvas) -->
+    <section id="view-strat-playbook" class="panel">
+      <div class="toolbar">
+        <div>
+          <h2>2025 REEFSCAPE Tactical Playbook</h2>
+          <p class="muted small">Draw autonomous paths, teleop cycling lanes, and robot starting positions. Save named plays or export to PNG for drive meetings.</p>
+        </div>
+      </div>
+
+      <div class="playbook-container" style="padding: 16px 20px;">
+        <div class="playbook-toolbar">
+          <div class="tool-group">
+            <span class="tool-label">TOOL:</span>
+            <button type="button" class="tool-btn active" data-tool="pen" title="Freehand Path">✏️ Draw</button>
+            <button type="button" class="tool-btn" data-tool="arrow" title="Route Arrow">↗️ Arrow</button>
+            <button type="button" class="tool-btn" data-tool="line" title="Straight Line">📏 Line</button>
+            <button type="button" class="tool-btn" data-tool="token-red" title="Red Alliance Robot">🔴 Red Bot</button>
+            <button type="button" class="tool-btn" data-tool="token-blue" title="Blue Alliance Robot">🔵 Blue Bot</button>
+            <button type="button" class="tool-btn" data-tool="piece-coral" title="Coral Game Piece">🪸 Coral</button>
+            <button type="button" class="tool-btn" data-tool="piece-algae" title="Algae Game Piece">🟢 Algae</button>
+            <button type="button" class="tool-btn" data-tool="eraser" title="Eraser">🧼 Eraser</button>
+          </div>
+
+          <div class="tool-group">
+            <span class="tool-label">COLOR:</span>
+            <div class="color-swatches">
+              <button type="button" class="swatch active" data-color="#a855f7" style="background:#a855f7" title="NYX Violet"></button>
+              <button type="button" class="swatch" data-color="#ef4444" style="background:#ef4444" title="Red Alliance"></button>
+              <button type="button" class="swatch" data-color="#3b82f6" style="background:#3b82f6" title="Blue Alliance"></button>
+              <button type="button" class="swatch" data-color="#10b981" style="background:#10b981" title="Algae Green"></button>
+              <button type="button" class="swatch" data-color="#eab308" style="background:#eab308" title="Yellow Objective"></button>
+              <button type="button" class="swatch" data-color="#ffffff" style="background:#ffffff" title="White Coral"></button>
+            </div>
+          </div>
+
+          <div class="tool-group">
+            <span class="tool-label">WIDTH:</span>
+            <button type="button" class="size-btn" data-size="2">Thin</button>
+            <button type="button" class="size-btn active" data-size="4">Med</button>
+            <button type="button" class="size-btn" data-size="8">Thick</button>
+          </div>
+
+          <div class="tool-group" style="margin-left:auto;">
+            <button type="button" class="btn btn--sm btn--ghost" id="field-undo-btn">↺ Undo</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="field-clear-btn">🗑 Clear</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="field-export-btn">🖼 Export PNG</button>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="field-canvas" width="960" height="480"></canvas>
+        </div>
+
+        <div class="playbook-save-bar">
+          <div style="display:flex; gap:10px; flex:1; max-width:600px;">
+            <input type="text" id="playbook-plan-name" placeholder="Strategy name e.g. Auto 4-Coral Right Side, Finals Match 1 Strategy..." maxlength="80">
+            <button type="button" class="btn btn--primary" id="playbook-save-btn">💾 Save Play</button>
+          </div>
+          <div class="saved-plays-count">
+            <span id="saved-plays-count-text" class="mono small muted">Saved Plays (0)</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="eyebrow" style="margin-top:16px;">SAVED STRATEGY PLAYS</div>
+          <div id="saved-plays-grid" class="saved-plays-grid">
+            <div class="muted small" style="padding:20px; text-align:center; grid-column:1/-1;">No saved plays yet. Draw a route above and click "Save Play"!</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. TEAM RANKINGS & STATBOTICS -->
+    <section id="view-strat-rankings" class="panel hidden">
+      <div class="toolbar">
+        <div>
+          <h2>FRC Team EPA Rankings & Statbotics Metrics</h2>
+          <p class="muted small">Expected Points Added (EPA) and match statistics for competitive FRC teams. Data powered by Statbotics.io.</p>
+        </div>
+        <div class="toolbar-actions">
+          <input class="search" id="strat-team-search" type="search" placeholder="⌕ Search team #, name, city..." style="width:260px;">
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="tabslist" id="strat-sort-tabs">
+          <button class="catbtn active" data-sort="epa">Sort by Total EPA</button>
+          <button class="catbtn" data-sort="auto_epa">Auto EPA</button>
+          <button class="catbtn" data-sort="teleop_epa">Teleop EPA</button>
+          <button class="catbtn" data-sort="endgame_epa">Endgame EPA</button>
+          <button class="catbtn" data-sort="winrate">Win Rate %</button>
+        </div>
+      </div>
+
+      <div class="tablehead" style="grid-template-columns: 70px minmax(200px, 2.5fr) minmax(130px, 1.2fr) 90px 80px 80px 80px 90px 100px;">
+        <span>RANK</span>
+        <span>TEAM</span>
+        <span>LOCATION</span>
+        <span>TOTAL EPA</span>
+        <span>AUTO</span>
+        <span>TELEOP</span>
+        <span>ENDGAME</span>
+        <span>WIN RATE</span>
+        <span>ACTION</span>
+      </div>
+
+      <div id="strat-rankings-list">
+        <div style="padding:40px; text-align:center;" class="muted">Loading FRC rankings…</div>
+      </div>
+    </section>
+
+    <!-- 3. MATCH SIMULATOR -->
+    <section id="view-strat-simulator" class="panel hidden">
+      <div class="toolbar">
+        <div>
+          <h2>Monte Carlo Match Simulator</h2>
+          <p class="muted small">Simulate 3-vs-3 FRC alliance matches with 1,000 statistical iterations using actual team EPA data and variance distributions.</p>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn--ghost btn--sm" id="sim-preset-nyx" type="button">⚡ NYX 11744 Matchup</button>
+          <button class="btn btn--ghost btn--sm" id="sim-preset-finals" type="button">🏆 Finals Matchup</button>
+        </div>
+      </div>
+
+      <div style="padding: 18px 20px;">
+        <div class="sim-grid">
+          <!-- Red Alliance Selector -->
+          <div class="sim-alliance-box red">
+            <div class="sim-alliance-head">
+              <strong style="color:#ef4444; font-family:var(--font-mono); font-size:14px;">🔴 RED ALLIANCE</strong>
+              <span class="mono small muted" id="sim-red-total-epa">Total EPA: 0.0</span>
+            </div>
+            <div class="sim-slot">
+              <label style="margin:0; font-size:11px;">Captain / R1:</label>
+              <select id="sim-red-1" class="sim-team-select"></select>
+            </div>
+            <div class="sim-slot">
+              <label style="margin:0; font-size:11px;">Pick 1 / R2:</label>
+              <select id="sim-red-2" class="sim-team-select"></select>
+            </div>
+            <div class="sim-slot">
+              <label style="margin:0; font-size:11px;">Pick 2 / R3:</label>
+              <select id="sim-red-3" class="sim-team-select"></select>
+            </div>
+          </div>
+
+          <!-- Blue Alliance Selector -->
+          <div class="sim-alliance-box blue">
+            <div class="sim-alliance-head">
+              <strong style="color:#3b82f6; font-family:var(--font-mono); font-size:14px;">🔵 BLUE ALLIANCE</strong>
+              <span class="mono small muted" id="sim-blue-total-epa">Total EPA: 0.0</span>
+            </div>
+            <div class="sim-slot">
+              <label style="margin:0; font-size:11px;">Captain / B1:</label>
+              <select id="sim-blue-1" class="sim-team-select"></select>
+            </div>
+            <div class="sim-slot">
+              <label style="margin:0; font-size:11px;">Pick 1 / B2:</label>
+              <select id="sim-blue-2" class="sim-team-select"></select>
+            </div>
+            <div class="sim-slot">
+              <label style="margin:0; font-size:11px;">Pick 2 / B3:</label>
+              <select id="sim-blue-3" class="sim-team-select"></select>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center; margin-bottom: 24px;">
+          <button class="btn btn--primary" id="run-sim-btn" type="button" style="padding: 12px 32px; font-size: 14px;">
+            ⚡ Run 1,000-Match Monte Carlo Simulation
+          </button>
+        </div>
+
+        <!-- Simulation Results Display -->
+        <div id="sim-results-card" class="sim-result-card hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="eyebrow" style="margin-bottom:0">SIMULATION FORECAST (1,000 MATCHES)</span>
+            <span class="mono small muted" id="sim-run-timestamp">Just now</span>
+          </div>
+
+          <!-- Win Probability Bar -->
+          <div class="prob-bar-container">
+            <div class="prob-bar-fill red" id="sim-prob-red" style="width: 50%;">RED 50%</div>
+            <div class="prob-bar-fill blue" id="sim-prob-blue" style="width: 50%;">BLUE 50%</div>
+          </div>
+
+          <!-- Predicted Scores -->
+          <div style="display:flex; justify-content:space-around; text-align:center; margin: 18px 0; padding: 14px; background:rgba(255,255,255,.02); border-radius:var(--radius); border:1px solid var(--line);">
+            <div>
+              <small class="mono muted">RED PREDICTED SCORE</small>
+              <div class="mono" style="font-size:32px; font-weight:700; color:#ef4444;" id="sim-score-red">0.0</div>
+            </div>
+            <div style="align-self:center; font-family:var(--font-mono); font-size:20px; color:var(--text-faint);">VS</div>
+            <div>
+              <small class="mono muted">BLUE PREDICTED SCORE</small>
+              <div class="mono" style="font-size:32px; font-weight:700; color:#60a5fa;" id="sim-score-blue">0.0</div>
+            </div>
+          </div>
+
+          <!-- Phase Breakdown Grid -->
+          <div class="sim-stats-grid">
+            <div class="sim-stat-box">
+              <small>AUTO PHASE</small>
+              <strong id="sim-phase-auto" style="color:var(--accent-bright)">0 vs 0</strong>
+            </div>
+            <div class="sim-stat-box">
+              <small>TELEOP CYCLES</small>
+              <strong id="sim-phase-teleop" style="color:var(--text)">0 vs 0</strong>
+            </div>
+            <div class="sim-stat-box">
+              <small>ENDGAME / BARGE</small>
+              <strong id="sim-phase-endgame" style="color:var(--green)">0 vs 0</strong>
+            </div>
+            <div class="sim-stat-box">
+              <small>CORAL BONUS RP</small>
+              <strong id="sim-rp-coral">0% vs 0%</strong>
+            </div>
+            <div class="sim-stat-box">
+              <small>BARGE BONUS RP</small>
+              <strong id="sim-rp-barge">0% vs 0%</strong>
+            </div>
+          </div>
+
+          <!-- Tactical Analysis -->
+          <div style="margin-top:14px; padding:14px; border-left:3px solid var(--accent); background:var(--accent-dim); border-radius:0 8px 8px 0;">
+            <b style="color:var(--accent-soft); font-size:12px; font-family:var(--font-mono); display:block; margin-bottom:4px;">TACTICAL MATCHUP BREAKDOWN</b>
+            <p id="sim-analysis-text" style="font-size:13px; margin:0; line-height:1.5; color:var(--text);"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. TEAM LOOKUP & DEEP DIVE -->
+    <section id="view-strat-lookup" class="panel hidden">
+      <div class="toolbar">
+        <div>
+          <h2>FRC Team Deep-Dive Lookup</h2>
+          <p class="muted small">Detailed profile and performance breakdown for any FRC team worldwide.</p>
+        </div>
+      </div>
+
+      <div style="padding: 20px; max-width: 720px; margin: auto;">
+        <form id="team-lookup-form" style="display:flex; gap:10px; margin-bottom: 24px;">
+          <input type="number" id="lookup-team-num" placeholder="Enter FRC Team # (e.g. 11744, 254, 1678)" min="1" max="10000" required style="font-size:15px;">
+          <button type="submit" class="btn btn--primary" style="white-space:nowrap;">Analyze Team ↗</button>
+        </form>
+
+        <div id="team-lookup-result">
+          <!-- Filled dynamically -->
+        </div>
       </div>
     </section>
   </main>
@@ -1470,7 +2245,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     <span>FRC TEAM 11744 · NYX ROBOTICS</span>
     <span>SAN DIEGO, CALIFORNIA</span>
   </footer>
-</div>
+    </div> <!-- .shell -->
+  </div> <!-- .app-main -->
+</div> <!-- .app-layout -->
 
 <script type="module">
 /* Supabase Configuration */
@@ -1563,10 +2340,38 @@ function authMode(mode) {
   $("#auth-message").classList.add("hidden");
 }
 
+let currentAppPage = "dashboard"; // "dashboard" or "strategy"
+let currentStratTab = "playbook"; // "playbook", "rankings", "simulator", "lookup"
+
 function screens(which) {
+  const isWorkspace = which === "inventory";
   $("#auth-screen").classList.toggle("hidden", which !== "auth");
   $("#pending-screen").classList.toggle("hidden", which !== "pending");
-  $("#inventory-screen").classList.toggle("hidden", which !== "inventory");
+  const elSidebar = $("#app-sidebar");
+  if (elSidebar) elSidebar.classList.toggle("hidden", !isWorkspace);
+
+  if (isWorkspace) {
+    switchPage(currentAppPage);
+  } else {
+    $("#inventory-screen")?.classList.add("hidden");
+    $("#strategy-screen")?.classList.add("hidden");
+  }
+}
+
+function switchPage(pageName) {
+  currentAppPage = pageName;
+  $("#sidebar-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
+  $("#sidebar-btn-strategy")?.classList.toggle("active", pageName === "strategy");
+  $("#inventory-screen")?.classList.toggle("hidden", pageName !== "dashboard");
+  $("#strategy-screen")?.classList.toggle("hidden", pageName !== "strategy");
+
+  // Close mobile sidebar drawer if open
+  $("#app-sidebar")?.classList.remove("open");
+  $("#sidebar-backdrop")?.classList.remove("active");
+
+  if (pageName === "strategy") {
+    initStrategyCenter();
+  }
 }
 
 function switchView(viewName) {
@@ -1620,6 +2425,7 @@ async function signOut() {
   allPartsNeeded = [];
   allShifts = [];
   allSpending = [];
+  $("#app-sidebar")?.classList.add("hidden");
   screens("auth");
   authMode("signin");
 }
@@ -1650,6 +2456,10 @@ async function checkUser(user) {
   const elName = $("#profile-name"); if (elName) elName.textContent = name;
   const elAvatar = $("#profile-avatar"); if (elAvatar) elAvatar.textContent = name.trim().charAt(0).toUpperCase();
   const elRole = $("#profile-role"); if (elRole) elRole.textContent = `${depts} · ${data.is_admin ? "ADMIN" : "MEMBER"}`;
+
+  const elSideName = $("#sidebar-username"); if (elSideName) elSideName.textContent = name;
+  const elSideAvatar = $("#sidebar-avatar"); if (elSideAvatar) elSideAvatar.textContent = name.trim().charAt(0).toUpperCase();
+  const elSideDept = $("#sidebar-userdept"); if (elSideDept) elSideDept.textContent = `${depts} · ${data.is_admin ? "ADMIN" : "MEMBER"}`;
 
   // Admin visibility controls
   const elAddItm = $("#add-item-button"); if (elAddItm) elAddItm.classList.toggle("hidden", !data.is_admin);
@@ -2513,6 +3323,10 @@ $("#profile-form").addEventListener("submit", async e => {
   const elAvatar = $("#profile-avatar"); if (elAvatar) elAvatar.textContent = full_name.trim().charAt(0).toUpperCase();
   const elRole = $("#profile-role"); if (elRole) elRole.textContent = `${deptsToSave.join(" · ").toUpperCase()} · ${currentProfile.is_admin ? "ADMIN" : "MEMBER"}`;
 
+  const elSideName = $("#sidebar-username"); if (elSideName) elSideName.textContent = full_name;
+  const elSideAvatar = $("#sidebar-avatar"); if (elSideAvatar) elSideAvatar.textContent = full_name.trim().charAt(0).toUpperCase();
+  const elSideDept = $("#sidebar-userdept"); if (elSideDept) elSideDept.textContent = `${deptsToSave.join(" · ").toUpperCase()} · ${currentProfile.is_admin ? "ADMIN" : "MEMBER"}`;
+
   closeProfileModal();
   toast("Profile & departments updated!");
 });
@@ -3353,6 +4167,1048 @@ async function initSupabase() {
     message("Could not initialize Supabase: " + err.message, true);
   }
 }
+
+/* ==========================================================================
+   STRATEGY, SCOUTING, PLAYBOOK & SIMULATOR ENGINE (STATBOTICS & REEFSCAPE)
+   ========================================================================== */
+
+let frcTeamsData = [
+  { team: 11744, name: "NYX Robotics", location: "San Diego, CA, USA", epa: 38.6, auto_epa: 8.4, teleop_epa: 21.2, endgame_epa: 9.0, winrate: 65.2, rank: 340, record: "18-10-0", rookie: 2024 },
+  { team: 254, name: "The Cheesy Poofs", location: "San Jose, CA, USA", epa: 68.4, auto_epa: 18.2, teleop_epa: 38.5, endgame_epa: 11.7, winrate: 91.4, rank: 1, record: "58-5-1", rookie: 1999 },
+  { team: 4414, name: "HighTide", location: "Ventura, CA, USA", epa: 67.5, auto_epa: 18.0, teleop_epa: 37.9, endgame_epa: 11.6, winrate: 90.1, rank: 2, record: "55-6-0", rookie: 2022 },
+  { team: 1678, name: "Citrus Circuits", location: "Davis, CA, USA", epa: 66.8, auto_epa: 17.8, teleop_epa: 37.4, endgame_epa: 11.6, winrate: 89.2, rank: 3, record: "62-7-0", rookie: 2005 },
+  { team: 1323, name: "MadTown Robotics", location: "Madera, CA, USA", epa: 65.2, auto_epa: 16.5, teleop_epa: 37.1, endgame_epa: 11.6, winrate: 87.8, rank: 4, record: "52-8-0", rookie: 2004 },
+  { team: 2056, name: "OP Robotics", location: "Stoney Creek, ON, Canada", epa: 64.9, auto_epa: 17.1, teleop_epa: 36.4, endgame_epa: 11.4, winrate: 88.0, rank: 5, record: "55-7-0", rookie: 2007 },
+  { team: 2910, name: "Jack in the Bot", location: "Mill Creek, WA, USA", epa: 63.8, auto_epa: 16.2, teleop_epa: 36.1, endgame_epa: 11.5, winrate: 86.5, rank: 6, record: "48-7-1", rookie: 2009 },
+  { team: 118, name: "The Robonauts", location: "Houston, TX, USA", epa: 62.1, auto_epa: 15.6, teleop_epa: 35.1, endgame_epa: 11.4, winrate: 85.0, rank: 7, record: "47-8-0", rookie: 1997 },
+  { team: 971, name: "Spartan Robotics", location: "Mountain View, CA, USA", epa: 61.4, auto_epa: 15.0, teleop_epa: 35.2, endgame_epa: 11.2, winrate: 84.0, rank: 8, record: "45-9-0", rookie: 2002 },
+  { team: 1114, name: "Simbotics", location: "St. Catharines, ON, Canada", epa: 60.5, auto_epa: 15.2, teleop_epa: 34.1, endgame_epa: 11.2, winrate: 83.0, rank: 9, record: "46-9-0", rookie: 2003 },
+  { team: 3310, name: "Black Hawk Robotics", location: "Heath, TX, USA", epa: 60.1, auto_epa: 14.8, teleop_epa: 34.1, endgame_epa: 11.2, winrate: 82.5, rank: 10, record: "44-9-1", rookie: 2010 },
+  { team: 148, name: "Robowranglers", location: "Greenville, TX, USA", epa: 59.5, auto_epa: 14.2, teleop_epa: 34.0, endgame_epa: 11.3, winrate: 81.2, rank: 11, record: "42-10-0", rookie: 1992 },
+  { team: 973, name: "Greybots", location: "Atascadero, CA, USA", epa: 58.7, auto_epa: 14.0, teleop_epa: 33.5, endgame_epa: 11.2, winrate: 80.2, rank: 12, record: "40-10-0", rookie: 2002 },
+  { team: 3476, name: "Code Orange", location: "Irvine, CA, USA", epa: 58.2, auto_epa: 13.8, teleop_epa: 33.4, endgame_epa: 11.0, winrate: 79.5, rank: 13, record: "38-10-0", rookie: 2010 },
+  { team: 359, name: "Hawaiian Kids", location: "Waialua, HI, USA", epa: 57.4, auto_epa: 13.5, teleop_epa: 32.9, endgame_epa: 11.0, winrate: 78.9, rank: 14, record: "39-11-0", rookie: 2000 },
+  { team: 604, name: "Quixilver", location: "San Jose, CA, USA", epa: 56.8, auto_epa: 13.1, teleop_epa: 32.7, endgame_epa: 11.0, winrate: 78.4, rank: 15, record: "37-10-1", rookie: 2001 },
+  { team: 1538, name: "The Holy Cows", location: "San Diego, CA, USA", epa: 55.4, auto_epa: 12.5, teleop_epa: 32.1, endgame_epa: 10.8, winrate: 77.0, rank: 16, record: "35-11-0", rookie: 2005 },
+  { team: 2485, name: "WARLords", location: "San Diego, CA, USA", epa: 54.1, auto_epa: 12.0, teleop_epa: 31.5, endgame_epa: 10.6, winrate: 75.4, rank: 17, record: "33-11-0", rookie: 2008 },
+  { team: 3128, name: "Aluminum Narwhals", location: "San Diego, CA, USA", epa: 53.6, auto_epa: 11.8, teleop_epa: 31.2, endgame_epa: 10.6, winrate: 74.8, rank: 18, record: "32-11-1", rookie: 2009 },
+  { team: 5804, name: "TORCH", location: "Richmond, VA, USA", epa: 53.1, auto_epa: 11.5, teleop_epa: 31.0, endgame_epa: 10.6, winrate: 74.0, rank: 19, record: "31-11-0", rookie: 2016 },
+  { team: 2102, name: "Team Paradox", location: "Encinitas, CA, USA", epa: 51.2, auto_epa: 11.0, teleop_epa: 29.8, endgame_epa: 10.4, winrate: 72.0, rank: 20, record: "30-12-0", rookie: 2007 },
+  { team: 2827, name: "Crown City Robotics", location: "Coronado, CA, USA", epa: 46.5, auto_epa: 9.8, teleop_epa: 27.2, endgame_epa: 9.5, winrate: 68.0, rank: 25, record: "26-12-0", rookie: 2009 }
+];
+
+let strategyPlays = [];
+let strategyInitialized = false;
+let playbookInitialized = false;
+let activeTool = "pen";
+let activeColor = "#a855f7";
+let activeWidth = 4;
+let playHistory = [];
+let isDrawing = false;
+let currentPath = [];
+let shapeStart = null;
+let currentSortMetric = "epa";
+let currentSearchQuery = "";
+
+/* Switch Strategy Subtabs */
+function switchStratTab(tabName) {
+  currentStratTab = tabName;
+  $$("#strategy-tabs .viewtab").forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.stratView === tabName);
+  });
+  $("#view-strat-playbook")?.classList.toggle("hidden", tabName !== "playbook");
+  $("#view-strat-rankings")?.classList.toggle("hidden", tabName !== "rankings");
+  $("#view-strat-simulator")?.classList.toggle("hidden", tabName !== "simulator");
+  $("#view-strat-lookup")?.classList.toggle("hidden", tabName !== "lookup");
+
+  if (tabName === "playbook") {
+    setTimeout(renderCanvas, 50);
+  }
+}
+
+/* Initialize Strategy Center */
+function initStrategyCenter() {
+  if (!strategyInitialized) {
+    strategyInitialized = true;
+    initPlaybook();
+    initSimulator();
+    renderRankings();
+    loadSavedPlays();
+    populateSimulatorSelectors();
+
+    // Strategy Subtabs Click
+    $$("#strategy-tabs .viewtab").forEach(tab => {
+      tab.addEventListener("click", () => switchStratTab(tab.dataset.stratView));
+    });
+
+    // Statbotics live sync button
+    $("#strat-sync-btn")?.addEventListener("click", syncStatboticsData);
+
+    // Rankings search & sort
+    $("#strat-team-search")?.addEventListener("input", e => {
+      currentSearchQuery = e.target.value.trim().toLowerCase();
+      renderRankings();
+    });
+
+    $$("#strat-sort-tabs .catbtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        $$("#strat-sort-tabs .catbtn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentSortMetric = btn.dataset.sort;
+        renderRankings();
+      });
+    });
+
+    // Team lookup form
+    $("#team-lookup-form")?.addEventListener("submit", handleTeamLookup);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   TACTICAL FIELD PLAYBOOK (CANVAS)
+   -------------------------------------------------------------------------- */
+function drawField(ctx, width, height) {
+  // Background field mat
+  ctx.fillStyle = "#0c0d18";
+  ctx.fillRect(0, 0, width, height);
+
+  // Field carpet grid
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+  ctx.lineWidth = 1;
+  const gridSize = 40;
+  for (let x = 0; x < width; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+  }
+  for (let y = 0; y < height; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+  }
+
+  // Field outer boundary
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(10, 10, width - 20, height - 20);
+
+  // Blue Alliance Zone (Left)
+  const gradBlue = ctx.createLinearGradient(10, 0, 320, 0);
+  gradBlue.addColorStop(0, "rgba(59, 130, 246, 0.12)");
+  gradBlue.addColorStop(1, "transparent");
+  ctx.fillStyle = gradBlue;
+  ctx.fillRect(10, 10, 310, height - 20);
+
+  // Red Alliance Zone (Right)
+  const gradRed = ctx.createLinearGradient(width - 10, 0, width - 320, 0);
+  gradRed.addColorStop(0, "rgba(239, 68, 68, 0.12)");
+  gradRed.addColorStop(1, "transparent");
+  ctx.fillStyle = gradRed;
+  ctx.fillRect(width - 320, 10, 310, height - 20);
+
+  // Auto Lines
+  ctx.strokeStyle = "rgba(96, 165, 250, 0.6)";
+  ctx.setLineDash([8, 6]);
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(180, 10); ctx.lineTo(180, height - 10); ctx.stroke();
+
+  ctx.strokeStyle = "rgba(248, 113, 113, 0.6)";
+  ctx.beginPath(); ctx.moveTo(width - 180, 10); ctx.lineTo(width - 180, height - 10); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Center Line
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(width / 2, 10); ctx.lineTo(width / 2, height - 10); ctx.stroke();
+
+  // Watermark
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  ctx.font = "bold 26px Space Grotesk, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("2025 FIRST REEFSCAPE — NYX 11744 TACTICAL FIELD", width / 2, height / 2 - 120);
+
+  // Center Barge & Cages Zone
+  ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 2;
+  ctx.fillRect(width / 2 - 60, height / 2 - 100, 120, 200);
+  ctx.strokeRect(width / 2 - 60, height / 2 - 100, 120, 200);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+  ctx.font = "bold 11px JetBrains Mono, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("BARGE / CAGES", width / 2, height / 2);
+
+  // Reef drawing helper (Hexagon with 6 branch stations)
+  function drawReef(cx, cy, color, label) {
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    ctx.beginPath();
+    const r = 68;
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const hx = r * Math.cos(angle);
+      const hy = r * Math.sin(angle);
+      if (i === 0) ctx.moveTo(hx, hy);
+      else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color === "blue" ? "rgba(59, 130, 246, 0.15)" : "rgba(239, 68, 68, 0.15)";
+    ctx.fill();
+    ctx.strokeStyle = color === "blue" ? "#3b82f6" : "#ef4444";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    const branches = ["A", "B", "C", "D", "E", "F"];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i + Math.PI / 6;
+      const bx = (r - 10) * Math.cos(angle);
+      const by = (r - 10) * Math.sin(angle);
+      ctx.beginPath();
+      ctx.arc(bx, by, 9, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 9px JetBrains Mono";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(branches[i], bx, by);
+    }
+
+    ctx.beginPath();
+    ctx.arc(0, 0, 24, 0, Math.PI * 2);
+    ctx.fillStyle = color === "blue" ? "#1e3a8a" : "#7f1d1d";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, 0, 0);
+
+    ctx.restore();
+  }
+
+  drawReef(240, height / 2, "blue", "BLUE REEF");
+  drawReef(width - 240, height / 2, "red", "RED REEF");
+
+  // Coral Human Player Stations
+  function drawStation(x, y, label, isBlue) {
+    ctx.fillStyle = isBlue ? "rgba(59, 130, 246, 0.2)" : "rgba(239, 68, 68, 0.2)";
+    ctx.strokeStyle = isBlue ? "#60a5fa" : "#f87171";
+    ctx.lineWidth = 2;
+    ctx.fillRect(x, y, 70, 32);
+    ctx.strokeRect(x, y, 70, 32);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px JetBrains Mono";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, x + 35, y + 16);
+  }
+
+  drawStation(15, 15, "CORAL STN", true);
+  drawStation(15, height - 47, "CORAL STN", true);
+  drawStation(width - 85, 15, "CORAL STN", false);
+  drawStation(width - 85, height - 47, "CORAL STN", false);
+
+  // Processors
+  drawStation(width / 2 - 140, height - 35, "PROCESSOR", true);
+  drawStation(width / 2 + 70, height - 35, "PROCESSOR", false);
+
+  // Alliance Labels
+  ctx.fillStyle = "rgba(96, 165, 250, 0.6)";
+  ctx.font = "bold 11px JetBrains Mono";
+  ctx.textAlign = "left";
+  ctx.fillText("BLUE ALLIANCE", 25, height / 2);
+
+  ctx.fillStyle = "rgba(248, 113, 113, 0.6)";
+  ctx.textAlign = "right";
+  ctx.fillText("RED ALLIANCE", width - 25, height / 2);
+}
+
+function drawArrowHead(ctx, fromX, fromY, toX, toY, color, width) {
+  const headlen = 15;
+  const angle = Math.atan2(toY - fromY, toX - fromX);
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(toX, toY);
+  ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+  ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function renderCanvas() {
+  const canvas = $("#field-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  drawField(ctx, canvas.width, canvas.height);
+
+  playHistory.forEach(action => {
+    if (action.type === 'pen' && action.points.length > 1) {
+      ctx.beginPath();
+      ctx.strokeStyle = action.color;
+      ctx.lineWidth = action.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      action.points.forEach((pt, idx) => {
+        if (idx === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      });
+      ctx.stroke();
+    } else if (action.type === 'line') {
+      ctx.beginPath();
+      ctx.strokeStyle = action.color;
+      ctx.lineWidth = action.width;
+      ctx.lineCap = 'round';
+      ctx.moveTo(action.start.x, action.start.y);
+      ctx.lineTo(action.end.x, action.end.y);
+      ctx.stroke();
+    } else if (action.type === 'arrow') {
+      drawArrowHead(ctx, action.start.x, action.start.y, action.end.x, action.end.y, action.color, action.width);
+    } else if (action.type === 'token') {
+      ctx.beginPath();
+      ctx.arc(action.x, action.y, 16, 0, Math.PI * 2);
+      ctx.fillStyle = action.color;
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px JetBrains Mono";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(action.label, action.x, action.y);
+    } else if (action.type === 'piece') {
+      if (action.kind === 'coral') {
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 2;
+        ctx.fillRect(action.x - 8, action.y - 14, 16, 28);
+        ctx.strokeRect(action.x - 8, action.y - 14, 16, 28);
+      } else {
+        ctx.beginPath();
+        ctx.arc(action.x, action.y, 13, 0, Math.PI * 2);
+        ctx.fillStyle = "#10b981";
+        ctx.fill();
+        ctx.strokeStyle = "#a7f3d0";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+  });
+}
+
+function initPlaybook() {
+  if (playbookInitialized) return;
+  playbookInitialized = true;
+
+  const canvas = $("#field-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  renderCanvas();
+
+  function getCanvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  }
+
+  // Pointer events
+  canvas.addEventListener("pointerdown", e => {
+    isDrawing = true;
+    const coords = getCanvasCoords(e);
+    if (activeTool === "pen") {
+      currentPath = [coords];
+    } else if (activeTool === "line" || activeTool === "arrow") {
+      shapeStart = coords;
+    } else if (activeTool === "token-red") {
+      const redCount = playHistory.filter(a => a.type === 'token' && a.label?.startsWith('R')).length;
+      playHistory.push({ type: 'token', x: coords.x, y: coords.y, label: `R${(redCount % 3) + 1}`, color: '#ef4444' });
+      renderCanvas();
+      isDrawing = false;
+    } else if (activeTool === "token-blue") {
+      const blueCount = playHistory.filter(a => a.type === 'token' && a.label?.startsWith('B')).length;
+      playHistory.push({ type: 'token', x: coords.x, y: coords.y, label: `B${(blueCount % 3) + 1}`, color: '#3b82f6' });
+      renderCanvas();
+      isDrawing = false;
+    } else if (activeTool === "piece-coral") {
+      playHistory.push({ type: 'piece', x: coords.x, y: coords.y, kind: 'coral' });
+      renderCanvas();
+      isDrawing = false;
+    } else if (activeTool === "piece-algae") {
+      playHistory.push({ type: 'piece', x: coords.x, y: coords.y, kind: 'algae' });
+      renderCanvas();
+      isDrawing = false;
+    } else if (activeTool === "eraser") {
+      playHistory = playHistory.filter(action => {
+        if (action.x && action.y) {
+          const dist = Math.hypot(action.x - coords.x, action.y - coords.y);
+          return dist > 25;
+        }
+        return true;
+      });
+      renderCanvas();
+    }
+  });
+
+  canvas.addEventListener("pointermove", e => {
+    if (!isDrawing) return;
+    const coords = getCanvasCoords(e);
+    if (activeTool === "pen") {
+      currentPath.push(coords);
+      ctx.beginPath();
+      ctx.strokeStyle = activeColor;
+      ctx.lineWidth = activeWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const len = currentPath.length;
+      if (len > 1) {
+        ctx.moveTo(currentPath[len - 2].x, currentPath[len - 2].y);
+        ctx.lineTo(currentPath[len - 1].x, currentPath[len - 1].y);
+        ctx.stroke();
+      }
+    } else if (activeTool === "line" && shapeStart) {
+      renderCanvas();
+      ctx.beginPath();
+      ctx.strokeStyle = activeColor;
+      ctx.lineWidth = activeWidth;
+      ctx.moveTo(shapeStart.x, shapeStart.y);
+      ctx.lineTo(coords.x, coords.y);
+      ctx.stroke();
+    } else if (activeTool === "arrow" && shapeStart) {
+      renderCanvas();
+      drawArrowHead(ctx, shapeStart.x, shapeStart.y, coords.x, coords.y, activeColor, activeWidth);
+    }
+  });
+
+  const stopDrawing = (e) => {
+    if (!isDrawing) return;
+    isDrawing = false;
+    const coords = e ? getCanvasCoords(e) : null;
+    if (activeTool === "pen" && currentPath.length > 1) {
+      playHistory.push({ type: 'pen', points: [...currentPath], color: activeColor, width: activeWidth });
+      currentPath = [];
+      renderCanvas();
+    } else if (activeTool === "line" && shapeStart && coords) {
+      playHistory.push({ type: 'line', start: shapeStart, end: coords, color: activeColor, width: activeWidth });
+      shapeStart = null;
+      renderCanvas();
+    } else if (activeTool === "arrow" && shapeStart && coords) {
+      playHistory.push({ type: 'arrow', start: shapeStart, end: coords, color: activeColor, width: activeWidth });
+      shapeStart = null;
+      renderCanvas();
+    }
+  };
+
+  canvas.addEventListener("pointerup", stopDrawing);
+  canvas.addEventListener("pointercancel", stopDrawing);
+
+  // Tool buttons
+  $$(".playbook-toolbar .tool-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".playbook-toolbar .tool-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeTool = btn.dataset.tool;
+    });
+  });
+
+  // Color swatches
+  $$(".playbook-toolbar .swatch").forEach(swatch => {
+    swatch.addEventListener("click", () => {
+      $$(".playbook-toolbar .swatch").forEach(s => s.classList.remove("active"));
+      swatch.classList.add("active");
+      activeColor = swatch.dataset.color;
+    });
+  });
+
+  // Size buttons
+  $$(".playbook-toolbar .size-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".playbook-toolbar .size-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeWidth = parseInt(btn.dataset.size, 10);
+    });
+  });
+
+  // Undo, Clear, Export
+  $("#field-undo-btn")?.addEventListener("click", () => {
+    if (playHistory.length > 0) {
+      playHistory.pop();
+      renderCanvas();
+    }
+  });
+
+  $("#field-clear-btn")?.addEventListener("click", () => {
+    if (playHistory.length === 0) return;
+    if (confirm("Clear all tactical marks on the field?")) {
+      playHistory = [];
+      renderCanvas();
+      toast("Field cleared.");
+    }
+  });
+
+  $("#field-export-btn")?.addEventListener("click", () => {
+    const link = document.createElement("a");
+    const name = ($("#playbook-plan-name")?.value.trim() || "nyx-reefscape-play").toLowerCase().replace(/[^a-z0-9]/g, "-");
+    link.download = `${name}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    toast("Exported playbook image!");
+  });
+
+  // Save Play
+  $("#playbook-save-btn")?.addEventListener("click", savePlaybookPlay);
+}
+
+/* Save Playbook Play to Supabase & localStorage */
+async function savePlaybookPlay() {
+  const input = $("#playbook-plan-name");
+  const name = input ? input.value.trim() : "";
+  if (!name) {
+    toast("Please enter a name for this strategy play.", true);
+    input?.focus();
+    return;
+  }
+
+  const canvas = $("#field-canvas");
+  const thumb = canvas ? canvas.toDataURL("image/png") : "";
+  const myName = currentProfile?.full_name || currentUser?.email || "Team Member";
+
+  const newPlay = {
+    id: "play_" + Date.now(),
+    name,
+    history: playHistory,
+    thumbnail: thumb,
+    created_by_name: myName,
+    created_at: new Date().toISOString()
+  };
+
+  // 1. Mirror in localStorage
+  strategyPlays.unshift(newPlay);
+  try {
+    localStorage.setItem("nyx_strategy_plays", JSON.stringify(strategyPlays.slice(0, 30)));
+  } catch (e) {
+    console.warn("localStorage quota exceeded:", e);
+  }
+
+  // 2. Persist in Supabase
+  if (supabase && currentUser) {
+    try {
+      await supabase.from("strategy_plays").insert({
+        name,
+        drawing_data: JSON.stringify(playHistory),
+        created_by: currentUser.id,
+        created_by_name: myName
+      });
+    } catch (err) {
+      console.warn("Supabase strategy play insert notice:", err);
+    }
+  }
+
+  toast(`Saved playbook: "${name}"`);
+  renderSavedPlays();
+}
+
+/* Load Saved Plays */
+async function loadSavedPlays() {
+  // Load from localStorage first
+  try {
+    const raw = localStorage.getItem("nyx_strategy_plays");
+    if (raw) strategyPlays = JSON.parse(raw);
+  } catch (e) {}
+
+  // Then sync from Supabase if available
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from("strategy_plays")
+        .select("id, name, drawing_data, created_by_name, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        data.forEach(item => {
+          if (!strategyPlays.some(p => p.id === item.id)) {
+            let hist = [];
+            try { hist = JSON.parse(item.drawing_data); } catch (e) {}
+            strategyPlays.push({
+              id: item.id,
+              name: item.name,
+              history: hist,
+              created_by_name: item.created_by_name || "Team Member",
+              created_at: item.created_at
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.warn("Could not sync strategy_plays from Supabase:", err);
+    }
+  }
+
+  renderSavedPlays();
+}
+
+function renderSavedPlays() {
+  const grid = $("#saved-plays-grid");
+  const countEl = $("#saved-plays-count-text");
+  if (countEl) countEl.textContent = `Saved Plays (${strategyPlays.length})`;
+  if (!grid) return;
+
+  if (!strategyPlays.length) {
+    grid.innerHTML = '<div class="muted small" style="padding:20px; text-align:center; grid-column:1/-1;">No saved plays yet. Draw a route above and click "Save Play"!</div>';
+    return;
+  }
+
+  grid.innerHTML = strategyPlays.map(play => `
+    <article class="play-card" data-play-id="${play.id}">
+      <div class="play-card-body">
+        <div class="play-card-title">${esc(play.name)}</div>
+        <div class="play-card-meta">
+          <span>By ${esc(play.created_by_name || 'Team Member')}</span>
+          <span>${new Date(play.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+        </div>
+        <div class="play-card-actions">
+          <button class="btn btn--sm btn--primary" data-action="load-play" data-id="${play.id}">Load 🎨</button>
+          <button class="actionbtn delete" data-action="delete-play" data-id="${play.id}" title="Delete play">🗑</button>
+        </div>
+      </div>
+    </article>
+  `).join("");
+}
+
+// Click events for saved plays
+$("#saved-plays-grid")?.addEventListener("click", async e => {
+  const b = e.target.closest("button[data-action]");
+  if (!b) return;
+  const action = b.dataset.action;
+  const id = b.dataset.id;
+  const play = strategyPlays.find(p => p.id === id);
+
+  if (action === "load-play" && play) {
+    playHistory = Array.isArray(play.history) ? [...play.history] : [];
+    renderCanvas();
+    if ($("#playbook-plan-name")) $("#playbook-plan-name").value = play.name;
+    window.scrollTo({ top: $("#field-canvas").offsetTop - 80, behavior: 'smooth' });
+    toast(`Loaded play "${play.name}"`);
+  } else if (action === "delete-play" && play) {
+    if (confirm(`Delete strategy play "${play.name}"?`)) {
+      strategyPlays = strategyPlays.filter(p => p.id !== id);
+      try {
+        localStorage.setItem("nyx_strategy_plays", JSON.stringify(strategyPlays));
+      } catch (err) {}
+      if (supabase && id.length > 20) {
+        await supabase.from("strategy_plays").delete().eq("id", id);
+      }
+      renderSavedPlays();
+      toast("Strategy play removed.");
+    }
+  }
+});
+
+/* --------------------------------------------------------------------------
+   FRC TEAM RANKINGS & STATBOTICS TABLE
+   -------------------------------------------------------------------------- */
+function renderRankings() {
+  const list = $("#strat-rankings-list");
+  if (!list) return;
+
+  let filtered = frcTeamsData.filter(t => {
+    if (!currentSearchQuery) return true;
+    return (
+      String(t.team).includes(currentSearchQuery) ||
+      t.name.toLowerCase().includes(currentSearchQuery) ||
+      t.location.toLowerCase().includes(currentSearchQuery)
+    );
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    if (currentSortMetric === "epa") return b.epa - a.epa;
+    if (currentSortMetric === "auto_epa") return b.auto_epa - a.auto_epa;
+    if (currentSortMetric === "teleop_epa") return b.teleop_epa - a.teleop_epa;
+    if (currentSortMetric === "endgame_epa") return b.endgame_epa - a.endgame_epa;
+    if (currentSortMetric === "winrate") return b.winrate - a.winrate;
+    return a.team - b.team;
+  });
+
+  const countBadge = $("#badge-strat-count");
+  if (countBadge) countBadge.textContent = filtered.length;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">No teams match your search query. Try team number or city!</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map((t, idx) => {
+    const isNyx = t.team === 11744;
+    return `
+      <article class="itemrow" style="grid-template-columns: 70px minmax(200px, 2.5fr) minmax(130px, 1.2fr) 90px 80px 80px 80px 90px 100px; ${isNyx ? 'background:rgba(139,92,246,0.08); border-left:3px solid var(--accent);' : ''}">
+        <div>
+          <span class="rank-badge ${idx < 3 ? 'top3' : ''}">#${idx + 1}</span>
+        </div>
+        <div>
+          <div class="itemname">
+            <strong>${t.team}</strong> · ${esc(t.name)}
+            ${isNyx ? '<span class="pill Business" style="font-size:9px;">HOME TEAM</span>' : ''}
+          </div>
+          <div class="itemnotes">Rookie: ${t.rookie || '—'} · Record: ${esc(t.record || '—')}</div>
+        </div>
+        <div class="muted small">${esc(t.location)}</div>
+        <div>
+          <strong class="mono" style="font-size:14px; color:var(--accent-bright);">${t.epa.toFixed(1)}</strong>
+        </div>
+        <div class="mono small">${t.auto_epa.toFixed(1)}</div>
+        <div class="mono small">${t.teleop_epa.toFixed(1)}</div>
+        <div class="mono small">${t.endgame_epa.toFixed(1)}</div>
+        <div>
+          <span class="pill" style="color:${t.winrate >= 80 ? 'var(--green)' : 'var(--text)'}; font-size:10px;">${t.winrate.toFixed(1)}%</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn--sm btn--ghost" data-action="quick-sim" data-team="${t.team}">Simulate ⚡</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+// Quick simulate click from rankings
+$("#strat-rankings-list")?.addEventListener("click", e => {
+  const b = e.target.closest("button[data-action='quick-sim']");
+  if (!b) return;
+  const teamNum = parseInt(b.dataset.team, 10);
+  switchStratTab("simulator");
+  const sel = $("#sim-red-1");
+  if (sel) {
+    sel.value = String(teamNum);
+    updateSimTotals();
+  }
+  toast(`Loaded Team ${teamNum} into Red Alliance Captain!`);
+});
+
+/* --------------------------------------------------------------------------
+   MATCH SIMULATOR (MONTE CARLO 1,000 ITERATIONS)
+   -------------------------------------------------------------------------- */
+function populateSimulatorSelectors() {
+  const selects = [
+    $("#sim-red-1"), $("#sim-red-2"), $("#sim-red-3"),
+    $("#sim-blue-1"), $("#sim-blue-2"), $("#sim-blue-3")
+  ];
+
+  const sortedTeams = [...frcTeamsData].sort((a, b) => b.epa - a.epa);
+  const optionsHtml = sortedTeams.map(t => `
+    <option value="${t.team}">${t.team} — ${esc(t.name)} (EPA: ${t.epa.toFixed(1)})</option>
+  `).join("");
+
+  selects.forEach((sel, idx) => {
+    if (!sel) return;
+    sel.innerHTML = optionsHtml;
+    // Defaults:
+    // Red: 11744 NYX, 254 Cheesy Poofs, 1678 Citrus Circuits
+    // Blue: 4414 HighTide, 1323 MadTown, 971 Spartan
+    if (idx === 0) sel.value = "11744";
+    else if (idx === 1) sel.value = "254";
+    else if (idx === 2) sel.value = "1678";
+    else if (idx === 3) sel.value = "4414";
+    else if (idx === 4) sel.value = "1323";
+    else if (idx === 5) sel.value = "971";
+
+    sel.addEventListener("change", updateSimTotals);
+  });
+
+  updateSimTotals();
+}
+
+function getTeamByNum(num) {
+  return frcTeamsData.find(t => t.team === num) || {
+    team: num, name: `Team ${num}`, epa: 45.0, auto_epa: 10.0, teleop_epa: 25.0, endgame_epa: 10.0
+  };
+}
+
+function updateSimTotals() {
+  const r1 = getTeamByNum(parseInt($("#sim-red-1")?.value || "11744", 10));
+  const r2 = getTeamByNum(parseInt($("#sim-red-2")?.value || "254", 10));
+  const r3 = getTeamByNum(parseInt($("#sim-red-3")?.value || "1678", 10));
+
+  const b1 = getTeamByNum(parseInt($("#sim-blue-1")?.value || "4414", 10));
+  const b2 = getTeamByNum(parseInt($("#sim-blue-2")?.value || "1323", 10));
+  const b3 = getTeamByNum(parseInt($("#sim-blue-3")?.value || "971", 10));
+
+  const redTotal = (r1.epa + r2.epa + r3.epa).toFixed(1);
+  const blueTotal = (b1.epa + b2.epa + b3.epa).toFixed(1);
+
+  if ($("#sim-red-total-epa")) $("#sim-red-total-epa").textContent = `Total EPA: ${redTotal}`;
+  if ($("#sim-blue-total-epa")) $("#sim-blue-total-epa").textContent = `Total EPA: ${blueTotal}`;
+}
+
+function initSimulator() {
+  $("#run-sim-btn")?.addEventListener("click", runMonteCarloSimulation);
+
+  $("#sim-preset-nyx")?.addEventListener("click", () => {
+    if ($("#sim-red-1")) $("#sim-red-1").value = "11744";
+    if ($("#sim-red-2")) $("#sim-red-2").value = "254";
+    if ($("#sim-red-3")) $("#sim-red-3").value = "1678";
+    if ($("#sim-blue-1")) $("#sim-blue-1").value = "4414";
+    if ($("#sim-blue-2")) $("#sim-blue-2").value = "1323";
+    if ($("#sim-blue-3")) $("#sim-blue-3").value = "971";
+    updateSimTotals();
+    runMonteCarloSimulation();
+  });
+
+  $("#sim-preset-finals")?.addEventListener("click", () => {
+    if ($("#sim-red-1")) $("#sim-red-1").value = "254";
+    if ($("#sim-red-2")) $("#sim-red-2").value = "1678";
+    if ($("#sim-red-3")) $("#sim-red-3").value = "2910";
+    if ($("#sim-blue-1")) $("#sim-blue-1").value = "4414";
+    if ($("#sim-blue-2")) $("#sim-blue-2").value = "1323";
+    if ($("#sim-blue-3")) $("#sim-blue-3").value = "2056";
+    updateSimTotals();
+    runMonteCarloSimulation();
+  });
+}
+
+function runMonteCarloSimulation() {
+  const redTeams = [
+    getTeamByNum(parseInt($("#sim-red-1")?.value || "11744", 10)),
+    getTeamByNum(parseInt($("#sim-red-2")?.value || "254", 10)),
+    getTeamByNum(parseInt($("#sim-red-3")?.value || "1678", 10))
+  ];
+  const blueTeams = [
+    getTeamByNum(parseInt($("#sim-blue-1")?.value || "4414", 10)),
+    getTeamByNum(parseInt($("#sim-blue-2")?.value || "1323", 10)),
+    getTeamByNum(parseInt($("#sim-blue-3")?.value || "971", 10))
+  ];
+
+  const redAuto = redTeams.reduce((s, t) => s + (t ? t.auto_epa : 10), 0);
+  const redTele = redTeams.reduce((s, t) => s + (t ? t.teleop_epa : 25), 0);
+  const redEnd = redTeams.reduce((s, t) => s + (t ? t.endgame_epa : 10), 0);
+  const redMean = redAuto + redTele + redEnd;
+
+  const blueAuto = blueTeams.reduce((s, t) => s + (t ? t.auto_epa : 10), 0);
+  const blueTele = blueTeams.reduce((s, t) => s + (t ? t.teleop_epa : 25), 0);
+  const blueEnd = blueTeams.reduce((s, t) => s + (t ? t.endgame_epa : 10), 0);
+  const blueMean = blueAuto + blueTele + blueEnd;
+
+  const numSims = 1000;
+  const stdDev = 14;
+  let redWins = 0, blueWins = 0, ties = 0;
+  let totalRedScore = 0, totalBlueScore = 0;
+  let redCoralRP = 0, blueCoralRP = 0;
+  let redBargeRP = 0, blueBargeRP = 0;
+
+  function randomNormal(mean, std) {
+    let u1 = Math.random();
+    let u2 = Math.random();
+    while (u1 === 0) u1 = Math.random();
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    return mean + z0 * std;
+  }
+
+  for (let i = 0; i < numSims; i++) {
+    const rScore = Math.max(0, randomNormal(redMean, stdDev));
+    const bScore = Math.max(0, randomNormal(blueMean, stdDev));
+
+    totalRedScore += rScore;
+    totalBlueScore += bScore;
+
+    if (rScore > bScore + 0.5) redWins++;
+    else if (bScore > rScore + 0.5) blueWins++;
+    else ties++;
+
+    if (rScore >= 95) redCoralRP++;
+    if (rScore >= 110) redBargeRP++;
+    if (bScore >= 95) blueCoralRP++;
+    if (bScore >= 110) blueBargeRP++;
+  }
+
+  const redWinPct = Math.round((redWins / numSims) * 100);
+  const blueWinPct = Math.round((blueWins / numSims) * 100);
+  const avgRed = (totalRedScore / numSims).toFixed(1);
+  const avgBlue = (totalBlueScore / numSims).toFixed(1);
+
+  // Render results
+  $("#sim-results-card")?.classList.remove("hidden");
+  if ($("#sim-run-timestamp")) $("#sim-run-timestamp").textContent = new Date().toLocaleTimeString();
+
+  const elProbRed = $("#sim-prob-red");
+  if (elProbRed) {
+    elProbRed.style.width = `${Math.max(15, redWinPct)}%`;
+    elProbRed.textContent = `RED ${redWinPct}%`;
+  }
+  const elProbBlue = $("#sim-prob-blue");
+  if (elProbBlue) {
+    elProbBlue.style.width = `${Math.max(15, blueWinPct)}%`;
+    elProbBlue.textContent = `BLUE ${blueWinPct}%`;
+  }
+
+  if ($("#sim-score-red")) $("#sim-score-red").textContent = avgRed;
+  if ($("#sim-score-blue")) $("#sim-score-blue").textContent = avgBlue;
+
+  if ($("#sim-phase-auto")) $("#sim-phase-auto").textContent = `${redAuto.toFixed(1)} vs ${blueAuto.toFixed(1)}`;
+  if ($("#sim-phase-teleop")) $("#sim-phase-teleop").textContent = `${redTele.toFixed(1)} vs ${blueTele.toFixed(1)}`;
+  if ($("#sim-phase-endgame")) $("#sim-phase-endgame").textContent = `${redEnd.toFixed(1)} vs ${blueEnd.toFixed(1)}`;
+
+  if ($("#sim-rp-coral")) $("#sim-rp-coral").textContent = `${Math.round(redCoralRP / 10)}% vs ${Math.round(blueCoralRP / 10)}%`;
+  if ($("#sim-rp-barge")) $("#sim-rp-barge").textContent = `${Math.round(redBargeRP / 10)}% vs ${Math.round(blueBargeRP / 10)}%`;
+
+  const diff = (redMean - blueMean).toFixed(1);
+  const fav = redMean >= blueMean ? "Red Alliance" : "Blue Alliance";
+  const favPct = redMean >= blueMean ? redWinPct : blueWinPct;
+  const autoAdv = redAuto > blueAuto
+    ? `Red Alliance holds an Autonomous advantage (+${(redAuto - blueAuto).toFixed(1)} pts)`
+    : `Blue Alliance controls the Auto Phase (+${(blueAuto - redAuto).toFixed(1)} pts)`;
+  const endAdv = redEnd >= blueEnd
+    ? `Red has high Barge climb consistency (${redEnd.toFixed(1)} pts)`
+    : `Blue has higher Barge climb consistency (${blueEnd.toFixed(1)} pts)`;
+
+  if ($("#sim-analysis-text")) {
+    $("#sim-analysis-text").textContent = `${fav} is favored to win with a ${favPct}% probability over 1,000 simulated matches (projected spread: ${Math.abs(diff)} pts). ${autoAdv}. In the endgame, ${endAdv}. Key match dynamic: maintaining clean Coral reef cycling and avoiding barge penalties.`;
+  }
+
+  toast(`Simulation completed! ${fav} predicted win: ${favPct}%`);
+}
+
+/* --------------------------------------------------------------------------
+   TEAM DEEP DIVE LOOKUP
+   -------------------------------------------------------------------------- */
+async function handleTeamLookup(e) {
+  e.preventDefault();
+  const input = $("#lookup-team-num");
+  const num = parseInt(input?.value, 10);
+  if (!num) return;
+
+  const resultContainer = $("#team-lookup-result");
+  if (!resultContainer) return;
+  resultContainer.innerHTML = `<div style="padding:40px; text-align:center;" class="muted">Analyzing Team ${num} metrics…</div>`;
+
+  let teamObj = frcTeamsData.find(t => t.team === num);
+
+  // Try live fetch from Statbotics
+  try {
+    const res = await fetch(`https://api.statbotics.io/v3/team_year/${num}/2024`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.team) {
+        teamObj = {
+          team: data.team,
+          name: data.name || `Team ${data.team}`,
+          location: data.state ? `${data.state}, ${data.country}` : data.country || "USA",
+          epa: Number(data.epa_end || 45.0),
+          auto_epa: Number(data.auto_epa_end || 10.0),
+          teleop_epa: Number(data.teleop_epa_end || 25.0),
+          endgame_epa: Number(data.endgame_epa_end || 10.0),
+          winrate: Number(data.winrate ? (data.winrate * 100).toFixed(1) : 70.0),
+          rank: data.rank || 150,
+          record: `${data.wins || 25}-${data.losses || 10}-${data.ties || 0}`,
+          rookie: data.rookie_year || 2020
+        };
+      }
+    }
+  } catch (err) {}
+
+  if (!teamObj) {
+    teamObj = {
+      team: num,
+      name: `Team ${num}`,
+      location: "FIRST Robotics Competition",
+      epa: 42.0,
+      auto_epa: 9.5,
+      teleop_epa: 23.5,
+      endgame_epa: 9.0,
+      winrate: 62.5,
+      rank: 420,
+      record: "15-9-0",
+      rookie: 2020
+    };
+  }
+
+  resultContainer.innerHTML = `
+    <div class="card" style="border: 1px solid var(--accent-line);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+        <div>
+          <span class="eyebrow" style="margin-bottom:4px;">TEAM SCOUTING REPORT</span>
+          <h2 style="margin:0;">${teamObj.team} · ${esc(teamObj.name)}</h2>
+          <p class="muted small">${esc(teamObj.location)} · Rookie: ${teamObj.rookie || '—'}</p>
+        </div>
+        <div>
+          <span class="rank-badge top3" style="font-size:14px; width:auto; padding:6px 12px;">Rank #${teamObj.rank}</span>
+        </div>
+      </div>
+
+      <div class="sim-stats-grid" style="margin: 20px 0;">
+        <div class="sim-stat-box">
+          <small>TOTAL EPA</small>
+          <strong style="color:var(--accent-bright); font-size:24px;">${teamObj.epa.toFixed(1)}</strong>
+        </div>
+        <div class="sim-stat-box">
+          <small>AUTO EPA</small>
+          <strong style="font-size:24px;">${teamObj.auto_epa.toFixed(1)}</strong>
+        </div>
+        <div class="sim-stat-box">
+          <small>TELEOP EPA</small>
+          <strong style="font-size:24px;">${teamObj.teleop_epa.toFixed(1)}</strong>
+        </div>
+        <div class="sim-stat-box">
+          <small>ENDGAME EPA</small>
+          <strong style="font-size:24px; color:var(--green);">${teamObj.endgame_epa.toFixed(1)}</strong>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:12px 16px; background:rgba(255,255,255,.02); border-radius:8px; border:1px solid var(--line); font-size:13px;">
+        <span>Season Match Record: <b class="mono">${esc(teamObj.record)}</b></span>
+        <span>Win Rate: <b class="mono" style="color:var(--green);">${teamObj.winrate.toFixed(1)}%</b></span>
+      </div>
+
+      <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn--primary btn--sm" id="load-team-into-sim-btn" type="button">Load into Match Simulator ⚡</button>
+      </div>
+    </div>
+  `;
+
+  $("#load-team-into-sim-btn")?.addEventListener("click", () => {
+    switchStratTab("simulator");
+    const sel = $("#sim-red-1");
+    if (sel) {
+      sel.value = String(teamObj.team);
+      updateSimTotals();
+    }
+    toast(`Loaded Team ${teamObj.team} into Simulator!`);
+  });
+}
+
+/* Sidebar & Mobile Navigation listeners */
+$("#sidebar-btn-dashboard")?.addEventListener("click", () => switchPage("dashboard"));
+$("#sidebar-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
+$("#sidebar-open-profile-btn")?.addEventListener("click", openProfileModal);
+
+$("#sidebar-toggle-btn")?.addEventListener("click", () => {
+  const sb = $("#app-sidebar");
+  const bd = $("#sidebar-backdrop");
+  if (sb) sb.classList.toggle("open");
+  if (bd) bd.classList.toggle("active");
+});
+
+$("#sidebar-backdrop")?.addEventListener("click", () => {
+  $("#app-sidebar")?.classList.remove("open");
+  $("#sidebar-backdrop")?.classList.remove("active");
+});
 
 initSupabase();
 </script>

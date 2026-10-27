@@ -149,7 +149,22 @@ create table if not exists public.team_shifts (
 create index if not exists team_shifts_date_idx on public.team_shifts(shift_date);
 create index if not exists team_shifts_department_idx on public.team_shifts(department);
 
--- 9. Helper Functions & Triggers
+-- 9. Strategy Plays & Field Whiteboards
+create table if not exists public.strategy_plays (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(trim(name)) > 0),
+  game_year text not null default '2025',
+  drawing_data text not null,
+  notes text not null default '',
+  created_by uuid references auth.users(id),
+  created_by_name text not null default 'Team Member',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists strategy_plays_created_at_idx on public.strategy_plays(created_at desc);
+
+-- 10. Helper Functions & Triggers
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
@@ -341,7 +356,25 @@ drop policy if exists "Only admins can delete team shifts" on public.team_shifts
 create policy "Only admins can delete team shifts" on public.team_shifts
 for delete to authenticated using((select public.is_team_admin()));
 
--- 11. Realtime configuration
+-- Strategy Plays Policies
+drop policy if exists "Approved members can read strategy plays" on public.strategy_plays;
+create policy "Approved members can read strategy plays" on public.strategy_plays
+for select to authenticated using((select public.is_approved_member()));
+
+drop policy if exists "Approved members can insert strategy plays" on public.strategy_plays;
+create policy "Approved members can insert strategy plays" on public.strategy_plays
+for insert to authenticated with check((select public.is_approved_member()));
+
+drop policy if exists "Approved members can update strategy plays" on public.strategy_plays;
+create policy "Approved members can update strategy plays" on public.strategy_plays
+for update to authenticated using((select public.is_approved_member()))
+with check((select public.is_approved_member()));
+
+drop policy if exists "Approved members can delete strategy plays" on public.strategy_plays;
+create policy "Approved members can delete strategy plays" on public.strategy_plays
+for delete to authenticated using((select public.is_team_admin()) or created_by = auth.uid());
+
+-- 12. Realtime configuration
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -365,6 +398,9 @@ begin
     end if;
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'team_shifts') then
       execute 'alter publication supabase_realtime add table public.team_shifts';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'strategy_plays') then
+      execute 'alter publication supabase_realtime add table public.strategy_plays';
     end if;
   end if;
 end
