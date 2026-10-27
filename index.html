@@ -1686,6 +1686,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
         <div class="playbook-toolbar">
           <div class="tool-group">
             <span class="tool-label">TOOL:</span>
+            <button type="button" class="tool-btn" data-tool="pointer" title="Tactical Laser Pointer">🎯 Pointer</button>
             <button type="button" class="tool-btn active" data-tool="pen" title="Freehand Path">✏️ Draw</button>
             <button type="button" class="tool-btn" data-tool="arrow" title="Route Arrow">↗️ Arrow</button>
             <button type="button" class="tool-btn" data-tool="line" title="Straight Line">📏 Line</button>
@@ -2915,9 +2916,9 @@ function screens(which) {
 }
 
 function switchPage(pageName) {
-  // Guard secrets page
-  if (pageName === "secrets" && (!currentProfile?.is_admin || !currentProfile?.is_secret)) {
-    toast("Restricted Area: Secret Admin Role required.", true);
+  // Guard secrets page: visible to everyone with secret role
+  if (pageName === "secrets" && !currentProfile?.is_secret) {
+    toast("Restricted Area: Secret Role required.", true);
     pageName = "dashboard";
   }
 
@@ -2999,7 +3000,7 @@ async function signOut() {
 async function checkUser(user) {
   currentUser = user;
   const { data, error } = await supabase.from("profiles")
-    .select("id, full_name, departments, is_approved, is_admin, is_secret")
+    .select("id, full_name, departments, is_approved, is_admin, is_secret, is_strategy")
     .eq("id", user.id)
     .single();
 
@@ -3019,7 +3020,11 @@ async function checkUser(user) {
   screens("inventory");
   const name = data.full_name || user.email || "Team Member";
   const depts = (data.departments && data.departments.length) ? data.departments.join(" · ").toUpperCase() : "GENERAL";
-  const roleLabel = data.is_secret ? "SECRET ADMIN" : data.is_admin ? "ADMIN" : "MEMBER";
+  const roleParts = [];
+  if (data.is_admin) roleParts.push("ADMIN");
+  if (data.is_strategy) roleParts.push("STRATEGY");
+  if (data.is_secret) roleParts.push("SECRET");
+  const roleLabel = roleParts.length > 0 ? roleParts.join(" & ") : "MEMBER";
   const elName = $("#profile-name"); if (elName) elName.textContent = name;
   const elAvatar = $("#profile-avatar"); if (elAvatar) elAvatar.textContent = name.trim().charAt(0).toUpperCase();
   const elRole = $("#profile-role"); if (elRole) elRole.textContent = `${depts} · ${roleLabel}`;
@@ -3036,14 +3041,14 @@ async function checkUser(user) {
   const elTabSpend = $("#tab-spending"); if (elTabSpend) elTabSpend.classList.toggle("hidden", !data.is_admin);
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
-  const elSecretSideBtn = $("#sidebar-btn-secrets"); if (elSecretSideBtn) elSecretSideBtn.classList.toggle("hidden", !(data.is_admin && data.is_secret));
+  const elSecretSideBtn = $("#sidebar-btn-secrets"); if (elSecretSideBtn) elSecretSideBtn.classList.toggle("hidden", !data.is_secret);
 
   await Promise.all([loadItems(), loadCheckouts(), loadTasks(), loadPartsNeeded(), loadShifts()]);
 
   if (data.is_admin) {
     await Promise.all([loadMembers(), loadSpending()]);
   }
-  if (data.is_admin && data.is_secret) {
+  if (data.is_secret) {
     loadSecretIntel();
   }
 
@@ -3602,7 +3607,7 @@ function renderSpending() {
 async function loadMembers() {
   if (!supabase || !currentProfile?.is_admin) return;
   const list = $("#admin-members-list");
-  const { data, error } = await supabase.from("profiles").select("id, full_name, departments, is_approved, is_admin, is_secret, created_at").order("created_at");
+  const { data, error } = await supabase.from("profiles").select("id, full_name, departments, is_approved, is_admin, is_secret, is_strategy, created_at").order("created_at");
   if (error) {
     if (list) list.innerHTML = `<div style="padding:20px;" class="muted">Could not load members: ${esc(error.message)}</div>`;
     return;
@@ -3639,6 +3644,7 @@ async function loadMembers() {
         <div>
           <b>${esc(p.full_name)}</b>
           ${p.is_admin ? '<span class="pill" style="border-color:var(--accent-bright); color:var(--accent-bright); font-size:10px;">Admin</span>' : ''}
+          ${p.is_strategy ? '<span class="pill" style="border-color:#38bdf8; color:#38bdf8; font-size:10px;">Strategy</span>' : ''}
           <div class="muted small mono">${depts} ${p.id === currentUser.id ? '· (You)' : ''}</div>
         </div>
         <div>
@@ -4813,6 +4819,43 @@ let playHistory = [];
 let isDrawing = false;
 let currentPath = [];
 let shapeStart = null;
+let liveLaserPoint = null;
+
+function drawLiveLaser(coords) {
+  renderCanvas();
+  const canvas = $("#field-canvas");
+  if (!canvas || !coords) return;
+  const ctx = canvas.getContext("2d");
+
+  // Outer glowing pulse ring
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(coords.x, coords.y, 22, 0, Math.PI * 2);
+  ctx.strokeStyle = activeColor;
+  ctx.lineWidth = 2.5;
+  ctx.globalAlpha = 0.55;
+  ctx.stroke();
+
+  // Crosshairs
+  ctx.beginPath();
+  ctx.moveTo(coords.x - 30, coords.y);
+  ctx.lineTo(coords.x + 30, coords.y);
+  ctx.moveTo(coords.x, coords.y - 30);
+  ctx.lineTo(coords.x, coords.y + 30);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Solid bright core dot
+  ctx.beginPath();
+  ctx.arc(coords.x, coords.y, 7, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.globalAlpha = 1.0;
+  ctx.fill();
+  ctx.strokeStyle = activeColor;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+}
 let currentSortMetric = "epa";
 let currentSearchQuery = "";
 
@@ -5353,7 +5396,10 @@ function initPlaybook() {
     try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     isDrawing = true;
     const coords = getCanvasCoords(e);
-    if (activeTool === "pen") {
+    if (activeTool === "pointer") {
+      liveLaserPoint = coords;
+      drawLiveLaser(coords);
+    } else if (activeTool === "pen") {
       currentPath = [coords];
     } else if (activeTool === "line" || activeTool === "arrow") {
       shapeStart = coords;
@@ -5416,6 +5462,11 @@ function initPlaybook() {
   canvas.addEventListener("pointermove", e => {
     if (!isDrawing || (activePointerId !== null && e.pointerId !== activePointerId)) return;
     const coords = getCanvasCoords(e);
+    if (activeTool === "pointer") {
+      liveLaserPoint = coords;
+      drawLiveLaser(coords);
+      return;
+    }
     if (activeTool === "eraser") {
       eraseAtPoint(coords.x, coords.y);
       return;
@@ -5455,6 +5506,12 @@ function initPlaybook() {
       try { canvas.releasePointerCapture(activePointerId); } catch (_) {}
     }
     activePointerId = null;
+
+    if (activeTool === "pointer") {
+      liveLaserPoint = null;
+      renderCanvas();
+      return;
+    }
 
     const coords = e ? getCanvasCoords(e) : null;
     if (activeTool === "pen" && currentPath.length > 1) {
@@ -6542,8 +6599,8 @@ let secretDossiers = [];
 let secretsEventsBound = false;
 
 function initSecretsCenter() {
-  if (!currentProfile?.is_admin || !currentProfile?.is_secret) {
-    toast("Restricted access: Secret Admin clearance required.", true);
+  if (!currentProfile?.is_secret) {
+    toast("Restricted access: Secret Role required.", true);
     return;
   }
   loadSecretIntel();
@@ -6681,7 +6738,7 @@ function renderSecretIntel() {
 function setupSecretsEvents() {
   $("#secret-scout-form")?.addEventListener("submit", async e => {
     e.preventDefault();
-    if (!currentProfile?.is_admin || !currentProfile?.is_secret) {
+    if (!currentProfile?.is_secret) {
       toast("Access Denied: Secret clearance required.", true);
       return;
     }

@@ -1,4 +1,4 @@
--- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
+﻿-- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
 -- Run this entire script in Supabase Dashboard -> SQL Editor.
 create extension if not exists pgcrypto;
 
@@ -15,6 +15,7 @@ create table if not exists public.profiles (
 
 alter table public.profiles add column if not exists departments text[] not null default array['Mechanical']::text[];
 alter table public.profiles add column if not exists is_secret boolean not null default false;
+alter table public.profiles add column if not exists is_strategy boolean not null default false;
 
 -- 2. Inventory Items Table
 create table if not exists public.inventory_items (
@@ -440,7 +441,6 @@ as $$
     from public.profiles
     where id = auth.uid()
       and is_approved = true
-      and is_admin = true
       and is_secret = true
   );
 $$;
