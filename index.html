@@ -1596,6 +1596,9 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 
       <div class="user-controls-block">
         <div style="display:flex; gap:8px; align-items:center;">
+          <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
+            <span>🌐</span> Statbotics.io Teams ↗
+          </a>
           <button class="btn btn--ghost btn--sm" id="strat-sync-btn" type="button">🔄 Sync Statbotics Data</button>
         </div>
       </div>
@@ -1687,10 +1690,13 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <div class="toolbar">
         <div>
           <h2>2026 REBUILT Team EPA Rankings & Scouting Stats</h2>
-          <p class="muted small">Expected Points Added (EPA), 2026 season estimates, and aggregated live scouting match stats from NYX pit & stands scouts.</p>
+          <p class="muted small">Expected Points Added (EPA), 2026 season estimates, and aggregated live scouting match stats from NYX pit & stands scouts. Sourced from <a href="https://www.statbotics.io/teams" target="_blank" rel="noopener noreferrer" style="color:var(--accent-bright); text-decoration:underline;">statbotics.io/teams</a>.</p>
         </div>
-        <div class="toolbar-actions">
-          <input class="search" id="strat-team-search" type="search" placeholder="⌕ Search team #, name, city..." style="width:260px;">
+        <div class="toolbar-actions" style="display:flex; gap:8px; align-items:center;">
+          <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
+            <span>🌐</span> Open Statbotics Teams ↗
+          </a>
+          <input class="search" id="strat-team-search" type="search" placeholder="⌕ Search team #, name, city..." style="width:240px;">
         </div>
       </div>
 
@@ -2197,19 +2203,13 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
-              <div>
-                <label for="secret-person-name">Target Person's Name *</label>
-                <input type="text" id="secret-person-name" placeholder="e.g. Lead Driver, Head Strategist, Mentor..." required>
-              </div>
-              <div>
-                <label for="secret-person-role">Primary Role / What They Do *</label>
-                <input type="text" id="secret-person-role" placeholder="e.g. Main Driver, Operator, Auton Programmer, Drive Coach" required>
-              </div>
+            <div style="margin-bottom:12px;">
+              <label for="secret-person-role">Primary Role / What They Do For The Team *</label>
+              <input type="text" id="secret-person-role" placeholder="e.g. Main Driver, Operator, Auton Programmer, Drive Coach, Lead Strategist" required>
             </div>
 
             <div style="margin-bottom:12px;">
-              <label for="secret-person-intel">What they do for the team / Tactical Intelligence *</label>
+              <label for="secret-person-intel">Tactical Intelligence & Observations *</label>
               <textarea id="secret-person-intel" rows="3" placeholder="Detailed intel: habits under pressure, defense reaction, autonomous routines they wrote, human player tendencies, drive signals..." required></textarea>
             </div>
 
@@ -3578,13 +3578,11 @@ async function loadMembers() {
   html += '<div style="padding:14px 20px; background:rgba(255,255,255,.02); font-weight:700; font-size:12px; border-bottom:1px solid var(--line);">APPROVED TEAM MEMBERS (' + active.length + ')</div>';
   html += active.map(p => {
     const depts = (p.departments && p.departments.length) ? p.departments.join(", ") : "Mechanical";
-    const isSecretAdmin = !!p.is_secret;
     return `
       <div class="itemrow" style="grid-template-columns: 2fr 1.5fr auto;">
         <div>
           <b>${esc(p.full_name)}</b>
           ${p.is_admin ? '<span class="pill" style="border-color:var(--accent-bright); color:var(--accent-bright); font-size:10px;">Admin</span>' : ''}
-          ${isSecretAdmin ? '<span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-size:10px;">🕵️ Secret</span>' : ''}
           <div class="muted small mono">${depts} ${p.id === currentUser.id ? '· (You)' : ''}</div>
         </div>
         <div>
@@ -5579,7 +5577,7 @@ function renderRankings() {
         </div>
         <div>
           <div class="itemname">
-            <strong>${t.team}</strong> · ${esc(t.name)}
+            <strong>${t.team}</strong> · <a href="https://www.statbotics.io/team/${t.team}" target="_blank" rel="noopener noreferrer" style="color:var(--text); text-decoration:none;" title="View on Statbotics">${esc(t.name)} ↗</a>
             ${isNyx ? '<span class="pill Business" style="font-size:9px;">HOME TEAM</span>' : ''}
           </div>
           <div class="itemnotes">Rookie: ${t.rookie || '—'} · Record: ${esc(t.record || '—')}</div>
@@ -5927,7 +5925,7 @@ async function handleTeamLookup(e) {
       </div>
 
       <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
-        <span class="muted small">Source: Statbotics & TBA EPA model</span>
+        <span class="muted small">Source: <a href="https://www.statbotics.io/team/${teamObj.team}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-bright); text-decoration:underline;">statbotics.io/team/${teamObj.team}</a></span>
         <button class="btn btn--primary btn--sm" id="load-team-into-sim-btn" type="button">Load into Match Simulator ⚡</button>
       </div>
     </div>
@@ -5987,12 +5985,19 @@ function loadScoutingRecords() {
       .order("created_at", { ascending: false })
       .limit(200)
       .then(({ data, error }) => {
-        if (!error && data && data.length) {
-          // Merge remote records with local
-          const localIds = new Set(scoutingRecords.map(r => r.id));
+        if (!error && data) {
+          // Track deleted IDs in local storage so deleted remote rows are not resurrected
+          let deletedIds = new Set();
+          try {
+            const rawDel = localStorage.getItem("nyx_deleted_scouting_ids");
+            if (rawDel) deletedIds = new Set(JSON.parse(rawDel));
+          } catch (e) {}
+
+          const localMap = new Map(scoutingRecords.map(r => [r.id, r]));
           let added = false;
           data.forEach(remoteRow => {
-            if (!localIds.has(remoteRow.id)) {
+            if (deletedIds.has(remoteRow.id)) return;
+            if (!localMap.has(remoteRow.id)) {
               scoutingRecords.push(remoteRow);
               added = true;
             }
@@ -6283,11 +6288,29 @@ $("#scout-records-list")?.addEventListener("click", async e => {
   if (!id) return;
 
   if (confirm("Delete this scouting record? This action will update team ranking stats.")) {
-    scoutingRecords = scoutingRecords.filter(r => r.id !== id);
-    try { localStorage.setItem("nyx_scouting_records", JSON.stringify(scoutingRecords)); } catch (e) {}
+    scoutingRecords = scoutingRecords.filter(r => String(r.id) !== String(id));
+    try {
+      localStorage.setItem("nyx_scouting_records", JSON.stringify(scoutingRecords));
+      // Store deleted ID
+      const rawDel = localStorage.getItem("nyx_deleted_scouting_ids");
+      const delList = rawDel ? JSON.parse(rawDel) : [];
+      if (!delList.includes(id)) {
+        delList.push(id);
+        localStorage.setItem("nyx_deleted_scouting_ids", JSON.stringify(delList.slice(-200)));
+      }
+    } catch (e) {}
+
     if (supabase) {
-      await supabase.from("match_scouting_logs").delete().eq("id", id).catch(() => {});
+      try {
+        const { error } = await supabase.from("match_scouting_logs").delete().eq("id", id);
+        if (error) {
+          console.warn("Supabase scouting delete error:", error.message);
+        }
+      } catch (err) {
+        console.warn("Supabase scouting delete error:", err);
+      }
     }
+
     incorporateScoutingIntoRankings();
     renderScoutingRecords();
     toast("Scouting record deleted.");
@@ -6398,8 +6421,9 @@ function renderSecretIntel() {
             ${d.team_name ? `<span class="muted small">· ${esc(d.team_name)}</span>` : ''}
             <span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-size:10px;">CONFIDENTIAL</span>
           </div>
-          <h3 style="margin:4px 0 2px; font-size:17px; color:var(--text);">${esc(d.person_name)}</h3>
-          <span class="mono small" style="color:var(--accent-bright); font-weight:700;">Role: ${esc(d.person_role)}</span>
+          <div style="margin-top:6px;">
+            <span class="mono small" style="color:var(--accent-bright); font-weight:700; font-size:14px;">Role: ${esc(d.person_role)}</span>
+          </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="muted small mono">${new Date(d.created_at).toLocaleDateString()}</span>
@@ -6429,11 +6453,10 @@ function setupSecretsEvents() {
 
     const teamNum = parseInt($("#secret-team-num")?.value, 10);
     const teamName = $("#secret-team-name")?.value.trim() || "";
-    const personName = $("#secret-person-name")?.value.trim() || "";
     const personRole = $("#secret-person-role")?.value.trim() || "";
     const intelNotes = $("#secret-person-intel")?.value.trim() || "";
 
-    if (!teamNum || !personName || !personRole || !intelNotes) {
+    if (!teamNum || !personRole || !intelNotes) {
       toast("Please fill in all required intelligence fields.", true);
       return;
     }
@@ -6442,7 +6465,7 @@ function setupSecretsEvents() {
       id: "sec_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
       team_num: teamNum,
       team_name: teamName,
-      person_name: personName,
+      person_name: personRole,
       person_role: personRole,
       intel_notes: intelNotes,
       logged_by: currentUser.id,
@@ -6462,7 +6485,7 @@ function setupSecretsEvents() {
     }
 
     renderSecretIntel();
-    toast(`Classified dossier on ${personName} (Team ${teamNum}) recorded! 🕵️`);
+    toast(`Classified dossier on Team ${teamNum} (${personRole}) recorded! 🕵️`);
 
     // Reset form
     $("#secret-scout-form")?.reset();

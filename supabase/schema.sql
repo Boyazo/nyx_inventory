@@ -418,7 +418,7 @@ create table if not exists public.secret_personnel_intel (
   id text primary key,
   team_num integer not null,
   team_name text not null default '',
-  person_name text not null check (length(trim(person_name)) > 0),
+  person_name text default '',
   person_role text not null default '',
   intel_notes text not null default '',
   logged_by uuid references auth.users(id),
