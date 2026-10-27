@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="teams_data.js"></script>
 <style>
 :root, [data-theme="dark"] {
   --bg: #07070c;
@@ -1727,6 +1728,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <div id="strat-rankings-list">
         <div style="padding:40px; text-align:center;" class="muted">Loading 2026 FRC rankings…</div>
       </div>
+      <div id="strat-rankings-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-top:1px solid var(--border); margin-top:12px; background:var(--bg-card); border-radius:var(--radius-sm);"></div>
     </section>
 
     <!-- 3. MATCH SCOUTING FORM & DATA ENTRY -->
@@ -4713,7 +4715,9 @@ async function initSupabase() {
    STRATEGY, SCOUTING, PLAYBOOK & SIMULATOR ENGINE (STATBOTICS & 2026 REBUILT)
    ========================================================================== */
 
-let frcTeamsData = [
+let frcTeamsData = (typeof window !== "undefined" && Array.isArray(window.FRC_TEAMS_DATA) && window.FRC_TEAMS_DATA.length > 0)
+  ? window.FRC_TEAMS_DATA
+  : [
   { team: 4414, name: "HighTide", location: "Ventura, CA, USA", epa: 356.9, auto_epa: 75.1, teleop_epa: 195.9, endgame_epa: 86.0, winrate: 97.2, rank: 1, record: "70-2-0", rookie: 2022 },
   { team: 254, name: "The Cheesy Poofs", location: "San Jose, CA, USA", epa: 328.1, auto_epa: 78.5, teleop_epa: 169.9, endgame_epa: 79.8, winrate: 91.5, rank: 2, record: "65-6-0", rookie: 1999 },
   { team: 7769, name: "The CREW", location: "Sterling Heights, MI, USA", epa: 311.6, auto_epa: 67.8, teleop_epa: 175.4, endgame_epa: 68.5, winrate: 93.3, rank: 3, record: "70-5-0", rookie: 2019 },
@@ -4792,6 +4796,7 @@ function initStrategyCenter() {
     // Rankings search & sort
     $("#strat-team-search")?.addEventListener("input", e => {
       currentSearchQuery = e.target.value.trim().toLowerCase();
+      rankingsCurrentPage = 1;
       renderRankings();
     });
 
@@ -4800,6 +4805,7 @@ function initStrategyCenter() {
         $$("#strat-sort-tabs .catbtn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         currentSortMetric = btn.dataset.sort;
+        rankingsCurrentPage = 1;
         renderRankings();
       });
     });
@@ -5564,6 +5570,9 @@ $("#saved-plays-grid")?.addEventListener("click", async e => {
 /* --------------------------------------------------------------------------
    FRC TEAM RANKINGS & STATBOTICS TABLE
    -------------------------------------------------------------------------- */
+let rankingsCurrentPage = 1;
+const RANKINGS_PAGE_SIZE = 50;
+
 function renderRankings() {
   const list = $("#strat-rankings-list");
   if (!list) return;
@@ -5591,25 +5600,37 @@ function renderRankings() {
   const countBadge = $("#badge-strat-count");
   if (countBadge) countBadge.textContent = filtered.length;
 
+  const pagDiv = $("#strat-rankings-pagination");
+
   if (!filtered.length) {
     list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">No teams match your search query. Try team number or city!</div>';
+    if (pagDiv) pagDiv.innerHTML = "";
     return;
   }
 
-  list.innerHTML = filtered.map((t, idx) => {
+  // Calculate pagination
+  const totalPages = Math.ceil(filtered.length / RANKINGS_PAGE_SIZE) || 1;
+  if (rankingsCurrentPage > totalPages) rankingsCurrentPage = totalPages;
+  if (rankingsCurrentPage < 1) rankingsCurrentPage = 1;
+
+  const startIndex = (rankingsCurrentPage - 1) * RANKINGS_PAGE_SIZE;
+  const pageTeams = filtered.slice(startIndex, startIndex + RANKINGS_PAGE_SIZE);
+
+  list.innerHTML = pageTeams.map((t, localIdx) => {
+    const globalRank = startIndex + localIdx + 1;
     const isNyx = t.team === 11744;
     const scoutCount = t.scout_matches || 0;
     return `
       <article class="itemrow" style="grid-template-columns: 60px minmax(180px, 2fr) minmax(110px, 1fr) 85px 75px 75px 85px 85px 80px 100px; ${isNyx ? 'background:rgba(139,92,246,0.08); border-left:3px solid var(--accent);' : ''}">
         <div>
-          <span class="rank-badge ${idx < 3 ? 'top3' : ''}">#${idx + 1}</span>
+          <span class="rank-badge ${globalRank <= 3 ? 'top3' : ''}">#${globalRank}</span>
         </div>
         <div>
           <div class="itemname">
-            <strong>${t.team}</strong> · <a href="https://www.statbotics.io/team/${t.team}" target="_blank" rel="noopener noreferrer" style="color:var(--text); text-decoration:none;" title="View on Statbotics">${esc(t.name)} ↗</a>
+            <strong>${t.team}</strong> • <a href="https://www.statbotics.io/team/${t.team}" target="_blank" rel="noopener noreferrer" style="color:var(--text); text-decoration:none;" title="View on Statbotics">${esc(t.name)} ↗</a>
             ${isNyx ? '<span class="pill Business" style="font-size:9px;">HOME TEAM</span>' : ''}
           </div>
-          <div class="itemnotes">Rookie: ${t.rookie || '—'} · Record: ${esc(t.record || '—')}</div>
+          <div class="itemnotes">Rookie: ${t.rookie || '-'} • Record: ${esc(t.record || '-')}</div>
         </div>
         <div class="muted small">${esc(t.location)}</div>
         <div>
@@ -5619,7 +5640,7 @@ function renderRankings() {
         <div class="mono small">${t.teleop_epa.toFixed(1)}</div>
         <div class="mono small">${t.endgame_epa.toFixed(1)}</div>
         <div>
-          ${scoutCount > 0 ? `<span class="pill" style="background:var(--accent-dim); color:var(--accent-soft); font-size:10px; font-weight:700;">${scoutCount} match${scoutCount > 1 ? 'es' : ''}</span>` : '<span class="muted small">—</span>'}
+          ${scoutCount > 0 ? `<span class="pill" style="background:var(--accent-dim); color:var(--accent-soft); font-size:10px; font-weight:700;">${scoutCount} match${scoutCount > 1 ? 'es' : ''}</span>` : '<span class="muted small">-</span>'}
         </div>
         <div>
           <span class="pill" style="color:${t.winrate >= 80 ? 'var(--green)' : 'var(--text)'}; font-size:10px;">${t.winrate.toFixed(1)}%</span>
@@ -5630,6 +5651,35 @@ function renderRankings() {
       </article>
     `;
   }).join("");
+
+  if (pagDiv) {
+    pagDiv.innerHTML = `
+      <div class="muted small">
+        Showing <strong>${startIndex + 1}</strong> – <strong>${Math.min(startIndex + RANKINGS_PAGE_SIZE, filtered.length)}</strong> of <strong>${filtered.length.toLocaleString()}</strong> teams
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="btn btn--ghost btn--sm" id="strat-pag-prev" ${rankingsCurrentPage === 1 ? 'disabled' : ''}>← Prev</button>
+        <span class="muted small mono" style="padding:0 8px;">Page ${rankingsCurrentPage} of ${totalPages}</span>
+        <button class="btn btn--ghost btn--sm" id="strat-pag-next" ${rankingsCurrentPage === totalPages ? 'disabled' : ''}>Next →</button>
+      </div>
+    `;
+
+    $("#strat-pag-prev")?.addEventListener("click", () => {
+      if (rankingsCurrentPage > 1) {
+        rankingsCurrentPage--;
+        renderRankings();
+        list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+
+    $("#strat-pag-next")?.addEventListener("click", () => {
+      if (rankingsCurrentPage < totalPages) {
+        rankingsCurrentPage++;
+        renderRankings();
+        list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
 }
 
 // Quick simulate click from rankings
