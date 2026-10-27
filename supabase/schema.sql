@@ -1,4 +1,4 @@
-﻿-- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
+-- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
 -- Run this entire script in Supabase Dashboard -> SQL Editor.
 create extension if not exists pgcrypto;
 
@@ -491,6 +491,9 @@ begin
     end if;
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'strategy_plays') then
       execute 'alter publication supabase_realtime add table public.strategy_plays';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'secret_personnel_intel') then
+      execute 'alter publication supabase_realtime add table public.secret_personnel_intel';
     end if;
   end if;
 end

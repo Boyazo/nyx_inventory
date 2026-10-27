@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1150,6 +1150,187 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
     padding-bottom: 6px;
   }
 }
+
+/* Mobile Bottom Bar Navigation */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  body {
+    font-size: 13.5px;
+    -webkit-text-size-adjust: 100%;
+    padding-bottom: 74px !important; /* space for bottom bar */
+  }
+  .app-main {
+    padding-bottom: 20px;
+  }
+  .dashboard {
+    padding: 12px 14px 24px;
+  }
+  .welcome {
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .welcome h1 {
+    font-size: 24px;
+  }
+  .playbook-container {
+    padding: 10px 8px !important;
+  }
+  .panel {
+    border-radius: var(--radius-sm);
+  }
+  .toolbar {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .toolbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .toolbar-actions .search {
+    width: 100% !important;
+  }
+  .btn {
+    padding: 8px 14px;
+    font-size: 12.5px;
+    min-height: 40px;
+  }
+  .tool-btn, .size-btn, .viewtab, .catbtn {
+    min-height: 38px;
+  }
+
+  /* Fixed Mobile Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    background: rgba(15, 17, 23, 0.95);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line-strong);
+    z-index: 999;
+    justify-content: space-around;
+    align-items: center;
+    padding: 4px 8px env(safe-area-inset-bottom, 6px);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+  }
+  [data-theme="light"] .mobile-bottom-nav {
+    background: rgba(255, 255, 255, 0.95);
+    border-top-color: var(--line-strong);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex: 1;
+    max-width: 110px;
+    transition: color 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav-item .nav-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+  .mobile-nav-item.active {
+    color: var(--accent-bright);
+  }
+  .mobile-nav-item:active {
+    transform: scale(0.95);
+  }
+  .mobile-nav-item.secrets-item.active {
+    color: #f43f5e;
+  }
+
+  /* Responsive field canvas */
+  .canvas-wrapper {
+    -webkit-user-select: none;
+    user-select: none;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    position: relative;
+  }
+  #field-canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100%;
+    aspect-ratio: 2 / 1;
+    display: block;
+  }
+}
+
+/* Landscape / Mobile Fullscreen mode for Strategy Planner */
+.playbook-container.fullscreen-active {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  z-index: 99999 !important;
+  background: #090912 !important;
+  padding: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+.playbook-container.fullscreen-active .canvas-wrapper {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  max-height: calc(100vh - 100px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+}
+.playbook-container.fullscreen-active #field-canvas {
+  width: auto !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  max-width: 100% !important;
+  aspect-ratio: 2 / 1 !important;
+  object-fit: contain !important;
+}
+.playbook-container.fullscreen-active .playbook-toolbar {
+  position: relative !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  padding: 6px 10px !important;
+  background: rgba(18, 20, 28, 0.95) !important;
+  border-radius: 8px !important;
+  z-index: 10 !important;
+}
+.playbook-container.fullscreen-active .playbook-save-bar,
+.playbook-container.fullscreen-active .eyebrow,
+.playbook-container.fullscreen-active .saved-plays-grid {
+  display: none !important;
+}
+
+@media (max-width: 950px) and (orientation: landscape) {
+  /* On mobile landscape orientation, offer automatic full-screen canvas ergonomics */
+  body.auto-landscape-playbook .playbook-container {
+    padding: 6px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1686,7 +1867,6 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
         <div class="playbook-toolbar">
           <div class="tool-group">
             <span class="tool-label">TOOL:</span>
-            <button type="button" class="tool-btn" data-tool="move" title="Move & Pan Tool (Drag robots, tokens or pan page)">🖐️ Move</button>
             <button type="button" class="tool-btn active" data-tool="pen" title="Freehand Path">✏️ Draw</button>
             <button type="button" class="tool-btn" data-tool="arrow" title="Route Arrow">↗️ Arrow</button>
             <button type="button" class="tool-btn" data-tool="line" title="Straight Line">📏 Line</button>
@@ -1718,6 +1898,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 
           <div class="tool-group" style="margin-left:auto;">
             <button type="button" class="btn btn--sm btn--primary" id="field-choreo-play-btn" style="background:#8b5cf6; border-color:#8b5cf6; display:inline-flex; align-items:center; gap:5px;" title="Choreo Trajectory Simulation">▶ Simulate Path (Choreo)</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="field-fullscreen-btn" title="Toggle Fullscreen Field Mode">⛶ Fullscreen</button>
             <button type="button" class="btn btn--sm btn--ghost" id="field-undo-btn">↺ Undo</button>
             <button type="button" class="btn btn--sm btn--ghost" id="field-clear-btn">🗑 Clear</button>
             <button type="button" class="btn btn--sm btn--ghost" id="field-export-btn">🖼 Export PNG</button>
@@ -2804,6 +2985,26 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   </footer>
     </div> <!-- .shell -->
   </div> <!-- .app-main -->
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <button type="button" class="mobile-nav-item active" id="mob-btn-dashboard" data-page="dashboard">
+      <span class="nav-icon">🛠</span>
+      <span>Shop</span>
+    </button>
+    <button type="button" class="mobile-nav-item" id="mob-btn-strategy" data-page="strategy">
+      <span class="nav-icon">🎯</span>
+      <span>Strategy</span>
+    </button>
+    <button type="button" class="mobile-nav-item secrets-item hidden" id="mob-btn-secrets" data-page="secrets">
+      <span class="nav-icon">🕵️</span>
+      <span>Secret Intel</span>
+    </button>
+    <button type="button" class="mobile-nav-item" id="mob-btn-menu" aria-label="Open Menu">
+      <span class="nav-icon">☰</span>
+      <span>Menu</span>
+    </button>
+  </nav>
 </div> <!-- .app-layout -->
 
 <script type="module">
@@ -2927,6 +3128,9 @@ function switchPage(pageName) {
   $("#sidebar-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#sidebar-btn-strategy")?.classList.toggle("active", pageName === "strategy");
   $("#sidebar-btn-secrets")?.classList.toggle("active", pageName === "secrets");
+  $("#mob-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
+  $("#mob-btn-strategy")?.classList.toggle("active", pageName === "strategy");
+  $("#mob-btn-secrets")?.classList.toggle("active", pageName === "secrets");
   $("#inventory-screen")?.classList.toggle("hidden", pageName !== "dashboard");
   $("#strategy-screen")?.classList.toggle("hidden", pageName !== "strategy");
   $("#secrets-screen")?.classList.toggle("hidden", pageName !== "secrets");
@@ -3043,6 +3247,7 @@ async function checkUser(user) {
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
   const elSecretSideBtn = $("#sidebar-btn-secrets"); if (elSecretSideBtn) elSecretSideBtn.classList.toggle("hidden", !data.is_secret);
+  const elSecretMobBtn = $("#mob-btn-secrets"); if (elSecretMobBtn) elSecretMobBtn.classList.toggle("hidden", !data.is_secret);
 
   await Promise.all([loadItems(), loadCheckouts(), loadTasks(), loadPartsNeeded(), loadShifts()]);
 
@@ -3069,6 +3274,12 @@ async function checkUser(user) {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
         if (currentView === "logs" && currentProfile?.is_admin) loadLogs();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "strategy_plays" }, () => {
+        loadSavedPlays(true);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "secret_personnel_intel" }, () => {
+        if (currentProfile?.is_secret) loadSecretIntel(true);
       })
       .subscribe(status => {
         if (status === "SUBSCRIBED") {
@@ -5397,7 +5608,7 @@ function initPlaybook() {
   // Touch gesture isolation: prevent browser pinch/zoom/scroll from creating multi-touch artifacts
   canvas.addEventListener("touchstart", e => {
     if (e.touches.length > 1) {
-      // Two-finger pinch or zoom: cancel any active drawing cleanly
+      // Two-finger pinch or zoom: cancel any active drawing cleanly without bugging out
       if (isDrawing) {
         isDrawing = false;
         activePointerId = null;
@@ -5433,33 +5644,12 @@ function initPlaybook() {
   // Pointer events with single active pointer lock
   canvas.addEventListener("pointerdown", e => {
     if (activePointerId !== null && activePointerId !== e.pointerId) {
-      // Ignore additional fingers touching the screen
       e.preventDefault();
       return;
     }
     activePointerId = e.pointerId;
     try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     const coords = getCanvasCoords(e);
-    if (activeTool === "move") {
-      // Find draggable token or game piece under pointer (within 28px hit radius)
-      for (let i = playHistory.length - 1; i >= 0; i--) {
-        const item = playHistory[i];
-        if (item.type === "token" || item.type === "piece") {
-          const dist = Math.hypot(item.x - coords.x, item.y - coords.y);
-          if (dist <= 28) {
-            draggedItem = item;
-            draggedOffset = { x: item.x - coords.x, y: item.y - coords.y };
-            isDrawing = true;
-            canvas.style.cursor = "grabbing";
-            return;
-          }
-        }
-      }
-      // If nothing under pointer, allow native touch scrolling on mobile
-      isDrawing = false;
-      activePointerId = null;
-      return;
-    }
     isDrawing = true;
     if (activeTool === "pen") {
       currentPath = [coords];
@@ -5524,14 +5714,6 @@ function initPlaybook() {
   canvas.addEventListener("pointermove", e => {
     if (!isDrawing || (activePointerId !== null && e.pointerId !== activePointerId)) return;
     const coords = getCanvasCoords(e);
-    if (activeTool === "move") {
-      if (draggedItem) {
-        draggedItem.x = Math.max(16, Math.min(canvas.width - 16, coords.x + draggedOffset.x));
-        draggedItem.y = Math.max(16, Math.min(canvas.height - 16, coords.y + draggedOffset.y));
-        renderCanvas();
-      }
-      return;
-    }
     if (activeTool === "eraser") {
       eraseAtPoint(coords.x, coords.y);
       return;
@@ -5572,12 +5754,7 @@ function initPlaybook() {
     }
     activePointerId = null;
 
-    if (activeTool === "move") {
-      draggedItem = null;
-      canvas.style.cursor = "grab";
-      renderCanvas();
-      return;
-    }
+
 
     const coords = e ? getCanvasCoords(e) : null;
     if (activeTool === "pen" && currentPath.length > 1) {
@@ -5663,6 +5840,36 @@ function initPlaybook() {
 
   // Save Play
   $("#playbook-save-btn")?.addEventListener("click", savePlaybookPlay);
+
+  // Fullscreen Playbook Toggle
+  const fsBtn = $("#field-fullscreen-btn");
+  const pbContainer = $(".playbook-container");
+
+  function togglePlaybookFullscreen(force) {
+    if (!pbContainer) return;
+    const isActive = force !== undefined ? force : !pbContainer.classList.contains("fullscreen-active");
+    pbContainer.classList.toggle("fullscreen-active", isActive);
+    if (fsBtn) fsBtn.innerHTML = isActive ? "✕ Exit Fullscreen" : "⛶ Fullscreen";
+    setTimeout(renderCanvas, 60);
+  }
+
+  fsBtn?.addEventListener("click", () => togglePlaybookFullscreen());
+
+  // Listen for orientation change on mobile devices: auto-fullscreen landscape field when in strategy tab
+  function handleOrientationChange() {
+    const isMobile = window.innerWidth <= 950 || window.innerHeight <= 600;
+    const isLandscape = window.innerWidth > window.innerHeight;
+    if (isMobile && isLandscape && currentAppPage === "strategy" && currentStratTab === "playbook") {
+      document.body.classList.add("auto-landscape-playbook");
+      togglePlaybookFullscreen(true);
+    } else if (pbContainer && pbContainer.classList.contains("fullscreen-active") && !isLandscape && isMobile) {
+      // Return to standard view when rotated back to portrait
+      togglePlaybookFullscreen(false);
+    }
+  }
+
+  window.addEventListener("resize", handleOrientationChange);
+  window.addEventListener("orientationchange", handleOrientationChange);
 }
 
 /* Choreo Multi-Robot Trajectory Solver & Swerve Optimizer */
@@ -6031,8 +6238,8 @@ $("#saved-plays-grid")?.addEventListener("click", async e => {
     renderSavedPlays();
     toast(`Play "${playName}" deleted 🗑️`);
 
-    // Background sync to Supabase without blocking UI
-    if (supabase && id.length > 20) {
+    // Background sync to Supabase (match uuid or custom id)
+    if (supabase) {
       supabase.from("strategy_plays").delete().eq("id", id).catch(err => {
         console.warn("Background delete failed:", err);
       });
@@ -6912,37 +7119,34 @@ function initSecretsCenter() {
   }
 }
 
-function loadSecretIntel() {
+async function loadSecretIntel(quiet) {
   try {
     const raw = localStorage.getItem("nyx_secret_intel");
-    if (raw) secretDossiers = JSON.parse(raw);
+    if (raw && !quiet) secretDossiers = JSON.parse(raw);
   } catch (err) {
     secretDossiers = [];
   }
-  renderSecretIntel();
+  if (!quiet) renderSecretIntel();
 
-  // Load from Supabase if table exists
+  // Load directly from Supabase for all secret-cleared members
   if (supabase && currentUser) {
-    supabase.from("secret_personnel_intel")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (!error && data && data.length) {
-          const localIds = new Set(secretDossiers.map(d => d.id));
-          let changed = false;
-          data.forEach(rem => {
-            if (!localIds.has(rem.id)) {
-              secretDossiers.push(rem);
-              changed = true;
-            }
-          });
-          if (changed) {
-            try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers.slice(0, 100))); } catch (e) {}
-            renderSecretIntel();
-          }
-        }
-      })
-      .catch(() => {});
+    try {
+      const { data, error } = await supabase.from("secret_personnel_intel")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.warn("Secret personnel intel load notice:", error.message);
+      } else if (Array.isArray(data)) {
+        secretDossiers = data;
+        try {
+          localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers.slice(0, 100)));
+        } catch (e) {}
+        renderSecretIntel();
+      }
+    } catch (e) {
+      console.warn("Could not query secret intel from remote database:", e);
+    }
   }
 }
 
@@ -7155,6 +7359,17 @@ $("#sidebar-btn-dashboard")?.addEventListener("click", () => switchPage("dashboa
 $("#sidebar-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
 $("#sidebar-btn-secrets")?.addEventListener("click", () => switchPage("secrets"));
 $("#sidebar-open-profile-btn")?.addEventListener("click", openProfileModal);
+
+// Mobile Bottom Nav Bar Clicks
+$("#mob-btn-dashboard")?.addEventListener("click", () => switchPage("dashboard"));
+$("#mob-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
+$("#mob-btn-secrets")?.addEventListener("click", () => switchPage("secrets"));
+$("#mob-btn-menu")?.addEventListener("click", () => {
+  const sb = $("#app-sidebar");
+  const bd = $("#sidebar-backdrop");
+  if (sb) sb.classList.toggle("open");
+  if (bd) bd.classList.toggle("active");
+});
 
 $("#sidebar-toggle-btn")?.addEventListener("click", () => {
   const sb = $("#app-sidebar");
