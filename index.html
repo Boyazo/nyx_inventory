@@ -3589,13 +3589,6 @@ async function loadMembers() {
         </div>
         <div>
           <span class="muted small mono">Approved</span>
-          ${currentProfile?.is_admin ? `
-            <div style="margin-top:4px;">
-              <button class="btn btn--ghost btn--sm" data-action="toggle-secret-role" data-id="${p.id}" data-name="${esc(p.full_name)}" data-secret="${isSecretAdmin ? 'true' : 'false'}" style="padding:3px 8px; font-size:10px; color:${isSecretAdmin ? '#f43f5e' : 'var(--text-muted)'};">
-                ${isSecretAdmin ? 'Remove Secret Role' : 'Grant Secret Role 🕵️'}
-              </button>
-            </div>
-          ` : ''}
         </div>
         <div>
           ${p.id !== currentUser.id ? `
@@ -4625,21 +4618,6 @@ $("#admin-members-list").addEventListener("click", async e => {
       await logAction(approve ? "MEMBER_APPROVED" : "MEMBER_REVOKED", "profiles", id, { member_name: name });
       await loadMembers();
       toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
-    }
-  } else if (action === "toggle-secret-role") {
-    const currentSecret = b.dataset.secret === "true";
-    const newSecret = !currentSecret;
-    const { error } = await supabase.from("profiles").update({ is_secret: newSecret, is_admin: true }).eq("id", id);
-    if (error) {
-      toast("Secret role update failed: " + error.message, true);
-    } else {
-      await logAction("SECRET_ROLE_UPDATED", "profiles", id, { member_name: name, is_secret: newSecret });
-      await loadMembers();
-      toast(newSecret ? `Granted Secret Role to ${name}! 🕵️` : `Removed Secret Role from ${name}.`);
-      if (id === currentUser?.id) {
-        currentProfile.is_secret = newSecret;
-        $("#sidebar-btn-secrets")?.classList.toggle("hidden", !newSecret);
-      }
     }
   }
 });
