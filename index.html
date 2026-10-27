@@ -1582,12 +1582,12 @@ function renderItems() {
   const totalQty = allItems.reduce((n, x) => n + Number(x.quantity || 0), 0);
   const toolsCount = allItems.filter(x => x.is_tool).length;
 
-  $("#stat-items").textContent = allItems.length;
-  $("#stat-quantity").textContent = totalQty;
-  $("#badge-all").textContent = allItems.length;
+  const elStatItems = $("#stat-items"); if (elStatItems) elStatItems.textContent = allItems.length;
+  const elStatQty = $("#stat-quantity"); if (elStatQty) elStatQty.textContent = totalQty;
+  const elBadgeAll = $("#badge-all"); if (elBadgeAll) elBadgeAll.textContent = allItems.length;
 
-  $("#count-all").textContent = allItems.length;
-  $("#count-tools").textContent = toolsCount;
+  const elCountAll = $("#count-all"); if (elCountAll) elCountAll.textContent = allItems.length;
+  const elCountTools = $("#count-tools"); if (elCountTools) elCountTools.textContent = toolsCount;
   CATEGORIES.forEach(c => {
     const el = $("#count-" + c.toLowerCase());
     if (el) el.textContent = allItems.filter(x => x.category === c).length;
@@ -1672,8 +1672,8 @@ function renderItems() {
 /* Render Parts Needed (Viewable by everyone, editable by admins) */
 function renderPartsNeeded() {
   const neededUnarrived = allPartsNeeded.filter(p => p.status !== "arrived");
-  $("#stat-parts-needed").textContent = neededUnarrived.length;
-  $("#badge-parts-needed").textContent = neededUnarrived.length;
+  const elSpn = $("#stat-parts-needed"); if (elSpn) elSpn.textContent = neededUnarrived.length;
+  const elBpn = $("#badge-parts-needed"); if (elBpn) elBpn.textContent = neededUnarrived.length;
 
   const filtered = allPartsNeeded.filter(p => {
     if (activePartsFilter === "All") return true;
@@ -1739,8 +1739,8 @@ function renderPartsNeeded() {
 }
 
 function renderCheckouts() {
-  $("#stat-checkouts").textContent = allCheckouts.length;
-  $("#badge-checkouts").textContent = allCheckouts.length;
+  const elSc = $("#stat-checkouts"); if (elSc) elSc.textContent = allCheckouts.length;
+  const elBc = $("#badge-checkouts"); if (elBc) elBc.textContent = allCheckouts.length;
 
   const list = $("#checkouts-list");
   if (!allCheckouts.length) {
@@ -1780,8 +1780,8 @@ function renderCheckouts() {
 
 function renderTasks() {
   const activeTasks = allTasks.filter(t => t.status !== "done");
-  $("#stat-tasks").textContent = activeTasks.length;
-  $("#badge-planner").textContent = activeTasks.length;
+  const elSt = $("#stat-tasks"); if (elSt) elSt.textContent = activeTasks.length;
+  const elBp = $("#badge-planner"); if (elBp) elBp.textContent = activeTasks.length;
 
   const filtered = allTasks.filter(t => {
     if (activePlannerSubsystem === "All") return true;
@@ -1792,9 +1792,9 @@ function renderTasks() {
   const inProgTasks = filtered.filter(t => t.status === "in_progress");
   const doneTasks = filtered.filter(t => t.status === "done");
 
-  $("#count-todo").textContent = todoTasks.length;
-  $("#count-in-progress").textContent = inProgTasks.length;
-  $("#count-done").textContent = doneTasks.length;
+  const elCt = $("#count-todo"); if (elCt) elCt.textContent = todoTasks.length;
+  const elCip = $("#count-in-progress"); if (elCip) elCip.textContent = inProgTasks.length;
+  const elCd = $("#count-done"); if (elCd) elCd.textContent = doneTasks.length;
 
   const isAdmin = !!currentProfile?.is_admin;
 
@@ -1844,8 +1844,8 @@ function renderTasks() {
 function renderSpending() {
   if (!currentProfile?.is_admin) return;
   const total = allSpending.reduce((sum, s) => sum + Number(s.amount || 0), 0);
-  $("#spending-total-amt").textContent = "$" + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  $("#spending-total-count").textContent = allSpending.length;
+  const elSta = $("#spending-total-amt"); if (elSta) elSta.textContent = "$" + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const elStc = $("#spending-total-count"); if (elStc) elStc.textContent = allSpending.length;
 
   // Find top vendor
   const vendorTotals = {};
@@ -1857,7 +1857,7 @@ function renderSpending() {
   for (const [v, amt] of Object.entries(vendorTotals)) {
     if (amt > maxV) { maxV = amt; topV = v; }
   }
-  $("#spending-top-vendor").textContent = topV + (maxV > 0 ? ` ($${maxV.toFixed(0)})` : '');
+  const elStv = $("#spending-top-vendor"); if (elStv) elStv.textContent = topV + (maxV > 0 ? ` ($${maxV.toFixed(0)})` : '');
 
   const list = $("#spending-list");
   if (!allSpending.length) {
@@ -1893,7 +1893,7 @@ async function loadMembers() {
 
   const pending = (data || []).filter(p => !p.is_approved);
   const active = (data || []).filter(p => p.is_approved);
-  $("#badge-members").textContent = pending.length;
+  const elBm = $("#badge-members"); if (elBm) elBm.textContent = pending.length;
 
   let html = '';
   if (pending.length) {
