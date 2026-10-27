@@ -1080,16 +1080,75 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   .authlayout { grid-template-columns: 1fr; padding: 30px 0; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .tablehead { display: none; }
-  .itemrow {
+  .itemrow:not(#strat-rankings-list .itemrow) {
     grid-template-columns: 1fr auto; padding: 16px; gap: 10px;
   }
-  .itemrow .subsys { grid-column: 1; grid-row: 2; }
-  .itemrow .location { display: none; }
-  .itemrow .quantity { grid-column: 2; grid-row: 1; }
-  .itemrow .actions { grid-column: 2; grid-row: 2; justify-content: flex-end; }
+  .itemrow:not(#strat-rankings-list .itemrow) .subsys { grid-column: 1; grid-row: 2; }
+  .itemrow:not(#strat-rankings-list .itemrow) .location { display: none; }
+  .itemrow:not(#strat-rankings-list .itemrow) .quantity { grid-column: 2; grid-row: 1; }
+  .itemrow:not(#strat-rankings-list .itemrow) .actions { grid-column: 2; grid-row: 2; justify-content: flex-end; }
   .planner-grid { grid-template-columns: 1fr; }
   .logrow { grid-template-columns: 1fr; gap: 4px; }
   .user-controls-block { align-items: flex-start; }
+
+  /* Mobile Strategy & Whiteboard polish */
+  .viewtabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+    gap: 6px;
+  }
+  .viewtabs .viewtab {
+    flex: 0 0 auto;
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+  .playbook-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .tool-group {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .playbook-save-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .canvas-wrapper {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #field-canvas {
+    touch-action: none;
+  }
+
+  /* Mobile Rankings list card view */
+  #strat-rankings-list .itemrow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+  }
+  #strat-rankings-pagination {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    text-align: center;
+  }
+  #strat-sort-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 6px;
+  }
 }
 </style>
 </head>
@@ -5233,20 +5292,65 @@ function initPlaybook() {
 
   renderCanvas();
 
+  let activePointerId = null;
+
   function getCanvasCoords(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const clientX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
     return {
       x: (clientX - rect.left) * scaleX,
       y: (clientY - rect.top) * scaleY
     };
   }
 
-  // Pointer events
+  // Touch gesture isolation: prevent browser pinch/zoom/scroll from creating multi-touch artifacts
+  canvas.addEventListener("touchstart", e => {
+    if (e.touches.length > 1) {
+      // Two-finger pinch or zoom: cancel any active drawing cleanly
+      if (isDrawing) {
+        isDrawing = false;
+        activePointerId = null;
+        currentPath = [];
+        shapeStart = null;
+        renderCanvas();
+      }
+      return;
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener("touchmove", e => {
+    if (e.touches.length > 1) {
+      if (isDrawing) {
+        isDrawing = false;
+        activePointerId = null;
+        currentPath = [];
+        shapeStart = null;
+        renderCanvas();
+      }
+      return;
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener("touchend", e => {
+    if (e.touches.length === 0 && isDrawing) {
+      stopDrawing(e);
+    }
+  }, { passive: false });
+
+  // Pointer events with single active pointer lock
   canvas.addEventListener("pointerdown", e => {
+    if (activePointerId !== null && activePointerId !== e.pointerId) {
+      // Ignore additional fingers touching the screen
+      e.preventDefault();
+      return;
+    }
+    activePointerId = e.pointerId;
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     isDrawing = true;
     const coords = getCanvasCoords(e);
     if (activeTool === "pen") {
@@ -5310,7 +5414,7 @@ function initPlaybook() {
   }
 
   canvas.addEventListener("pointermove", e => {
-    if (!isDrawing) return;
+    if (!isDrawing || (activePointerId !== null && e.pointerId !== activePointerId)) return;
     const coords = getCanvasCoords(e);
     if (activeTool === "eraser") {
       eraseAtPoint(coords.x, coords.y);
@@ -5345,7 +5449,13 @@ function initPlaybook() {
 
   const stopDrawing = (e) => {
     if (!isDrawing) return;
+    if (e && activePointerId !== null && e.pointerId !== activePointerId) return;
     isDrawing = false;
+    if (activePointerId !== null && canvas.hasPointerCapture && canvas.hasPointerCapture(activePointerId)) {
+      try { canvas.releasePointerCapture(activePointerId); } catch (_) {}
+    }
+    activePointerId = null;
+
     const coords = e ? getCanvasCoords(e) : null;
     if (activeTool === "pen" && currentPath.length > 1) {
       playHistory.push({ type: 'pen', points: [...currentPath], color: activeColor, width: activeWidth });
@@ -5553,16 +5663,20 @@ $("#saved-plays-grid")?.addEventListener("click", async e => {
     window.scrollTo({ top: $("#field-canvas").offsetTop - 80, behavior: 'smooth' });
     toast(`Loaded play "${play.name}"`);
   } else if (action === "delete-play" && play) {
-    if (confirm(`Delete strategy play "${play.name}"?`)) {
-      strategyPlays = strategyPlays.filter(p => p.id !== id);
-      try {
-        localStorage.setItem("nyx_strategy_plays", JSON.stringify(strategyPlays));
-      } catch (err) {}
-      if (supabase && id.length > 20) {
-        await supabase.from("strategy_plays").delete().eq("id", id);
-      }
-      renderSavedPlays();
-      toast("Strategy play removed.");
+    const playName = play.name;
+    // Instant optimistic removal from memory & UI
+    strategyPlays = strategyPlays.filter(p => p.id !== id);
+    try {
+      localStorage.setItem("nyx_strategy_plays", JSON.stringify(strategyPlays));
+    } catch (err) {}
+    renderSavedPlays();
+    toast(`Play "${playName}" deleted 🗑️`);
+
+    // Background sync to Supabase without blocking UI
+    if (supabase && id.length > 20) {
+      supabase.from("strategy_plays").delete().eq("id", id).catch(err => {
+        console.warn("Background delete failed:", err);
+      });
     }
   }
 });
