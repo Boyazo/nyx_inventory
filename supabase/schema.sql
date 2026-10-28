@@ -93,6 +93,8 @@ create table if not exists public.planner_tasks (
 
 create index if not exists planner_tasks_status_idx on public.planner_tasks(status);
 create index if not exists planner_tasks_subsystem_idx on public.planner_tasks(subsystem);
+-- Drag-and-drop ordering within each board column
+alter table public.planner_tasks add column if not exists position double precision;
 
 -- 6. Parts Needed for Robot Table (View: Everyone, Edit: Admin Only)
 create table if not exists public.parts_needed (
@@ -138,6 +140,8 @@ alter table public.spending_records add column if not exists season_period text 
 alter table public.spending_records add column if not exists edit_history jsonb not null default '[]'::jsonb;
 alter table public.spending_records add column if not exists updated_at timestamptz not null default now();
 create index if not exists spending_records_season_period_idx on public.spending_records(season_period);
+-- One-time fix: the first release used Jan 9, 2026 as kickoff, so pre-2027-kickoff purchases were tagged in-season
+update public.spending_records set season_period = 'offseason' where season_period = 'inseason' and order_date < '2027-01-09';
 
 -- 8. Department Shifts & Calendar Table (Admins Schedule/Delete, All Members RSVP)
 create table if not exists public.team_shifts (
@@ -549,3 +553,30 @@ begin
   end if;
 end
 $$;
+
+-- 12. Claude MCP Connector Keys (each member manages their own; only SHA-256 hashes are stored)
+create table if not exists public.mcp_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  token_hash text not null unique,
+  token_hint text not null default '',
+  label text not null default 'Claude',
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz,
+  revoked_at timestamptz
+);
+
+create index if not exists mcp_tokens_user_idx on public.mcp_tokens(user_id);
+alter table public.mcp_tokens enable row level security;
+
+drop policy if exists "Members read own connector keys" on public.mcp_tokens;
+create policy "Members read own connector keys" on public.mcp_tokens
+for select to authenticated using(user_id = (select auth.uid()));
+
+drop policy if exists "Approved members create own connector keys" on public.mcp_tokens;
+create policy "Approved members create own connector keys" on public.mcp_tokens
+for insert to authenticated with check(user_id = (select auth.uid()) and (select public.is_approved_member()));
+
+drop policy if exists "Members revoke own connector keys" on public.mcp_tokens;
+create policy "Members revoke own connector keys" on public.mcp_tokens
+for update to authenticated using(user_id = (select auth.uid())) with check(user_id = (select auth.uid()));

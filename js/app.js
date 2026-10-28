@@ -1,3 +1,5 @@
+import * as gcal from "./gcal.js";
+
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
 const SUPABASE_PUBLIC_KEY = "sb_publishable_5jyFdRU5d501M8YWZT2Fsg_7mwovAkD";
@@ -18,6 +20,7 @@ let allShifts = [];
 let allSpending = [];
 let spendingPeriodFilter = "all";
 let editingSpendingId = null;
+let taskDrag = null;
 let activeCategory = "All";
 let activePlannerSubsystem = "All";
 let activePartsFilter = "All";
@@ -348,7 +351,46 @@ async function loadShifts(quiet) {
 
   allShifts = data || [];
   renderShifts();
+  syncShiftCalendar();
 }
+
+/* Google Calendar: push this member's shift sign-ups to their calendar */
+function myShiftName() {
+  return currentProfile?.full_name || currentUser?.email || "Team Member";
+}
+
+async function syncShiftCalendar({ interactive = false, announce = false } = {}) {
+  if (!gcal.isConfigured()) return;
+  try {
+    if (interactive) await gcal.requestToken();
+    const res = await gcal.syncShifts(allShifts, myShiftName());
+    if (announce && !res.skipped) {
+      toast(res.added || res.removed
+        ? `Google Calendar updated (${res.added} added/updated, ${res.removed} removed).`
+        : "Google Calendar is up to date.");
+    }
+  } catch (err) {
+    if (interactive || announce) toast("Google Calendar sync failed: " + err.message, true);
+  }
+  updateGcalButton();
+}
+
+function updateGcalButton() {
+  const btn = $("#gcal-connect-btn");
+  if (!btn) return;
+  btn.classList.toggle("hidden", !gcal.isConfigured());
+  btn.textContent = gcal.isConnected() ? "📅 Google Calendar: Synced ✓" : "📅 Sync to Google Calendar";
+}
+
+$("#gcal-connect-btn")?.addEventListener("click", async () => {
+  if (gcal.isConnected() && confirm("Stop syncing shifts to Google Calendar? Events already added stay on your calendar.\n\nPress Cancel to re-sync now instead.")) {
+    gcal.disconnect();
+    updateGcalButton();
+    toast("Google Calendar sync turned off.");
+    return;
+  }
+  await syncShiftCalendar({ interactive: true, announce: true });
+});
 
 /* Load Parts Needed (Everyone views) */
 async function loadPartsNeeded(quiet) {
@@ -390,7 +432,8 @@ async function loadTasks(quiet) {
   if (!supabase || !currentUser) return;
   const { data, error } = await supabase
     .from("planner_tasks")
-    .select("id, title, description, subsystem, status, priority, due_date, assigned_to, created_by, created_by_name, created_at, updated_at")
+    .select("id, title, description, subsystem, status, priority, due_date, assigned_to, position, created_by, created_by_name, created_at, updated_at")
+    .order("position", { ascending: true, nullsFirst: true })
     .order("created_at", { ascending: false });
 
   if (!error) {
@@ -595,6 +638,9 @@ function renderShifts() {
               </button>
             `}
           </div>
+          ${isAttending && !gcal.isConnected() ? `
+            <a class="muted small" href="${esc(gcal.templateLink(s))}" target="_blank" rel="noopener" style="display:inline-block; margin-top:4px;">📅 Add to Google Calendar</a>
+          ` : ''}
           <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
             ${attendees.length ? attendees.map(a => {
               const canRemove = isAdmin || a === myName;
@@ -728,6 +774,7 @@ function renderCheckouts() {
 }
 
 function renderTasks() {
+  if (taskDrag?.active) return; // endTaskDrag re-renders once the card lands
   const activeTasks = allTasks.filter(t => t.status !== "done");
   const elSt = $("#stat-tasks"); if (elSt) elSt.textContent = activeTasks.length;
   const elBp = $("#badge-planner"); if (elBp) elBp.textContent = activeTasks.length;
@@ -750,7 +797,7 @@ function renderTasks() {
   function renderCard(t) {
     const subsysClass = t.subsystem.replace(/[\s\/]/g, "");
     return `
-      <div class="task-card" data-task-id="${t.id}">
+      <div class="task-card" data-task-id="${t.id}" title="Drag to move">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
           <span class="pill ${esc(subsysClass)}">${esc(t.subsystem)}</span>
           <span class="prio ${esc(t.priority)}">${esc(t.priority)}</span>
@@ -789,11 +836,181 @@ function renderTasks() {
   const elTasksDone = $("#tasks-done"); if (elTasksDone) elTasksDone.innerHTML = doneTasks.length ? doneTasks.map(renderCard).join("") : '<div class="muted small" style="text-align:center; padding:30px 10px;">No completed tasks yet</div>';
 }
 
+/* Planner drag & drop (Trello-style). Mouse drags after a small move; touch needs a long-press so scrolling still works. */
+const TASK_COLUMNS = { "tasks-todo": "todo", "tasks-in-progress": "in_progress", "tasks-done": "done" };
+
+function taskColumnAt(x, y) {
+  for (const id of Object.keys(TASK_COLUMNS)) {
+    const col = document.getElementById(id);
+    const box = col?.closest(".planner-col");
+    if (!box) continue;
+    const r = box.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return col;
+  }
+  return null;
+}
+
+function beginTaskDrag(card, x, y) {
+  const r = card.getBoundingClientRect();
+  const ghost = card.cloneNode(true);
+  ghost.classList.add("task-card--ghost");
+  Object.assign(ghost.style, { width: r.width + "px", left: r.left + "px", top: r.top + "px" });
+  document.body.appendChild(ghost);
+
+  const placeholder = document.createElement("div");
+  placeholder.className = "task-card-placeholder";
+  placeholder.style.height = r.height + "px";
+  card.after(placeholder);
+  card.classList.add("task-card--dragging");
+  document.body.classList.add("is-dragging-task");
+
+  taskDrag.active = true;
+  Object.assign(taskDrag, { ghost, placeholder, offX: x - r.left, offY: y - r.top });
+  navigator.vibrate?.(15);
+}
+
+function moveTaskDrag(x, y) {
+  const { ghost, placeholder, card } = taskDrag;
+  ghost.style.left = x - taskDrag.offX + "px";
+  ghost.style.top = y - taskDrag.offY + "px";
+
+  const col = taskColumnAt(x, y);
+  $$(".task-dropzone--over").forEach(el => el.classList.remove("task-dropzone--over"));
+  if (!col) return;
+  col.classList.add("task-dropzone--over");
+
+  const siblings = [...col.querySelectorAll(".task-card:not(.task-card--dragging)")];
+  const before = siblings.find(el => {
+    const r = el.getBoundingClientRect();
+    return y < r.top + r.height / 2;
+  });
+  if (before) col.insertBefore(placeholder, before);
+  else col.appendChild(placeholder);
+  col.querySelector(":scope > .muted")?.classList.add("hidden");
+
+  // Auto-scroll the page near the viewport edges
+  if (y < 60) window.scrollBy(0, -12);
+  else if (y > window.innerHeight - 60) window.scrollBy(0, 12);
+}
+
+async function endTaskDrag() {
+  const { ghost, placeholder, card, id } = taskDrag;
+  const col = placeholder.parentElement;
+  taskDrag = null;
+  ghost.remove();
+  card.classList.remove("task-card--dragging");
+  document.body.classList.remove("is-dragging-task");
+  $$(".task-dropzone--over").forEach(el => el.classList.remove("task-dropzone--over"));
+
+  const newStatus = col && TASK_COLUMNS[col.id];
+  if (!newStatus) { placeholder.remove(); renderTasks(); return; }
+
+  // New order of the destination column, with the dragged card where the placeholder sits
+  const orderedIds = [...col.children]
+    .map(el => el === placeholder ? id : el.dataset.taskId)
+    .filter(Boolean);
+  placeholder.remove();
+
+  const task = allTasks.find(t => t.id === id);
+  if (!task) return;
+  const previousStatus = task.status;
+
+  const updates = [];
+  orderedIds.forEach((tid, i) => {
+    const t = allTasks.find(x => x.id === tid);
+    if (!t) return;
+    const position = (i + 1) * 1000;
+    const status = tid === id ? newStatus : t.status;
+    if (t.position !== position || t.status !== status) {
+      t.position = position;
+      t.status = status;
+      updates.push({ id: tid, position, status });
+    }
+  });
+  allTasks.sort((a, b) => (a.position ?? -Infinity) - (b.position ?? -Infinity));
+  renderTasks();
+  if (!updates.length) return;
+
+  const now = new Date().toISOString();
+  const results = await Promise.all(updates.map(u =>
+    supabase.from("planner_tasks").update({ status: u.status, position: u.position, updated_at: now }).eq("id", u.id)
+  ));
+  const failed = results.find(r => r.error);
+  if (failed) {
+    toast("Failed to move task: " + failed.error.message, true);
+    await loadTasks(true);
+    return;
+  }
+
+  if (previousStatus !== newStatus) {
+    const logType = newStatus === "done" ? "PLANNER_TASK_COMPLETED" : "PLANNER_TASK_UPDATED";
+    await logAction(logType, "planner_tasks", id, {
+      title: task.title,
+      previous_status: previousStatus,
+      new_status: newStatus,
+      status: newStatus,
+      subsystem: task.subsystem || "General",
+      assigned_to: task.assigned_to || "",
+      via: "drag"
+    });
+    toast(newStatus === "done" ? "Task marked complete! 🎉" : `Moved "${task.title}" to ${newStatus === "todo" ? "To Do" : "In Progress"}.`);
+  }
+}
+
+document.addEventListener("pointerdown", e => {
+  const card = e.target.closest(".task-card");
+  if (!card || e.button > 0 || e.target.closest("button, a, input, select, textarea")) return;
+  taskDrag = { card, id: card.dataset.taskId, startX: e.clientX, startY: e.clientY, active: false, pointerId: e.pointerId, touch: e.pointerType !== "mouse" };
+  if (taskDrag.touch) {
+    taskDrag.timer = setTimeout(() => {
+      if (taskDrag && !taskDrag.active) beginTaskDrag(card, taskDrag.startX, taskDrag.startY);
+    }, 280);
+  }
+});
+
+document.addEventListener("pointermove", e => {
+  if (!taskDrag || e.pointerId !== taskDrag.pointerId) return;
+  const dist = Math.hypot(e.clientX - taskDrag.startX, e.clientY - taskDrag.startY);
+  if (!taskDrag.active) {
+    if (taskDrag.touch) {
+      if (dist > 8) { clearTimeout(taskDrag.timer); taskDrag = null; } // user is scrolling
+      return;
+    }
+    if (dist < 5) return;
+    beginTaskDrag(taskDrag.card, e.clientX, e.clientY);
+  }
+  e.preventDefault();
+  moveTaskDrag(e.clientX, e.clientY);
+}, { passive: false });
+
+// Block native scrolling while a touch drag is active
+document.addEventListener("touchmove", e => { if (taskDrag?.active) e.preventDefault(); }, { passive: false });
+
+function finishTaskPointer(e) {
+  if (!taskDrag || e.pointerId !== taskDrag.pointerId) return;
+  clearTimeout(taskDrag.timer);
+  if (taskDrag.active) endTaskDrag();
+  else taskDrag = null;
+}
+document.addEventListener("pointerup", finishTaskPointer);
+document.addEventListener("pointercancel", finishTaskPointer);
+
+/* Season kickoff: purchases dated on/after this are in-season, earlier ones are offseason */
+const SEASON_KICKOFF = "2027-01-09";
+const SEASON_YEAR = SEASON_KICKOFF.slice(0, 4);
+const KICKOFF_LABEL = new Date(SEASON_KICKOFF + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+{
+  const pill = $("#spending-inseason-pill"); if (pill) pill.textContent = `⚡ In-Season ${SEASON_YEAR} (${KICKOFF_LABEL}+)`;
+  const lbl = $("#spending-kickoff-label"); if (lbl) lbl.textContent = `Kickoff Threshold: ${KICKOFF_LABEL}`;
+  const opt = $("#spend-season-auto-option"); if (opt) opt.textContent = `⚡ Auto (Kickoff is ${KICKOFF_LABEL})`;
+}
+
 /* Helper: determine season period */
 function getSeasonPeriod(orderDate, chosenPeriod) {
   if (chosenPeriod && chosenPeriod !== "auto") return chosenPeriod;
   if (!orderDate) return "inseason";
-  return orderDate < "2026-01-09" ? "offseason" : "inseason";
+  return orderDate < SEASON_KICKOFF ? "offseason" : "inseason";
 }
 
 /* Render Spending (Admin only) */
@@ -814,7 +1031,7 @@ function renderSpending() {
 
   const elLbl = $("#spending-total-label");
   if (elLbl) {
-    if (spendingPeriodFilter === "inseason") elLbl.textContent = "2026 IN-SEASON TOTAL SPENT";
+    if (spendingPeriodFilter === "inseason") elLbl.textContent = `${SEASON_YEAR} IN-SEASON TOTAL SPENT`;
     else if (spendingPeriodFilter === "offseason") elLbl.textContent = "OFFSEASON TOTAL SPENT";
     else elLbl.textContent = "ALL-TIME TOTAL SPENT";
   }
@@ -865,7 +1082,7 @@ function renderSpending() {
         ${hasReceipt ? `
           <button type="button" class="actionbtn" data-action="view-receipt" data-id="${s.id}" style="color:#60a5fa; border:1px solid rgba(96, 165, 250, 0.3); background:rgba(96, 165, 250, 0.1); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;" title="View attached receipt / card charge">📸 View</button>
         ` : `
-          <span class="muted small" style="opacity:0.6;">None</span>
+          <span class="small" style="color:#f87171; font-weight:600;" title="Receipt screenshot required — click ✏️ to attach">⚠️ Needed</span>
         `}
       </div>
       <div><strong class="mono" style="color:var(--green); font-size:14px;">$${Number(s.amount).toFixed(2)}</strong></div>
@@ -1294,6 +1511,97 @@ function openProfileModal() {
   $("#prof-name").focus();
 }
 
+/* Claude MCP connector: personal keys for the Supabase "mcp" edge function */
+const MCP_ENDPOINT = `${SUPABASE_URL}/functions/v1/mcp`;
+let lastConnectorUrl = "";
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function openClaudeConnect() {
+  if (!currentProfile) return;
+  $("#claude-connect-who").textContent = `${currentProfile.full_name} (${currentProfile.is_admin ? "admin" : "member"})`;
+  $("#claude-connect-new").classList.add("hidden");
+  $("#claude-connect-url").value = "";
+  lastConnectorUrl = "";
+  $("#claude-connect-modal").classList.remove("hidden");
+  await renderClaudeKeys();
+}
+
+async function renderClaudeKeys() {
+  const list = $("#claude-key-list");
+  list.innerHTML = '<div class="muted small">Loading…</div>';
+  const { data, error } = await supabase.from("mcp_tokens")
+    .select("id, label, token_hint, created_at, last_used_at")
+    .is("revoked_at", null)
+    .order("created_at", { ascending: false });
+  if (error) {
+    list.innerHTML = `<div class="muted small">Could not load keys: ${esc(error.message)}</div>`;
+    return;
+  }
+  list.innerHTML = data.length ? data.map(k => `
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(255,255,255,0.04); border:1px solid var(--line-glass); border-radius:8px; padding:10px 12px;">
+      <div class="small">
+        <b>${esc(k.label)}</b> <span class="mono muted">${esc(k.token_hint)}</span><br>
+        <span class="muted">Created ${new Date(k.created_at).toLocaleDateString()} · ${k.last_used_at ? `last used ${new Date(k.last_used_at).toLocaleString()}` : "never used"}</span>
+      </div>
+      <button class="btn btn--danger btn--sm" type="button" data-revoke-key="${esc(k.id)}">Revoke</button>
+    </div>
+  `).join("") : '<div class="muted small">No connectors yet. Generate one to link Claude.</div>';
+}
+
+async function generateClaudeKey() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const key = "nyx_" + btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const btn = $("#generate-claude-key-btn");
+  btn.disabled = true;
+  const { error } = await supabase.from("mcp_tokens").insert({
+    user_id: currentUser.id,
+    token_hash: await sha256Hex(key),
+    token_hint: `${key.slice(0, 8)}…${key.slice(-4)}`,
+    label: "Claude"
+  });
+  btn.disabled = false;
+  if (error) {
+    toast("Could not create connector: " + error.message, true);
+    return;
+  }
+  await logAction("MCP_CONNECTOR_CREATED", "mcp_tokens", null, { member_name: currentProfile?.full_name });
+  lastConnectorUrl = `${MCP_ENDPOINT}?key=${key}`;
+  $("#claude-connect-url").value = lastConnectorUrl;
+  $("#claude-connect-new").classList.remove("hidden");
+  await renderClaudeKeys();
+}
+
+async function copyText(text, label) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(`${label} copied.`);
+  } catch {
+    toast("Copy failed — select the text and copy it manually.", true);
+  }
+}
+
+$("#open-claude-connect-btn")?.addEventListener("click", openClaudeConnect);
+$("#close-claude-connect-modal")?.addEventListener("click", () => $("#claude-connect-modal").classList.add("hidden"));
+$("#generate-claude-key-btn")?.addEventListener("click", generateClaudeKey);
+$("#copy-claude-url-btn")?.addEventListener("click", () => copyText(lastConnectorUrl, "Connector URL"));
+$("#copy-claude-code-cmd-btn")?.addEventListener("click", () => copyText(`claude mcp add --transport http nyx-workspace "${lastConnectorUrl}"`, "Claude Code command"));
+$("#claude-key-list")?.addEventListener("click", async e => {
+  const id = e.target.closest("[data-revoke-key]")?.dataset.revokeKey;
+  if (!id || !confirm("Revoke this connector? Claude will lose access immediately.")) return;
+  const { error } = await supabase.from("mcp_tokens").update({ revoked_at: new Date().toISOString() }).eq("id", id);
+  if (error) {
+    toast("Could not revoke: " + error.message, true);
+    return;
+  }
+  await logAction("MCP_CONNECTOR_REVOKED", "mcp_tokens", id, { member_name: currentProfile?.full_name });
+  toast("Connector revoked.");
+  await renderClaudeKeys();
+});
+
 function closeProfileModal() {
   $("#profile-modal").classList.add("hidden");
 }
@@ -1460,7 +1768,8 @@ function openSpendingModal(recordToEdit) {
     $("#spend-date").value = recordToEdit.order_date || new Date().toISOString().slice(0, 10);
     $("#spend-order-number").value = recordToEdit.order_number || "";
     $("#spend-notes").value = recordToEdit.notes || "";
-    $("#spend-season-period").value = recordToEdit.season_period || "auto";
+    const autoPeriod = getSeasonPeriod(recordToEdit.order_date);
+    $("#spend-season-period").value = !recordToEdit.season_period || recordToEdit.season_period === autoPeriod ? "auto" : recordToEdit.season_period;
 
     if (recordToEdit.receipt_data || recordToEdit.receipt_url) {
       const src = recordToEdit.receipt_data || recordToEdit.receipt_url;
@@ -1865,6 +2174,9 @@ async function saveSpending(e) {
       if (existing.order_date !== order_date) changes.order_date = { from: existing.order_date, to: order_date };
       if ((existing.order_number || "") !== order_number) changes.order_number = { from: existing.order_number || "", to: order_number };
       if ((existing.notes || "") !== notes) changes.notes = { from: existing.notes || "", to: notes };
+      if ((existing.receipt_data || existing.receipt_url || "") !== receipt_data) {
+        changes.receipt = { from: existing.receipt_data || existing.receipt_url ? "previous screenshot" : "none", to: "new screenshot uploaded" };
+      }
       if ((existing.season_period || getSeasonPeriod(existing.order_date)) !== season_period) {
         changes.season_period = { from: existing.season_period || getSeasonPeriod(existing.order_date), to: season_period };
       }
@@ -2293,7 +2605,12 @@ $("#shifts-list").addEventListener("click", async e => {
         }
       );
       await loadShifts(true);
-      toast(isAttending ? "Removed yourself from shift roster." : "Signed up for shift!");
+      if (gcal.isConnected()) {
+        await syncShiftCalendar({ interactive: true });
+        toast(isAttending ? "Left shift and removed it from your Google Calendar." : "Signed up! Shift added to your Google Calendar 📅");
+      } else {
+        toast(isAttending ? "Removed yourself from shift roster." : "Signed up for shift!");
+      }
     }
   } else if (action === "remove-attendee" && shift) {
     const target = b.dataset.attendee;
@@ -4036,7 +4353,7 @@ async function loadSavedPlays() {
   if (supabase) {
     try {
       const { data, error } = await supabase.from("strategy_plays")
-        .select("id, name, drawing_data, created_by_name, created_at")
+        .select("id, name, drawing_data, notes, created_by_name, created_at")
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -4049,6 +4366,7 @@ async function loadSavedPlays() {
               id: item.id,
               name: item.name,
               history: hist,
+              notes: item.notes || "",
               created_by_name: item.created_by_name || "Team Member",
               created_at: item.created_at
             });
@@ -4082,6 +4400,12 @@ function renderSavedPlays() {
           <span>By ${esc(play.created_by_name || 'Team Member')}</span>
           <span>${new Date(play.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
         </div>
+        ${play.notes ? `
+          <details class="small" style="margin:6px 0;">
+            <summary style="cursor:pointer; color:var(--accent-bright);">📋 Strategy notes</summary>
+            <div style="white-space:pre-wrap; margin-top:6px; color:var(--text-muted); max-height:240px; overflow-y:auto;">${esc(play.notes)}</div>
+          </details>
+        ` : ''}
         <div class="play-card-actions">
           <button class="btn btn--sm btn--primary" data-action="load-play" data-id="${play.id}">Load 🎨</button>
           <button class="actionbtn delete" data-action="delete-play" data-id="${play.id}" title="Delete play">🗑</button>

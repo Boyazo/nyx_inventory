@@ -234,6 +234,7 @@
         <!-- Buttons placed directly below the user picture/chip -->
         <div class="user-quick-actions">
           <button class="textbtn" id="edit-profile-action" type="button">⚙️ Edit Departments</button>
+          <button class="btn btn--ghost btn--sm" id="open-claude-connect-btn" type="button" title="Control the workspace from Claude — send it a photo and it does the updates">🤖 Connect Claude</button>
           <button class="btn btn--ghost btn--sm hidden" id="admin-audit-logs-btn" type="button">Audit Logs 🔒</button>
         </div>
       </div>
@@ -343,6 +344,7 @@
           <p class="muted small">Schedule lab meetings and track attendance for Mechanical, Electrical, Software, and Business departments. Admins schedule shifts; all members can sign up!</p>
         </div>
         <div class="toolbar-actions">
+          <button class="btn btn--ghost btn--sm hidden" id="gcal-connect-btn" type="button" title="Shifts you join are added to your Google Calendar automatically">📅 Sync to Google Calendar</button>
           <button class="btn btn--primary btn--sm hidden" id="add-shift-btn" type="button">＋ Schedule Shift (Admin)</button>
         </div>
       </div>
@@ -499,11 +501,11 @@
       <div style="display:flex; justify-content:space-between; align-items:center; padding:0 24px 16px; flex-wrap:wrap; gap:10px;">
         <div class="filterbar" id="spending-season-filter-tabs" style="display:flex; gap:8px;">
           <button class="filterpill active" data-period="all" type="button">All Purchases</button>
-          <button class="filterpill" data-period="inseason" type="button">⚡ In-Season 2026 (Jan 9+)</button>
+          <button class="filterpill" data-period="inseason" type="button" id="spending-inseason-pill">⚡ In-Season</button>
           <button class="filterpill" data-period="offseason" type="button">🛠️ Offseason Pre-Kickoff</button>
         </div>
         <div class="muted small" style="display:flex; align-items:center; gap:6px;">
-          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span> Kickoff Threshold: Jan 9, 2026
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span> <span id="spending-kickoff-label">Kickoff</span>
         </div>
       </div>
 
@@ -1751,7 +1753,7 @@
           <div>
             <label for="spend-season-period">Season Period *</label>
             <select id="spend-season-period">
-              <option value="auto">⚡ Auto (Kickoff is Jan 9, 2026)</option>
+              <option value="auto" id="spend-season-auto-option">⚡ Auto (by kickoff date)</option>
               <option value="offseason">🛠️ Offseason Purchase</option>
               <option value="inseason">🏆 In-Season Build Purchase</option>
             </select>
@@ -2042,6 +2044,40 @@
       <div id="spending-history-list" style="margin-top:16px; display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto;">
         <!-- Populated dynamically -->
       </div>
+    </div>
+  </div>
+
+  <!-- Claude MCP Connector Modal -->
+  <div id="claude-connect-modal" class="modalback hidden" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:600px;">
+      <div class="modalhead">
+        <div>
+          <span class="eyebrow">CLAUDE CONNECTOR · MCP</span>
+          <h2>Control NYX from Claude 🤖</h2>
+          <p class="muted small">Add the workspace to Claude, then send it a photo of a receipt, whiteboard, parts shelf or schedule and it records purchases, creates tasks, schedules shifts and updates stock for you. It acts as <b id="claude-connect-who">you</b>, with your permissions.</p>
+        </div>
+        <button class="close" id="close-claude-connect-modal" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div id="claude-connect-new" class="hidden" style="background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.3); border-radius:10px; padding:14px; margin:12px 0;">
+        <b class="small" style="color:#34d399;">Your connector URL — copy it now, it won't be shown again</b>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <input id="claude-connect-url" readonly style="flex:1; font-family:var(--font-mono); font-size:11px;">
+          <button class="btn btn--primary btn--sm" id="copy-claude-url-btn" type="button">Copy</button>
+        </div>
+        <ol class="small" style="margin:12px 0 0 18px; padding:0; line-height:1.6;">
+          <li><b>Claude (web, desktop, mobile):</b> <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">Settings → Connectors</a> → <i>Add custom connector</i> → name it "NYX Workspace" and paste the URL.</li>
+          <li><b>Claude Code:</b> <button class="textbtn" id="copy-claude-code-cmd-btn" type="button" style="font-size:12px;">copy the setup command</button> and run it in a terminal.</li>
+          <li>Start a chat, enable the NYX connector, and send a photo: <i>"Log this receipt"</i>, <i>"Turn this whiteboard into tasks"</i>.</li>
+        </ol>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <b class="mono small" style="color:var(--text-muted);">YOUR CONNECTOR KEYS</b>
+        <button class="btn btn--primary btn--sm" id="generate-claude-key-btn" type="button">＋ Generate Connector</button>
+      </div>
+      <div id="claude-key-list" style="display:flex; flex-direction:column; gap:8px; margin-top:10px;"></div>
+      <p class="muted small" style="margin-top:12px;">Anyone with a connector URL can act as you. Revoke a key if it leaks or you stop using it.</p>
     </div>
   </div>
 

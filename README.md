@@ -15,6 +15,12 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
 - **Admin-Only Inventory & Task Management**: Only verified admins can add/edit/delete inventory items or create/delete planner tasks.
 - **Admin Audit Logs 🔒**: Detailed event stream of all changes, checkouts, orders, and member approvals.
 
+- **Drag-and-drop Planner**: Drag task cards between `To Do`, `In Progress` and `Completed` (and reorder within a column) like a Trello board. On phones, long-press a card to pick it up.
+- **Google Calendar Shift Sync 📅**: Members click *Sync to Google Calendar* once; every shift they join is added to their Google Calendar and removed when they leave. Without it, joined shifts show a one-click *Add to Google Calendar* link.
+- **Claude Connector 🤖 (MCP)**: *Connect Claude* generates a personal connector URL. Add it to Claude as a custom connector, then send Claude a photo (receipt, whiteboard, shelf, schedule) and it records purchases, creates tasks, schedules shifts and updates stock with your permissions.
+- **Scouting-driven Strategy via Claude 🧠**: Through the connector, Claude can pull aggregated team scouting reports (accuracy, climbs, reliability, recent form) with live Statbotics EPA, rank teams for pick lists, build a match brief for any alliance vs. opponents, log entries from photos of paper scouting sheets, and save its written plan to the playbook (*Strategy → Saved Plays → 📋 Strategy notes*).
+- **Spending Seasons & Audit Trail**: Purchases before kickoff (`SEASON_KICKOFF`, currently Jan 9, 2027) are offseason; on/after are in-season. Every purchase requires a receipt/card-charge screenshot, and admin edits require a reason and are kept as a version history.
+
 ## Database Setup & Updates
 
 1. In your **Supabase Dashboard**, open the **SQL Editor**.
@@ -22,6 +28,22 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
    * It creates `parts_needed` and `spending_records` tables with full RLS policies.
    * It ensures only admins can write to inventory, tasks, parts needed, and spending records.
    * It registers Realtime publications for live team synchronization.
+
+## Claude Connector (MCP) Setup
+
+1. Install the [Supabase CLI](https://supabase.com/docs/guides/cli) and link the project: `supabase link --project-ref wdzrttyxcedkaifzkjvp`.
+2. Deploy the server: `supabase functions deploy mcp --no-verify-jwt` (Claude authenticates with each member's connector key, not a Supabase JWT).
+3. In the app, click **🤖 Connect Claude → Generate Connector**, then add the URL in Claude under *Settings → Connectors → Add custom connector*.
+
+## Google Calendar Setup
+
+1. In Google Cloud Console, enable the **Google Calendar API** and create an OAuth client of type *Web application*.
+2. Add the site origin (e.g. `https://boyazo.github.io`) under *Authorized JavaScript origins*, and configure the OAuth consent screen with the `calendar.events` scope.
+3. Paste the client id into `GOOGLE_CLIENT_ID` in [`js/gcal.js`](js/gcal.js). The *Sync to Google Calendar* button appears once it is set.
+
+## Season Rollover
+
+Update `SEASON_KICKOFF` in [`js/app.js`](js/app.js) and [`supabase/functions/mcp/index.ts`](supabase/functions/mcp/index.ts) each year once kickoff is announced.
 
 ## Publishing & Admin Bootstrap
 
