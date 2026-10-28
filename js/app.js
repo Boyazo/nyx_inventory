@@ -1,4 +1,4 @@
-import * as gcal from "./gcal.js";
+import * as gcal from "./gcal.js?v=20261028b";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -870,7 +870,10 @@ function beginTaskDrag(card, x, y) {
 }
 
 function moveTaskDrag(x, y) {
-  const { ghost, placeholder, card } = taskDrag;
+  const { ghost, placeholder } = taskDrag;
+  taskDrag.lastX = x;
+  taskDrag.lastY = y;
+  if (!taskDrag.scrollRaf) taskDrag.scrollRaf = requestAnimationFrame(autoScrollTaskDrag);
   ghost.style.left = x - taskDrag.offX + "px";
   ghost.style.top = y - taskDrag.offY + "px";
 
@@ -887,14 +890,27 @@ function moveTaskDrag(x, y) {
   if (before) col.insertBefore(placeholder, before);
   else col.appendChild(placeholder);
   col.querySelector(":scope > .muted")?.classList.add("hidden");
+}
 
-  // Auto-scroll the page near the viewport edges
-  if (y < 60) window.scrollBy(0, -12);
-  else if (y > window.innerHeight - 60) window.scrollBy(0, 12);
+/* Keep scrolling while the pointer rests near the top/bottom edge, so stacked mobile columns are reachable */
+function autoScrollTaskDrag() {
+  if (!taskDrag?.active) return;
+  taskDrag.scrollRaf = null;
+  const edge = Math.min(90, window.innerHeight * 0.15);
+  const y = taskDrag.lastY;
+  let dy = 0;
+  if (y < edge) dy = -Math.ceil((edge - y) / 5);
+  else if (y > window.innerHeight - edge) dy = Math.ceil((y - (window.innerHeight - edge)) / 5);
+  if (!dy) return;
+  const before = window.scrollY;
+  window.scrollBy(0, dy);
+  if (window.scrollY !== before) moveTaskDrag(taskDrag.lastX, taskDrag.lastY);
+  else taskDrag.scrollRaf = requestAnimationFrame(autoScrollTaskDrag);
 }
 
 async function endTaskDrag() {
   const { ghost, placeholder, card, id } = taskDrag;
+  if (taskDrag.scrollRaf) cancelAnimationFrame(taskDrag.scrollRaf);
   const col = placeholder.parentElement;
   taskDrag = null;
   ghost.remove();
@@ -1062,31 +1078,31 @@ function renderSpending() {
     const historyCount = Array.isArray(s.edit_history) ? s.edit_history.length : 0;
 
     return `
-    <article class="itemrow" style="grid-template-columns: 105px minmax(180px, 2fr) minmax(110px, 1.1fr) minmax(100px, 1fr) 95px 105px 110px;">
-      <div class="mono small muted">${s.order_date || '—'}</div>
-      <div>
+    <article class="itemrow spend-row" style="grid-template-columns: 105px minmax(180px, 2fr) minmax(110px, 1.1fr) minmax(100px, 1fr) 95px 105px 110px;">
+      <div class="mono small muted spend-date">${s.order_date || '—'}</div>
+      <div class="spend-main">
         <div class="itemname" style="display:flex; align-items:center; gap:6px;">
           <span>${esc(s.title)}</span>
           ${historyCount > 0 ? `<button class="actionbtn" data-action="view-history" data-id="${s.id}" style="font-size:10px; padding:1px 6px; border-radius:4px; background:rgba(245, 158, 11, 0.15); color:#fbbf24; border:1px solid rgba(245, 158, 11, 0.3);" title="View ${historyCount} version edit(s)">v${historyCount + 1} history</button>` : ''}
         </div>
         <div class="itemnotes">${s.order_number ? `PO: ${esc(s.order_number)} · ` : ''}${esc(s.notes || "No notes")}</div>
       </div>
-      <div><b>${esc(s.vendor)}</b></div>
-      <div>
+      <div class="spend-vendor"><b>${esc(s.vendor)}</b></div>
+      <div class="spend-period">
         ${period === 'inseason'
           ? '<span class="pill" style="background:rgba(16, 185, 129, 0.15); color:#34d399; border:1px solid rgba(16, 185, 129, 0.3);">⚡ In-Season</span>'
           : '<span class="pill" style="background:rgba(148, 163, 184, 0.15); color:#cbd5e1; border:1px solid rgba(148, 163, 184, 0.3);">🛠️ Offseason</span>'
         }
       </div>
-      <div>
+      <div class="spend-receipt">
         ${hasReceipt ? `
           <button type="button" class="actionbtn" data-action="view-receipt" data-id="${s.id}" style="color:#60a5fa; border:1px solid rgba(96, 165, 250, 0.3); background:rgba(96, 165, 250, 0.1); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;" title="View attached receipt / card charge">📸 View</button>
         ` : `
           <span class="small" style="color:#f87171; font-weight:600;" title="Receipt screenshot required — click ✏️ to attach">⚠️ Needed</span>
         `}
       </div>
-      <div><strong class="mono" style="color:var(--green); font-size:14px;">$${Number(s.amount).toFixed(2)}</strong></div>
-      <div class="actions" style="display:flex; gap:4px; justify-content:flex-end;">
+      <div class="spend-amount"><strong class="mono" style="color:var(--green); font-size:14px;">$${Number(s.amount).toFixed(2)}</strong></div>
+      <div class="actions spend-actions" style="display:flex; gap:4px; justify-content:flex-end;">
         <button class="actionbtn" data-action="edit-spending" data-id="${s.id}" title="Edit purchase order">✏️</button>
         <button class="actionbtn delete" data-action="delete-spending" data-id="${s.id}" title="Delete record">🗑</button>
       </div>

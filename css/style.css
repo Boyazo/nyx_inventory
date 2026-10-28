@@ -145,7 +145,7 @@ body:before {
 button, input, select, textarea { font-family: inherit; font-size: inherit; }
 button { cursor: pointer; }
 button:disabled { opacity: .55; cursor: wait; }
-.shell { max-width: var(--page-max); margin: auto; padding: 0 24px 40px; position: relative; z-index: 1; }
+.shell { width: 100%; min-width: 0; max-width: var(--page-max); margin: 0 auto; padding: 0 24px 40px; position: relative; z-index: 1; }
 
 /* Topbar */
 .topbar {
@@ -2315,4 +2315,114 @@ body.is-dragging-task, body.is-dragging-task * { cursor: grabbing !important; }
   .global-search-btn {
     padding: 6px 10px !important;
   }
+}
+
+/* ==========================================================================
+   Mobile polish: header, quick actions, spending ledger cards, modals
+   ========================================================================== */
+@media (max-width: 900px) {
+  .topnote { display: none !important; }
+
+  .user-quick-actions {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px !important;
+    width: 100%;
+  }
+  .user-quick-actions > * {
+    width: 100%;
+    min-height: 40px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2;
+    text-align: center;
+    justify-content: center;
+    white-space: normal;
+  }
+  .user-quick-actions > .hidden { display: none !important; }
+
+  /* Season filter: one scrollable row of pills */
+  #spending-season-filter-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #spending-season-filter-tabs .catbtn { flex-shrink: 0; white-space: nowrap; }
+
+  /* Spending rows as compact cards:  date ........ amount
+                                      title + notes
+                                      vendor · period · receipt
+                                      ............... actions */
+  #spending-list .spend-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "date   amount"
+      "main   main"
+      "meta   meta"
+      "receipt actions";
+    align-items: center;
+    gap: 8px 10px !important;
+    text-align: left !important;
+  }
+  #spending-list .spend-row > * { width: auto !important; text-align: left !important; justify-self: stretch; }
+  #spending-list .spend-date { grid-area: date; }
+  #spending-list .spend-amount { grid-area: amount; justify-self: end !important; }
+  #spending-list .spend-amount strong { font-size: 17px !important; }
+  #spending-list .spend-main { grid-area: main; }
+  #spending-list .spend-vendor { grid-area: meta; }
+  #spending-list .spend-period { grid-area: meta; justify-self: end !important; }
+  #spending-list .spend-receipt { grid-area: receipt; }
+  #spending-list .spend-actions {
+    grid-area: actions;
+    justify-self: end !important;
+    border-top: 0 !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+  #spending-list .spend-receipt .actionbtn { padding: 6px 12px !important; font-size: 12px !important; }
+
+  /* Modals: full-width sheets that scroll, with reachable action buttons */
+  .modalback { place-items: end center !important; padding: 0 !important; }
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    max-height: 92dvh !important;
+    overflow-y: auto !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom)) !important;
+  }
+  .modal .formgrid { grid-template-columns: 1fr !important; }
+  .modalactions {
+    position: sticky;
+    bottom: calc(-18px - env(safe-area-inset-bottom));
+    background: rgb(18, 16, 29);
+    border-top: 1px solid var(--line);
+    padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+    margin-bottom: calc(-18px - env(safe-area-inset-bottom));
+    z-index: 2;
+  }
+  .modalactions .btn { flex: 1; }
+  .modal input, .modal select, .modal textarea { font-size: 16px !important; } /* stops iOS zoom-on-focus */
+
+  #claude-connect-url { min-width: 0; }
+  .toolbar-actions > .btn { width: 100%; justify-content: center; }
+
+  .spend-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 0 0 14px !important;
+  }
+  .spend-stats > .stat:first-child { grid-column: 1 / -1; }
+  .spend-stats strong { font-size: 22px !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere; }
+  .spend-stats #spending-top-vendor { font-size: 15px !important; line-height: 1.3; }
+}
+
+/* Planner cards: keep long-press from triggering text selection / callouts on touch */
+@media (hover: none) {
+  .task-card:hover { transform: none; }
 }
