@@ -47,7 +47,12 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
    ```
    Optional secrets: `DIGEST_HOUR` (default `7`, Pacific), `REMINDER_LEAD_MINUTES` (default `120`).
 4. Open [`supabase/discord_reminders.sql`](supabase/discord_reminders.sql), paste the same `CRON_SECRET`, and run it in the SQL Editor. The bot then checks every 15 minutes.
-5. Each member adds their **Discord User ID** under *Edit Departments* (profile) so they get @mentioned. Members without one are listed by name.
+5. **Auto-link members by nickname (recommended):** in the [Discord Developer Portal](https://discord.com/developers/applications) create an application → **Bot** → turn on **Server Members Intent** → **Reset Token**. Invite it with OAuth2 → URL Generator → scope `bot` (no permissions needed). Then:
+   ```bash
+   supabase secrets set DISCORD_BOT_TOKEN="..." DISCORD_GUILD_ID="your-server-id"
+   ```
+   Every 15 minutes, members without a Discord ID are matched to the server member whose nickname is their full name, else their unique first name, else first name + last initial when first names repeat (e.g. "Raymond L"). Ambiguous names are skipped.
+6. Members can also paste their **Discord User ID** under *Edit Departments*; a manually entered ID always wins. Members with no ID are listed by name instead of pinged.
 
 The first run records the existing rosters quietly, so only *new* assignments are announced.
 

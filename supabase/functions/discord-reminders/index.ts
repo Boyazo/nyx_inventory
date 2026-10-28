@@ -11,6 +11,11 @@
 //   DISCORD_WEBHOOK_URL   Channel → Edit Channel → Integrations → Webhooks → New Webhook → Copy URL
 //   CRON_SECRET           any long random string; the cron job sends it in the x-cron-secret header
 // Optional: DIGEST_HOUR (default 7), REMINDER_LEAD_MINUTES (default 120), SITE_URL
+// Optional auto-linking of Discord IDs by server nickname (needs a bot in the server):
+//   DISCORD_BOT_TOKEN     Developer Portal → your app → Bot → Reset Token (enable "Server Members Intent")
+//   DISCORD_GUILD_ID      the server id (right-click server icon → Copy Server ID)
+//   Members whose profile has no Discord ID are matched by nickname: full name, then unique first
+//   name, then first name + last initial when first names repeat. Manually entered IDs always win.
 //
 // Deploy: supabase functions deploy discord-reminders --no-verify-jwt
 // Manual test: POST …/discord-reminders?mode=test   (posts a test message)
@@ -24,6 +29,8 @@ const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
 const DIGEST_HOUR = Number(Deno.env.get("DIGEST_HOUR") ?? 7);
 const LEAD_MIN = Number(Deno.env.get("REMINDER_LEAD_MINUTES") ?? 120);
 const SITE_URL = Deno.env.get("SITE_URL") || "https://boyazo.github.io/nyx_inventory/";
+const BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN") || "";
+const GUILD_ID = Deno.env.get("DISCORD_GUILD_ID") || "";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 
@@ -109,6 +116,90 @@ async function send(post: Post) {
   }
 }
 
+/* ---------- auto-link Discord IDs from server nicknames ---------- */
+
+const nameWords = (s: string) => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
+
+async function fetchGuildMembers() {
+  const members: { id: string; names: string[][] }[] = [];
+  let after = "0";
+  for (let page = 0; page < 10; page++) {
+    const res = await fetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members?limit=1000&after=${after}`, {
+      headers: { Authorization: `Bot ${BOT_TOKEN}` },
+    });
+    if (!res.ok) throw new Error(`Discord member list failed (${res.status}) — is "Server Members Intent" enabled for the bot? ${await res.text()}`);
+    const batch = await res.json();
+    for (const m of batch) {
+      if (m.user?.bot) continue;
+      const names = [m.nick, m.user?.global_name, m.user?.username].filter(Boolean).map(nameWords).filter(w => w.length);
+      members.push({ id: m.user.id, names });
+    }
+    if (batch.length < 1000) break;
+    after = batch[batch.length - 1].user.id;
+  }
+  return members;
+}
+
+/* Returns profile id -> discord id for confident matches only */
+export function matchByNickname(
+  profiles: { id: string; full_name: string }[],
+  members: { id: string; names: string[][] }[],
+) {
+  const out = new Map<string, string>();
+  const firstOf = (w: string[]) => w[0] || "";
+  const profileFirstCount = new Map<string, number>();
+  for (const p of profiles) { const f = firstOf(nameWords(p.full_name)); profileFirstCount.set(f, (profileFirstCount.get(f) || 0) + 1); }
+  const unique = (ids: string[]) => { const u = [...new Set(ids)]; return u.length === 1 ? u[0] : null; };
+
+  for (const p of profiles) {
+    const pw = nameWords(p.full_name);
+    if (!pw.length) continue;
+    const [first, ...rest] = pw;
+    const lastInitial = rest.length ? rest[rest.length - 1][0] : "";
+
+    // 1. full name (all words, in order)
+    let id = unique(members.filter(m => m.names.some(n => n.join(" ") === pw.join(" "))).map(m => m.id));
+
+    // 2. unique first name on both sides
+    if (!id && profileFirstCount.get(first) === 1) {
+      const sameFirst = members.filter(m => m.names.some(n => firstOf(n) === first));
+      if (new Set(sameFirst.map(m => m.id)).size === 1) id = sameFirst[0].id;
+    }
+
+    // 3. duplicate first names: first name + last initial ("Raymond L", "Raymond L.", "Raymond Liu")
+    if (!id && lastInitial) {
+      id = unique(members.filter(m => m.names.some(n => firstOf(n) === first && n.length > 1 && n[n.length - 1][0] === lastInitial)).map(m => m.id));
+    }
+
+    if (id) out.set(p.id, id);
+  }
+
+  // Never give one Discord account to two profiles
+  const counts = new Map<string, number>();
+  for (const id of out.values()) counts.set(id, (counts.get(id) || 0) + 1);
+  for (const [pid, id] of out) if ((counts.get(id) || 0) > 1) out.delete(pid);
+  return out;
+}
+
+async function autoLinkDiscordIds(profiles: { id: string; full_name: string; discord_id: string }[]) {
+  if (!BOT_TOKEN || !GUILD_ID) return [];
+  const missing = profiles.filter(p => !p.discord_id);
+  if (!missing.length) return [];
+  const taken = new Set(profiles.map(p => p.discord_id).filter(Boolean));
+  const members = (await fetchGuildMembers()).filter(m => !taken.has(m.id));
+  const matches = matchByNickname(missing, members);
+  const linked: string[] = [];
+  for (const [pid, did] of matches) {
+    const { error } = await db.from("profiles").update({ discord_id: did }).eq("id", pid).eq("discord_id", "");
+    if (!error) {
+      const p = missing.find(x => x.id === pid)!;
+      p.discord_id = did;
+      linked.push(p.full_name);
+    }
+  }
+  return linked;
+}
+
 /* ---------- main ---------- */
 
 /* Keys sent in the last 45 days (older ones are pruned; the window covers every key we can still need) */
@@ -134,10 +225,17 @@ async function run(dry: boolean) {
   const [{ data: shifts, error: sErr }, { data: profiles, error: pErr }] = await Promise.all([
     db.from("team_shifts").select("id, title, department, shift_date, start_time, end_time, location, attendees, notes")
       .gte("shift_date", now.date).lte("shift_date", addDays(now.date, 21)).order("shift_date").order("start_time"),
-    db.from("profiles").select("full_name, discord_id").eq("is_approved", true),
+    db.from("profiles").select("id, full_name, discord_id").eq("is_approved", true),
   ]);
   if (sErr) throw sErr;
   if (pErr) throw pErr;
+
+  let linked: string[] = [];
+  try {
+    linked = dry ? [] : await autoLinkDiscordIds(profiles || []);
+  } catch (err) {
+    console.error("Discord auto-link skipped:", (err as Error).message);
+  }
 
   const ids = new Map<string, string>();
   for (const p of profiles || []) if (p.discord_id) ids.set(p.full_name.trim().toLowerCase(), p.discord_id);
@@ -225,7 +323,7 @@ async function run(dry: boolean) {
       await markSent(p.key);
     }
   }
-  return { now, sent: report.length, messages: dry ? report : undefined };
+  return { now, sent: report.length, linked, messages: dry ? report : undefined };
 }
 
 Deno.serve(async req => {
