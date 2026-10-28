@@ -3909,16 +3909,17 @@ async function signOut() {
 
 async function checkUser(user) {
   currentUser = user;
-  const { data, error } = await supabase.from("profiles")
-    .select("id, full_name, departments, is_approved, is_admin, is_secret, is_strategy")
-    .eq("id", user.id)
-    .single();
+  try {
+    const { data, error } = await supabase.from("profiles")
+      .select("id, full_name, departments, is_approved, is_admin, is_secret, is_strategy")
+      .eq("id", user.id)
+      .single();
 
-  if (error) {
-    screens("auth");
-    message("Could not load your team profile. Ensure supabase/schema.sql has been run. " + error.message, true);
-    return;
-  }
+    if (error) {
+      screens("auth");
+      message("Could not load your team profile: " + error.message, true);
+      return;
+    }
 
   currentProfile = data;
 
@@ -3992,6 +3993,10 @@ async function checkUser(user) {
           if (elSync) elSync.textContent = "Live sync connected";
         }
       });
+  }
+  } catch (err) {
+    console.error("checkUser error:", err);
+    toast("Workspace load error: " + err.message, true);
   }
 }
 
@@ -5136,15 +5141,26 @@ $("#show-signup").addEventListener("click", () => authMode("signup"));
 
 $("#signin-form").addEventListener("submit", async e => {
   e.preventDefault();
-  if (!supabase) { message("Database not configured.", true); return; }
-  const b = e.submitter; b.disabled = true;
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: $("#signin-email").value.trim(),
-    password: $("#signin-password").value
-  });
-  b.disabled = false;
-  if (error) { message(error.message, true); return; }
-  await checkUser(data.user);
+  if (!supabase) { message("Database not configured. Please wait or reload.", true); return; }
+  const b = e.submitter || e.target.querySelector("button[type='submit']");
+  if (b) b.disabled = true;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: $("#signin-email").value.trim(),
+      password: $("#signin-password").value
+    });
+    if (error) {
+      if (b) b.disabled = false;
+      message(error.message, true);
+      return;
+    }
+    await checkUser(data.user);
+  } catch (err) {
+    console.error("Sign in error:", err);
+    message("Sign in failed: " + (err.message || err), true);
+  } finally {
+    if (b) b.disabled = false;
+  }
 });
 
 $("#signup-form").addEventListener("submit", async e => {
