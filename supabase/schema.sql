@@ -430,6 +430,7 @@ create table if not exists public.secret_personnel_intel (
 );
 
 alter table public.secret_personnel_intel add column if not exists votes jsonb not null default '{}'::jsonb;
+alter table public.secret_personnel_intel replica identity full;
 
 create or replace function public.is_secret_admin()
 returns boolean

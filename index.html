@@ -792,15 +792,38 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   font-size: 9px;
   color: var(--accent-soft);
 }
-.mobile-menu-btn {
-  display: none;
+.sidebar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(255,255,255,.05);
   border: 1px solid var(--line);
   color: var(--text);
   font-size: 18px;
-  padding: 4px 10px;
+  padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
+  transition: all .15s ease;
+  line-height: 1;
+}
+.sidebar-toggle-btn:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-bright);
+}
+.mobile-menu-btn {
+  display: inline-flex;
+}
+
+/* PC Collapsible Sidebar State */
+@media (min-width: 1025px) {
+  body.sidebar-collapsed .app-sidebar {
+    display: none !important;
+  }
+  body.sidebar-collapsed .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
 }
 
 /* Strategy & Whiteboard Styles */
@@ -1072,7 +1095,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   .app-sidebar.open {
     transform: translateX(0);
   }
-  .mobile-menu-btn { display: inline-flex; align-items: center; }
+  /* mobile menu button visible */
   .sim-grid { grid-template-columns: 1fr; }
 }
 
@@ -1525,12 +1548,15 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   <!-- Left Sidebar (hidden on auth/pending screens, visible when logged in) -->
   <aside class="app-sidebar hidden" id="app-sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-brand">
-        <img src="logo.png" alt="Nyx Logo" class="sidebar-logo" width="36" height="36">
-        <div>
-          <strong>NYX 11744</strong>
-          <small class="mono">TEAM WORKSPACE</small>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="sidebar-brand">
+          <img src="logo.png" alt="Nyx Logo" class="sidebar-logo" width="36" height="36">
+          <div>
+            <strong>NYX 11744</strong>
+            <small class="mono">TEAM WORKSPACE</small>
+          </div>
         </div>
+        <button class="btn btn--ghost btn--sm" id="sidebar-close-btn" type="button" style="padding:4px 8px; font-size:14px; border:none; color:var(--text-muted);" title="Collapse Sidebar">✕</button>
       </div>
       <div class="sidebar-slogan">“Born in the dark, built to dominate”</div>
     </div>
@@ -1582,7 +1608,7 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
       <!-- Topbar -->
       <header class="topbar">
         <div style="display:flex; align-items:center; gap:12px;">
-          <button class="mobile-menu-btn" id="sidebar-toggle-btn" type="button" aria-label="Toggle menu">☰</button>
+          <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" type="button" aria-label="Toggle navigation sidebar" title="Toggle Sidebar">☰</button>
           <a class="brand" href="#" aria-label="NYX 11744 Workspace">
             <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
             <span class="brandtext">
@@ -7328,11 +7354,11 @@ async function loadSecretIntel(quiet) {
     const raw = localStorage.getItem("nyx_secret_intel");
     if (raw && !quiet && (!secretDossiers || secretDossiers.length === 0)) {
       secretDossiers = JSON.parse(raw);
+      renderSecretIntel();
     }
   } catch (err) {
     secretDossiers = [];
   }
-  if (!quiet) renderSecretIntel();
 
   // Load directly from Supabase for all team members with secret clearance
   if (supabase && currentUser) {
@@ -7343,7 +7369,7 @@ async function loadSecretIntel(quiet) {
 
       if (error) {
         console.error("Secret personnel intel load error:", error);
-        toast("Cloud database sync error: " + error.message, true);
+        if (!quiet) toast("Cloud database sync notice: " + error.message, true);
       } else if (Array.isArray(data)) {
         secretDossiers = data;
         try {
@@ -7545,9 +7571,19 @@ function setupSecretsEvents() {
       try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (err) {}
       renderSecretIntel();
 
-      // Async DB sync
+      // Cloud database sync
       if (supabase) {
-        supabase.from("secret_personnel_intel").update({ votes: item.votes }).eq("id", id).catch(() => {});
+        try {
+          const { error: voteErr } = await supabase.from("secret_personnel_intel")
+            .update({ votes: item.votes })
+            .eq("id", id);
+          if (voteErr) {
+            console.error("Vote sync error:", voteErr);
+            toast("Vote cloud sync failed: " + voteErr.message, true);
+          }
+        } catch (err) {
+          console.error("Vote sync exception:", err);
+        }
       }
       return;
     }
@@ -7591,17 +7627,49 @@ $("#mob-btn-menu")?.addEventListener("click", () => {
   if (bd) bd.classList.toggle("active");
 });
 
-$("#sidebar-toggle-btn")?.addEventListener("click", () => {
+function toggleSidebar(forceState) {
   const sb = $("#app-sidebar");
   const bd = $("#sidebar-backdrop");
-  if (sb) sb.classList.toggle("open");
-  if (bd) bd.classList.toggle("active");
-});
+  const isMobile = window.innerWidth <= 1024;
+
+  if (isMobile) {
+    if (forceState === false) {
+      sb?.classList.remove("open");
+      bd?.classList.remove("active");
+    } else {
+      sb?.classList.toggle("open");
+      bd?.classList.toggle("active");
+    }
+  } else {
+    // Desktop: toggle collapsed state on body and persist in localStorage
+    const willCollapse = forceState === false ? true : !document.body.classList.contains("sidebar-collapsed");
+    document.body.classList.toggle("sidebar-collapsed", willCollapse);
+    try { localStorage.setItem("nyx_sidebar_collapsed", willCollapse ? "1" : "0"); } catch(e){}
+  }
+}
+
+// Restore desktop sidebar collapsed preference
+try {
+  if (window.innerWidth > 1024 && localStorage.getItem("nyx_sidebar_collapsed") === "1") {
+    document.body.classList.add("sidebar-collapsed");
+  }
+} catch(e){}
+
+$("#sidebar-toggle-btn")?.addEventListener("click", () => toggleSidebar());
+$("#sidebar-close-btn")?.addEventListener("click", () => toggleSidebar(false));
 
 $("#sidebar-backdrop")?.addEventListener("click", () => {
   $("#app-sidebar")?.classList.remove("open");
   $("#sidebar-backdrop")?.classList.remove("active");
 });
+
+
+// Auto-refresh secret intel periodically so votes and new entries sync seamlessly
+setInterval(() => {
+  if (currentAppPage === "secrets" && currentProfile?.is_secret) {
+    loadSecretIntel(true);
+  }
+}, 10000);
 
 initSupabase();
 </script>
