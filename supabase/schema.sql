@@ -383,6 +383,7 @@ create policy "Only admins can delete team shifts" on public.team_shifts
 for delete to authenticated using((select public.is_team_admin()));
 
 -- Strategy Plays Policies
+alter table public.strategy_plays enable row level security;
 drop policy if exists "Approved members can read strategy plays" on public.strategy_plays;
 create policy "Approved members can read strategy plays" on public.strategy_plays
 for select to authenticated using((select public.is_approved_member()));
