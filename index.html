@@ -1009,15 +1009,27 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   margin-bottom: 14px;
 }
 .sim-slot {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
 }
 .sim-slot select {
   font-size: 13px;
   padding: 8px 10px;
+  width: 100%;
+}
+.sim-slot-search {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  transition: border-color .15s ease;
+}
+.sim-slot-search:focus {
+  border-color: var(--accent-line);
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
 }
 .sim-result-card {
   background: var(--bg-card);
@@ -2491,15 +2503,24 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
               <span class="mono small muted" id="sim-red-total-epa">Total EPA: 0.0</span>
             </div>
             <div class="sim-slot">
-              <label style="margin:0; font-size:11px;">Captain / R1:</label>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="margin:0; font-size:11px; font-weight:700;">Captain / R1:</label>
+                <input type="text" class="sim-slot-search" data-target="sim-red-1" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+              </div>
               <select id="sim-red-1" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
-              <label style="margin:0; font-size:11px;">Pick 1 / R2:</label>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="margin:0; font-size:11px; font-weight:700;">Pick 1 / R2:</label>
+                <input type="text" class="sim-slot-search" data-target="sim-red-2" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+              </div>
               <select id="sim-red-2" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
-              <label style="margin:0; font-size:11px;">Pick 2 / R3:</label>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="margin:0; font-size:11px; font-weight:700;">Pick 2 / R3:</label>
+                <input type="text" class="sim-slot-search" data-target="sim-red-3" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+              </div>
               <select id="sim-red-3" class="sim-team-select"></select>
             </div>
           </div>
@@ -2511,15 +2532,24 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
               <span class="mono small muted" id="sim-blue-total-epa">Total EPA: 0.0</span>
             </div>
             <div class="sim-slot">
-              <label style="margin:0; font-size:11px;">Captain / B1:</label>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="margin:0; font-size:11px; font-weight:700;">Captain / B1:</label>
+                <input type="text" class="sim-slot-search" data-target="sim-blue-1" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+              </div>
               <select id="sim-blue-1" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
-              <label style="margin:0; font-size:11px;">Pick 1 / B2:</label>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="margin:0; font-size:11px; font-weight:700;">Pick 1 / B2:</label>
+                <input type="text" class="sim-slot-search" data-target="sim-blue-2" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+              </div>
               <select id="sim-blue-2" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
-              <label style="margin:0; font-size:11px;">Pick 2 / B3:</label>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="margin:0; font-size:11px; font-weight:700;">Pick 2 / B3:</label>
+                <input type="text" class="sim-slot-search" data-target="sim-blue-3" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+              </div>
               <select id="sim-blue-3" class="sim-team-select"></select>
             </div>
           </div>
@@ -5306,7 +5336,10 @@ function initStrategyCenter() {
     });
 
     // Statbotics live sync button
-    $("#strat-sync-btn")?.addEventListener("click", syncStatboticsData);
+    $("#strat-sync-btn")?.addEventListener("click", () => syncStatboticsData(false));
+
+    // Real-time automatic sync on initial strategy visit
+    syncStatboticsData(true);
 
     // Rankings search & sort
     $("#strat-team-search")?.addEventListener("input", e => {
@@ -5333,46 +5366,72 @@ function initStrategyCenter() {
 /* --------------------------------------------------------------------------
    LIVE 2026 STATBOTICS SYNC FUNCTION
    -------------------------------------------------------------------------- */
-async function syncStatboticsData() {
-  const syncBtn = $("#strat-sync-btn");
-  if (syncBtn) {
-    syncBtn.disabled = true;
-    syncBtn.innerHTML = `⏳ Syncing 2026 Statbotics…`;
-  }
-  toast("Syncing live 2026 metrics from Statbotics...");
+let isSyncingStatbotics = false;
+let lastStatboticsSyncTime = 0;
 
-  let updatedCount = 0;
-  for (const t of frcTeamsData.slice(0, 8)) {
-    try {
-      const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), 2500);
-      let res = await fetch(`https://api.statbotics.io/v3/team_year/${t.team}/2026`, { signal: controller.signal });
-      if (!res.ok) {
-        res = await fetch(`https://api.statbotics.io/v3/team/${t.team}`, { signal: controller.signal });
-      }
-      clearTimeout(tid);
-      if (res.ok) {
-        const d = await res.json();
-        if (d && (d.epa_end || d.epa || d.norm_epa?.current)) {
-          const epaVal = d.epa_end || d.epa || ((d.norm_epa.current - 1500) / 10 + 40);
+async function syncSingleTeamStatbotics(t) {
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 4000);
+    // Query 2026 year first, fallback to team summary
+    let res = await fetch(`https://api.statbotics.io/v3/team_year/${t.team}/2026`, { signal: controller.signal });
+    if (!res.ok) {
+      res = await fetch(`https://api.statbotics.io/v3/team/${t.team}`, { signal: controller.signal });
+    }
+    clearTimeout(tid);
+    if (res.ok) {
+      const d = await res.json();
+      if (d) {
+        const epaVal = d.epa?.breakdown?.total_points?.mean ?? d.epa_end ?? d.epa ?? (d.norm_epa?.current ? (d.norm_epa.current - 1500) / 10 + 40 : null);
+        if (epaVal != null && !isNaN(epaVal)) {
           t.epa = Number(Number(epaVal).toFixed(1));
-          t.auto_epa = Number((d.auto_epa_end || d.auto_epa || (epaVal * 0.25)).toFixed(1));
-          t.teleop_epa = Number((d.teleop_epa_end || d.teleop_epa || (epaVal * 0.58)).toFixed(1));
-          t.endgame_epa = Number((d.endgame_epa_end || d.endgame_epa || (epaVal * 0.17)).toFixed(1));
+          t.auto_epa = Number((d.epa?.breakdown?.auto_points?.mean ?? d.auto_epa_end ?? d.auto_epa ?? (epaVal * 0.25)).toFixed(1));
+          t.teleop_epa = Number((d.epa?.breakdown?.teleop_points?.mean ?? d.teleop_epa_end ?? d.teleop_epa ?? (epaVal * 0.58)).toFixed(1));
+          t.endgame_epa = Number((d.epa?.breakdown?.endgame_points?.mean ?? d.endgame_epa_end ?? d.endgame_epa ?? (epaVal * 0.17)).toFixed(1));
           if (d.record?.winrate != null) t.winrate = Number((d.record.winrate * 100).toFixed(1));
-          updatedCount++;
+          return true;
         }
       }
-    } catch (e) {}
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function syncStatboticsData(silent = false) {
+  if (isSyncingStatbotics) return;
+  isSyncingStatbotics = true;
+
+  const syncBtn = $("#strat-sync-btn");
+  if (syncBtn && !silent) {
+    syncBtn.disabled = true;
+    syncBtn.innerHTML = `⏳ Live Syncing Statbotics…`;
   }
+  if (!silent) toast("Fetching real-time 2026 metrics from Statbotics...");
+
+  // Sync teams in concurrent batches of 4
+  let updatedCount = 0;
+  const batchSize = 4;
+  for (let i = 0; i < frcTeamsData.length; i += batchSize) {
+    const batch = frcTeamsData.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(t => syncSingleTeamStatbotics(t)));
+    updatedCount += results.filter(Boolean).length;
+    // Keep UI responsive
+    if (i === 0 && !silent) renderRankings();
+  }
+
+  isSyncingStatbotics = false;
+  lastStatboticsSyncTime = Date.now();
 
   if (syncBtn) {
     syncBtn.disabled = false;
-    syncBtn.innerHTML = `🔄 Sync Statbotics Data`;
+    syncBtn.innerHTML = `🔄 Live Sync Connected`;
   }
 
   renderRankings();
-  toast(updatedCount > 0 ? `Synced ${updatedCount} teams with live Statbotics data!` : "2026 Statbotics synced (using verified regional baseline).");
+  populateSimulatorSelectors();
+  if (!silent) {
+    toast(updatedCount > 0 ? `Real-time sync complete: Updated ${updatedCount} teams from Statbotics!` : "Real-time sync active (data up to date).");
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -6609,31 +6668,58 @@ $("#strat-rankings-list")?.addEventListener("click", e => {
 /* --------------------------------------------------------------------------
    MATCH SIMULATOR (MONTE CARLO 1,000 ITERATIONS)
    -------------------------------------------------------------------------- */
+function buildTeamOptionsHtml(filterQuery, currentVal) {
+  let list = [...frcTeamsData];
+  if (filterQuery) {
+    const q = filterQuery.toLowerCase().trim();
+    list = list.filter(t => String(t.team).includes(q) || (t.name || "").toLowerCase().includes(q));
+  }
+  // Ensure currently selected team is present even if filter excludes it
+  if (currentVal && !list.some(t => String(t.team) === String(currentVal))) {
+    const currTeam = getTeamByNum(parseInt(currentVal, 10));
+    if (currTeam) list.unshift(currTeam);
+  }
+  list.sort((a, b) => b.epa - a.epa);
+  return list.map(t => `
+    <option value="${t.team}">${t.team} — ${esc(t.name)} (EPA: ${t.epa.toFixed(1)})</option>
+  `).join("");
+}
+
 function populateSimulatorSelectors() {
   const selects = [
     $("#sim-red-1"), $("#sim-red-2"), $("#sim-red-3"),
     $("#sim-blue-1"), $("#sim-blue-2"), $("#sim-blue-3")
   ];
 
-  const sortedTeams = [...frcTeamsData].sort((a, b) => b.epa - a.epa);
-  const optionsHtml = sortedTeams.map(t => `
-    <option value="${t.team}">${t.team} — ${esc(t.name)} (EPA: ${t.epa.toFixed(1)})</option>
-  `).join("");
-
   selects.forEach((sel, idx) => {
     if (!sel) return;
-    sel.innerHTML = optionsHtml;
-    // Defaults:
-    // Red: 11744 NYX, 254 Cheesy Poofs, 1678 Citrus Circuits
-    // Blue: 4414 HighTide, 1323 MadTown, 971 Spartan
-    if (idx === 0) sel.value = "11744";
-    else if (idx === 1) sel.value = "254";
-    else if (idx === 2) sel.value = "1678";
-    else if (idx === 3) sel.value = "4414";
-    else if (idx === 4) sel.value = "1323";
-    else if (idx === 5) sel.value = "971";
+    const currentVal = sel.value || (
+      idx === 0 ? "11744" : idx === 1 ? "254" : idx === 2 ? "1678" :
+      idx === 3 ? "4414" : idx === 4 ? "1323" : "971"
+    );
+    sel.innerHTML = buildTeamOptionsHtml("", currentVal);
+    sel.value = currentVal;
 
-    sel.addEventListener("change", updateSimTotals);
+    if (!sel._hasListener) {
+      sel.addEventListener("change", updateSimTotals);
+      sel._hasListener = true;
+    }
+  });
+
+  // Attach search listeners for all 6 robot slot search bars
+  $$(".sim-slot-search").forEach(input => {
+    if (input._hasListener) return;
+    input._hasListener = true;
+    input.addEventListener("input", e => {
+      const targetId = input.dataset.target;
+      const sel = $(`#${targetId}`);
+      if (!sel) return;
+      const currentVal = sel.value;
+      const q = e.target.value.trim();
+      sel.innerHTML = buildTeamOptionsHtml(q, currentVal);
+      if (currentVal) sel.value = currentVal;
+      updateSimTotals();
+    });
   });
 
   updateSimTotals();
@@ -7408,6 +7494,7 @@ function renderSecretIntel() {
 
   list.innerHTML = filtered.map(d => {
     const isAuthor = d.logged_by === currentUser?.id;
+    const canDelete = isAuthor || !!currentProfile?.is_admin;
     const votes = (d.votes && typeof d.votes === "object") ? d.votes : {};
     
     // Calculate aggregate score: +1 for each up vote, -1 for each down vote
@@ -7461,7 +7548,9 @@ function renderSecretIntel() {
           </div>
 
           <span class="muted small mono">${new Date(d.created_at).toLocaleDateString()}</span>
-          <button class="btn btn--danger btn--sm" data-action="delete-secret-dossier" data-id="${d.id}" style="padding:4px 8px; font-size:11px;" title="Delete entry">✕</button>
+          ${canDelete ? `
+            <button class="btn btn--danger btn--sm" data-action="delete-secret-dossier" data-id="${d.id}" style="padding:4px 8px; font-size:11px;" title="${currentProfile?.is_admin && !isAuthor ? 'Admin Delete Entry' : 'Delete Entry'}">✕</button>
+          ` : ''}
         </div>
       </div>
 
@@ -7601,10 +7690,21 @@ function setupSecretsEvents() {
       secretDossiers = secretDossiers.filter(d => d.id !== id);
       try { localStorage.setItem("nyx_secret_intel", JSON.stringify(secretDossiers)); } catch (e) {}
       renderSecretIntel();
-      toast("Entry deleted.");
 
       if (supabase) {
-        supabase.from("secret_personnel_intel").delete().eq("id", id).catch(() => {});
+        try {
+          const { error: delErr } = await supabase.from("secret_personnel_intel").delete().eq("id", id);
+          if (delErr) {
+            console.error("Delete secret dossier error:", delErr);
+            toast("Cloud delete failed: " + delErr.message, true);
+          } else {
+            toast("Classified entry permanently deleted.");
+          }
+        } catch (err) {
+          console.error("Delete error:", err);
+        }
+      } else {
+        toast("Entry deleted locally.");
       }
     }
   });
@@ -7670,6 +7770,13 @@ setInterval(() => {
     loadSecretIntel(true);
   }
 }, 10000);
+
+// Auto-refresh Statbotics real-time metrics periodically when in strategy center
+setInterval(() => {
+  if (currentAppPage === "strategy") {
+    syncStatboticsData(true);
+  }
+}, 60000);
 
 initSupabase();
 </script>
