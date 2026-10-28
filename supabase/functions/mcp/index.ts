@@ -323,12 +323,13 @@ const TOOLS: Tool[] = [
         items: obj({
           title: str("Shift title"), department: str("Department", { enum: DEPTS }), shift_date: str("YYYY-MM-DD"),
           start_time: str("HH:MM"), end_time: str("HH:MM"), location: str("Location"), notes: str("Notes"),
+          attendees: { type: "array", items: { type: "string" }, description: "Full names of members to assign (they get a Discord ping)" },
         }, ["title", "department", "shift_date", "start_time", "end_time"]),
       },
     }, ["shifts"]),
     admin: true,
     run: async (m, a) => {
-      const rows = (a.shifts as any[]).map(s => ({ location: "Main Shop", ...s, attendees: [], created_by: m.id, created_by_name: m.full_name }));
+      const rows = (a.shifts as any[]).map(s => ({ location: "Main Shop", ...s, attendees: s.attendees || [], created_by: m.id, created_by_name: m.full_name }));
       const created = must(await db.from("team_shifts").insert(rows).select("id, title, shift_date, department")) as any[];
       for (const s of created) await log(m, "SHIFT_CREATED", "team_shifts", s.id, { title: s.title, department: s.department, shift_date: s.shift_date });
       return created;

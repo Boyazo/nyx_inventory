@@ -16,6 +16,8 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists departments text[] not null default array['Mechanical']::text[];
 alter table public.profiles add column if not exists is_secret boolean not null default false;
 alter table public.profiles add column if not exists is_strategy boolean not null default false;
+-- Numeric Discord user id so the shift bot can @mention the member
+alter table public.profiles add column if not exists discord_id text not null default '';
 
 -- 2. Inventory Items Table
 create table if not exists public.inventory_items (
@@ -580,3 +582,11 @@ for insert to authenticated with check(user_id = (select auth.uid()) and (select
 drop policy if exists "Members revoke own connector keys" on public.mcp_tokens;
 create policy "Members revoke own connector keys" on public.mcp_tokens
 for update to authenticated using(user_id = (select auth.uid())) with check(user_id = (select auth.uid()));
+
+-- 13. Discord shift-reminder bookkeeping (written only by the discord-reminders edge function)
+create table if not exists public.shift_notifications (
+  key text primary key,
+  sent_at timestamptz not null default now()
+);
+alter table public.shift_notifications enable row level security;
+-- No policies: only the service role (edge function) can read or write.

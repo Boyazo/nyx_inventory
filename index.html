@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028b">
+<link rel="stylesheet" href="css/style.css?v=20261028c">
 </head>
 <body>
 
@@ -1283,6 +1283,10 @@
         <label for="prof-email">Team Email (Account)</label>
         <input id="prof-email" type="email" disabled style="opacity:0.6; cursor:not-allowed;">
 
+        <label for="prof-discord">Discord User ID <span class="muted small">(for shift reminder pings)</span></label>
+        <input id="prof-discord" inputmode="numeric" maxlength="22" placeholder="e.g. 284019482734919681">
+        <p class="muted small" style="margin:4px 0 0;">In Discord: Settings → Advanced → turn on <b>Developer Mode</b>, then click your name → <b>Copy User ID</b>.</p>
+
         <label style="margin-top:16px;">My Departments (Select all that apply):</label>
         <div class="dept-check-group">
           <label class="dept-check-label">
@@ -1359,6 +1363,20 @@
 
         <label for="shift-notes">Shift Goals & Notes</label>
         <textarea id="shift-notes" maxlength="600" rows="2" placeholder="e.g. Bring safety glasses, finish intake gearbox assembly before scrim"></textarea>
+
+        <!-- Assign Members (Admin) -->
+        <div class="assign-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <label style="margin:0;">👥 Assigned Members <span class="muted small" id="shift-assign-count">(0)</span></label>
+            <div class="assign-quick" id="shift-assign-quick">
+              <button type="button" class="textbtn" data-assign-dept="__dept">+ Shift's department</button>
+              <button type="button" class="textbtn" data-assign-dept="__clear">Clear</button>
+            </div>
+          </div>
+          <input id="shift-assign-search" type="search" placeholder="Search members…" autocomplete="off" style="margin-top:8px;">
+          <div id="shift-assign-list" class="assign-list"></div>
+          <p class="muted small" style="margin:6px 0 0;">Assigned members get a Discord ping, and it syncs to their Google Calendar if they turned that on. Members can still join or leave themselves.</p>
+        </div>
 
         <!-- Repeat Weekly Option -->
         <div class="recurrence-box" id="shift-recurrence-row">
@@ -2081,6 +2099,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028b"></script>
+  <script type="module" src="js/app.js?v=20261028c"></script>
 </body>
 </html>

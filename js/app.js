@@ -1,4 +1,4 @@
-import * as gcal from "./gcal.js?v=20261028b";
+import * as gcal from "./gcal.js?v=20261028c";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -21,6 +21,8 @@ let allSpending = [];
 let spendingPeriodFilter = "all";
 let editingSpendingId = null;
 let taskDrag = null;
+let teamMembers = [];
+let shiftAssignSelected = new Set();
 let activeCategory = "All";
 let activePlannerSubsystem = "All";
 let activePartsFilter = "All";
@@ -628,6 +630,8 @@ function renderShifts() {
         <div class="shift-roster">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <b class="mono small" style="color:var(--text-muted)">ROSTER (${attendees.length})</b>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+            ${isAdmin ? `<button class="btn btn--sm btn--ghost" data-action="assign-shift" data-id="${s.id}" title="Assign members (Admin)">👥 Assign</button>` : ''}
             ${isAttending ? `
               <button class="btn btn--sm btn--ghost" data-action="toggle-attend-shift" data-id="${s.id}" style="color:var(--red); border-color:rgba(248,113,113,.3);" title="Remove yourself from this shift">
                 ✕ Leave Shift
@@ -637,6 +641,7 @@ function renderShifts() {
                 ＋ Join Shift
               </button>
             `}
+            </div>
           </div>
           ${isAttending && !gcal.isConnected() ? `
             <a class="muted small" href="${esc(gcal.templateLink(s))}" target="_blank" rel="noopener" style="display:inline-block; margin-top:4px;">📅 Add to Google Calendar</a>
@@ -1122,6 +1127,8 @@ async function loadMembers() {
 
   const pending = (data || []).filter(p => !p.is_approved);
   const active = (data || []).filter(p => p.is_approved);
+  teamMembers = active.map(p => ({ id: p.id, full_name: p.full_name, departments: p.departments || [] }))
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
   const elBm = $("#badge-members"); if (elBm) elBm.textContent = pending.length;
 
   if (!list) return;
@@ -1523,8 +1530,17 @@ function openProfileModal() {
   $$("input[name='prof-dept']").forEach(cb => {
     cb.checked = depts.includes(cb.value);
   });
+  $("#prof-discord").value = currentProfile.discord_id || "";
   $("#profile-modal").classList.remove("hidden");
   $("#prof-name").focus();
+
+  // Loaded separately so a database without the discord_id column can't break sign-in
+  supabase.from("profiles").select("discord_id").eq("id", currentUser.id).single().then(({ data }) => {
+    if (data && !$("#prof-discord").value) {
+      currentProfile.discord_id = data.discord_id || "";
+      $("#prof-discord").value = currentProfile.discord_id;
+    }
+  });
 }
 
 /* Claude MCP connector: personal keys for the Supabase "mcp" edge function */
@@ -1639,6 +1655,10 @@ function openShiftModal(shift) {
   $("#shift-location").value = shift ? (shift.location || "Main Shop") : "Main Shop";
   $("#shift-notes").value = shift ? (shift.notes || "").replace("[🔁 Weekly Shift]", "").trim() : "";
 
+  shiftAssignSelected = new Set(shift ? (shift.attendees || []) : [myShiftName()]);
+  $("#shift-assign-search").value = "";
+  renderShiftAssignList();
+
   const recurrenceRow = $("#shift-recurrence-row");
   if (recurrenceRow) recurrenceRow.classList.toggle("hidden", !!shift);
   const repeatCb = $("#shift-repeat-weekly");
@@ -1649,6 +1669,48 @@ function openShiftModal(shift) {
   $("#shift-modal").classList.remove("hidden");
   $("#shift-title").focus();
 }
+
+/* Admin member picker inside the shift modal */
+function renderShiftAssignList() {
+  const list = $("#shift-assign-list");
+  if (!list) return;
+  const q = ($("#shift-assign-search")?.value || "").trim().toLowerCase();
+  const known = new Set(teamMembers.map(m => m.full_name));
+  // Keep people already on the roster even if they are not in the member list (e.g. renamed)
+  const extra = [...shiftAssignSelected].filter(n => !known.has(n)).map(n => ({ full_name: n, departments: [] }));
+  const people = [...teamMembers, ...extra].filter(m => !q || m.full_name.toLowerCase().includes(q) || m.departments.join(" ").toLowerCase().includes(q));
+
+  list.innerHTML = people.length ? people.map(m => `
+    <label class="assign-chip ${shiftAssignSelected.has(m.full_name) ? "is-on" : ""}">
+      <input type="checkbox" value="${esc(m.full_name)}" ${shiftAssignSelected.has(m.full_name) ? "checked" : ""}>
+      <span>${esc(m.full_name)}</span>
+      ${m.departments.length ? `<small>${esc(m.departments.map(d => d.slice(0, 4)).join(" · "))}</small>` : ""}
+    </label>
+  `).join("") : `<div class="muted small" style="padding:8px;">${teamMembers.length ? "No members match." : "Member list not loaded yet."}</div>`;
+  $("#shift-assign-count").textContent = `(${shiftAssignSelected.size})`;
+}
+
+$("#shift-assign-list")?.addEventListener("change", e => {
+  const cb = e.target.closest("input[type=checkbox]");
+  if (!cb) return;
+  cb.checked ? shiftAssignSelected.add(cb.value) : shiftAssignSelected.delete(cb.value);
+  cb.closest(".assign-chip")?.classList.toggle("is-on", cb.checked);
+  $("#shift-assign-count").textContent = `(${shiftAssignSelected.size})`;
+});
+$("#shift-assign-search")?.addEventListener("input", renderShiftAssignList);
+$("#shift-assign-quick")?.addEventListener("click", e => {
+  const mode = e.target.closest("[data-assign-dept]")?.dataset.assignDept;
+  if (!mode) return;
+  if (mode === "__clear") {
+    shiftAssignSelected.clear();
+  } else {
+    const dept = $("#shift-dept").value;
+    teamMembers
+      .filter(m => dept === "All Departments" || m.departments.includes(dept))
+      .forEach(m => shiftAssignSelected.add(m.full_name));
+  }
+  renderShiftAssignList();
+});
 
 function closeShiftModal() {
   $("#shift-modal").classList.add("hidden");
@@ -1827,6 +1889,12 @@ $("#profile-form").addEventListener("submit", async e => {
   }
 
   const deptsToSave = selectedDepts.length ? selectedDepts : ["Mechanical"];
+  const discord_id = $("#prof-discord").value.trim();
+  if (discord_id && !/^\d{17,20}$/.test(discord_id)) {
+    toast("Discord User ID should be 17–20 digits (Copy User ID in Discord), not your username.", true);
+    $("#prof-discord").focus();
+    return;
+  }
 
   const btn = $("#save-profile-btn");
   btn.disabled = true;
@@ -1841,6 +1909,12 @@ $("#profile-form").addEventListener("submit", async e => {
   if (error) {
     toast("Failed to update profile: " + error.message, true);
     return;
+  }
+
+  if (discord_id !== (currentProfile.discord_id || "")) {
+    const { error: discordError } = await supabase.from("profiles").update({ discord_id }).eq("id", currentUser.id);
+    if (discordError) toast("Profile saved, but the Discord ID couldn't be: " + discordError.message, true);
+    else currentProfile.discord_id = discord_id;
   }
 
   currentProfile.full_name = full_name;
@@ -1891,8 +1965,11 @@ $("#shift-form").addEventListener("submit", async e => {
   const btn = $("#save-shift-btn");
   btn.disabled = true;
 
+  const attendees = [...shiftAssignSelected];
+  const wasEditing = editingShiftId;
+  const previousAttendees = wasEditing ? (allShifts.find(s => s.id === wasEditing)?.attendees || []) : [];
   const payload = {
-    title, department, shift_date, start_time, end_time, location, notes,
+    title, department, shift_date, start_time, end_time, location, notes, attendees,
     updated_at: new Date().toISOString()
   };
 
@@ -1915,7 +1992,7 @@ $("#shift-form").addEventListener("submit", async e => {
         end_time,
         location,
         notes: fullNotes,
-        attendees: i === 0 ? [myName] : [],
+        attendees,
         created_by: currentUser.id,
         created_by_name: myName,
         updated_at: new Date().toISOString()
@@ -1926,7 +2003,6 @@ $("#shift-form").addEventListener("submit", async e => {
     const myName = currentProfile?.full_name || currentUser.email || "Team Member";
     result = await supabase.from("team_shifts").insert({
       ...payload,
-      attendees: [myName],
       created_by: currentUser.id,
       created_by_name: myName
     });
@@ -1938,10 +2014,15 @@ $("#shift-form").addEventListener("submit", async e => {
     return;
   }
 
-  await logAction("SHIFT_CREATED", "team_shifts", editingShiftId || "new", { title, department, shift_date, repeatWeekly, repeatCount });
+  await logAction(wasEditing ? "SHIFT_UPDATED" : "SHIFT_CREATED", "team_shifts", wasEditing || "new", { title, department, shift_date, repeatWeekly, repeatCount, attendees });
+  const added = attendees.filter(n => !previousAttendees.includes(n));
+  const removed = previousAttendees.filter(n => !attendees.includes(n));
+  if (added.length || removed.length) {
+    await logAction("SHIFT_ASSIGNED", "team_shifts", wasEditing || "new", { shift_title: title, shift_date, assigned: added, unassigned: removed });
+  }
   closeShiftModal();
   await loadShifts();
-  toast(editingShiftId ? "Shift updated." : (repeatWeekly ? `Scheduled ${repeatCount} weekly shifts!` : "Shift scheduled!"));
+  toast(wasEditing ? `Shift updated · ${attendees.length} assigned.` : (repeatWeekly ? `Scheduled ${repeatCount} weekly shifts · ${attendees.length} assigned each week!` : `Shift scheduled · ${attendees.length} assigned!`));
 });
 
 /* Item Save (Admin only) */
@@ -2648,6 +2729,13 @@ $("#shifts-list").addEventListener("click", async e => {
       await loadShifts(true);
       toast(target === myName ? "Removed yourself from shift roster." : `Removed ${target} from shift roster.`);
     }
+  } else if (action === "assign-shift" && shift) {
+    if (!currentProfile?.is_admin) return;
+    openShiftModal(shift);
+    setTimeout(() => {
+      $(".assign-box")?.scrollIntoView({ block: "center" });
+      $("#shift-assign-search")?.focus();
+    }, 50);
   } else if (action === "edit-shift" && shift) {
     if (!currentProfile?.is_admin) {
       toast("Only admins can edit shifts.", true);

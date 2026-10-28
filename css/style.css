@@ -2426,3 +2426,51 @@ body.is-dragging-task, body.is-dragging-task * { cursor: grabbing !important; }
 @media (hover: none) {
   .task-card:hover { transform: none; }
 }
+
+/* Shift member picker (admin) */
+.assign-box {
+  margin: 16px 0 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.assign-quick { display: flex; gap: 12px; }
+.assign-quick .textbtn { font-size: 12px; }
+.assign-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.assign-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.assign-chip input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.assign-chip small { font-family: var(--font-mono); font-size: 9.5px; opacity: .7; text-transform: uppercase; }
+.assign-chip.is-on {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--text);
+}
+.assign-chip.is-on::before { content: "✓"; color: var(--accent-bright); font-weight: 800; }
+.assign-chip:has(input:focus-visible) { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+@media (max-width: 900px) {
+  .assign-chip { padding: 8px 12px; font-size: 13px; }
+  .assign-list { max-height: 240px; }
+}

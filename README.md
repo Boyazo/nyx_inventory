@@ -18,6 +18,7 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
 - **Drag-and-drop Planner**: Drag task cards between `To Do`, `In Progress` and `Completed` (and reorder within a column) like a Trello board. On phones, long-press a card to pick it up.
 - **Google Calendar Shift Sync 📅**: Members click *Sync to Google Calendar* once; every shift they join is added to their Google Calendar and removed when they leave. Without it, joined shifts show a one-click *Add to Google Calendar* link.
 - **Claude Connector 🤖 (MCP)**: *Connect Claude* generates a personal connector URL. Add it to Claude as a custom connector, then send Claude a photo (receipt, whiteboard, shelf, schedule) and it records purchases, creates tasks, schedules shifts and updates stock with your permissions.
+- **Shift Assignments & Discord Reminders 🔔**: Admins assign members to shifts (one-click "whole department", applies to every week of a weekly series). A Discord bot posts a morning schedule, a heads-up ~2 hours before each shift, and a ping when someone is newly scheduled, @mentioning members who added their Discord User ID in their profile.
 - **Scouting-driven Strategy via Claude 🧠**: Through the connector, Claude can pull aggregated team scouting reports (accuracy, climbs, reliability, recent form) with live Statbotics EPA, rank teams for pick lists, build a match brief for any alliance vs. opponents, log entries from photos of paper scouting sheets, and save its written plan to the playbook (*Strategy → Saved Plays → 📋 Strategy notes*).
 - **Spending Seasons & Audit Trail**: Purchases before kickoff (`SEASON_KICKOFF`, currently Jan 9, 2027) are offseason; on/after are in-season. Every purchase requires a receipt/card-charge screenshot, and admin edits require a reason and are kept as a version history.
 
@@ -34,6 +35,21 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/cli) and link the project: `supabase link --project-ref wdzrttyxcedkaifzkjvp`.
 2. Deploy the server: `supabase functions deploy mcp --no-verify-jwt` (Claude authenticates with each member's connector key, not a Supabase JWT).
 3. In the app, click **🤖 Connect Claude → Generate Connector**, then add the URL in Claude under *Settings → Connectors → Add custom connector*.
+
+## Discord Shift Bot Setup
+
+1. Re-run [`supabase/schema.sql`](supabase/schema.sql) (adds `profiles.discord_id` and `shift_notifications`).
+2. In Discord, open the channel for reminders → **Edit Channel → Integrations → Webhooks → New Webhook**, name it "NYX Shift Bot", and **Copy Webhook URL**.
+3. Set the function secrets and deploy:
+   ```bash
+   supabase secrets set DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." CRON_SECRET="$(openssl rand -hex 24)"
+   supabase functions deploy discord-reminders --no-verify-jwt
+   ```
+   Optional secrets: `DIGEST_HOUR` (default `7`, Pacific), `REMINDER_LEAD_MINUTES` (default `120`).
+4. Open [`supabase/discord_reminders.sql`](supabase/discord_reminders.sql), paste the same `CRON_SECRET`, and run it in the SQL Editor. The bot then checks every 15 minutes.
+5. Each member adds their **Discord User ID** under *Edit Departments* (profile) so they get @mentioned. Members without one are listed by name.
+
+The first run records the existing rosters quietly, so only *new* assignments are announced.
 
 ## Google Calendar Setup
 
