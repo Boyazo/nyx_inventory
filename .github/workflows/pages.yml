@@ -6,6 +6,10 @@ on:
       - main
     paths:
       - "index.html"
+      - "js/**"
+      - "css/**"
+      - "*.js"
+      - "*.png"
       - ".nojekyll"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
