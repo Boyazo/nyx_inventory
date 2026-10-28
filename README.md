@@ -30,6 +30,16 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
    * It ensures only admins can write to inventory, tasks, parts needed, and spending records.
    * It registers Realtime publications for live team synchronization.
 
+## One-command Supabase Setup
+
+Someone with access to the Supabase project (or invited to its organization) runs, from the repo root:
+
+```bash
+brew install supabase/tap/supabase && supabase login && bash tools/setup_supabase.sh
+```
+
+It applies `schema.sql`, deploys the Claude connector and Discord bot functions, asks for the Discord webhook (and optional bot token for nickname auto-linking) without echoing them, generates the cron secret, starts the 15-minute reminder schedule and posts a test message. The sections below describe the same steps manually.
+
 ## Claude Connector (MCP) Setup
 
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/cli) and link the project: `supabase link --project-ref wdzrttyxcedkaifzkjvp`.
