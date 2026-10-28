@@ -1076,204 +1076,388 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   .sim-grid { grid-template-columns: 1fr; }
 }
 
+
+/* ==========================================================================
+   MOBILE FIRST & RESPONSIVE POLISH (Phones < 768px & Tablets < 900px)
+   ========================================================================== */
 @media (max-width: 900px) {
-  .authlayout { grid-template-columns: 1fr; padding: 30px 0; }
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .tablehead { display: none; }
-  .itemrow:not(#strat-rankings-list .itemrow) {
-    grid-template-columns: 1fr auto; padding: 16px; gap: 10px;
+  body {
+    font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+    padding-bottom: 78px !important; /* Dedicated clearance for mobile bottom nav */
   }
-  .itemrow:not(#strat-rankings-list .itemrow) .subsys { grid-column: 1; grid-row: 2; }
-  .itemrow:not(#strat-rankings-list .itemrow) .location { display: none; }
-  .itemrow:not(#strat-rankings-list .itemrow) .quantity { grid-column: 2; grid-row: 1; }
-  .itemrow:not(#strat-rankings-list .itemrow) .actions { grid-column: 2; grid-row: 2; justify-content: flex-end; }
-  .planner-grid { grid-template-columns: 1fr; }
-  .logrow { grid-template-columns: 1fr; gap: 4px; }
-  .user-controls-block { align-items: flex-start; }
+
+  .shell {
+    padding: 0 12px 30px !important;
+  }
+
+  .app-main {
+    padding-bottom: 12px;
+  }
+
+  .dashboard {
+    padding: 8px 4px 20px;
+  }
+
+  /* Compact Sleek Topbar */
+  .topbar {
+    height: 56px !important;
+    padding: 0 6px !important;
+    gap: 8px;
+  }
+  .brand-logo {
+    height: 32px !important;
+    width: 32px !important;
+  }
+  .brandtext strong {
+    font-size: 13.5px !important;
+    letter-spacing: .03em;
+  }
+  .brandtext small {
+    display: none !important; /* Hide tiny unreadable slogan on mobile header */
+  }
+  .theme-toggle {
+    scale: 0.9;
+  }
+  .userchip {
+    padding: 4px 10px !important;
+    gap: 8px !important;
+  }
+  .avatar {
+    height: 28px !important;
+    width: 28px !important;
+    font-size: 11px !important;
+  }
+
+  /* Welcome Hero Section */
+  .welcome {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+    padding: 14px 16px !important;
+    border-radius: var(--radius-sm);
+  }
+  .welcome h1 {
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 2px !important;
+  }
+  .welcome p.muted {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* 2x2 Stats Dashboard Grid */
+  .stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 18px !important;
+  }
+  .stat {
+    padding: 12px 14px !important;
+    border-radius: var(--radius-sm) !important;
+    min-height: 80px;
+  }
+  .statlabel {
+    font-size: 9.5px !important;
+    letter-spacing: .08em;
+  }
+  .statvalue {
+    font-size: 22px !important;
+    line-height: 1.1 !important;
+    margin-top: 4px;
+  }
+  .stathelp {
+    font-size: 10.5px !important;
+    margin-top: 2px;
+  }
+
+  /* Horizontal Scrolling Category Pills & View Tabs */
+  .viewtabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 14px !important;
+    gap: 8px !important;
+    scrollbar-width: none;
+  }
+  .viewtabs::-webkit-scrollbar {
+    display: none;
+  }
+  .viewtab {
+    flex: 0 0 auto !important;
+    font-size: 12.5px !important;
+    padding: 8px 14px !important;
+    border-radius: 999px !important;
+  }
+
+  .tabslist {
+    display: flex !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 6px !important;
+    gap: 6px !important;
+    scrollbar-width: none;
+  }
+  .tabslist::-webkit-scrollbar {
+    display: none;
+  }
+  .catbtn {
+    flex: 0 0 auto !important;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+    min-height: 34px !important;
+  }
+
+  /* Toolbars & Search */
+  .toolbar {
+    padding: 12px 14px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .toolbar-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .toolbar-actions .search,
+  .search {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 14px !important;
+    height: 40px !important;
+  }
+
+  /* Hide Desktop Table Headers */
+  .tablehead {
+    display: none !important;
+  }
+
+  /* Mobile Inventory Card Transformation */
+  .itemrow {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 14px 16px !important;
+    margin-bottom: 10px !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius-sm) !important;
+    gap: 10px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+  }
+  .itemrow > div:first-child {
+    width: 100%;
+  }
+  .itemname {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: var(--text) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  .itemnotes {
+    font-size: 12px !important;
+    white-space: normal !important;
+    max-width: 100% !important;
+    margin-top: 4px !important;
+    color: var(--text-muted) !important;
+  }
+  .itemrow .subsys {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+  .itemrow .location {
+    display: inline-block !important;
+    font-size: 11.5px !important;
+  }
+
+  /* Quantity & Action Controls in Modern Native Row */
+  .itemrow .quantity {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--line) !important;
+    width: fit-content !important;
+  }
+  .qtybtn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 8px !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .qtynum {
+    font-size: 17px !important;
+    min-width: 26px !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+  }
+  .itemrow .actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 4px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding-top: 10px !important;
+  }
+  .actionbtn {
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+    min-height: 36px !important;
+    border-radius: 7px !important;
+  }
+
+  /* Touch-friendly Buttons */
+  .btn {
+    padding: 9px 15px !important;
+    font-size: 13px !important;
+    min-height: 42px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Secret Intel Cards Mobile */
+  #secret-intel-list .card {
+    padding: 14px 14px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+  #secret-intel-list .card > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  #secret-intel-list .card > div:first-child > div:last-child {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
 
   /* Mobile Strategy & Whiteboard polish */
-  .viewtabs {
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 6px;
-    gap: 6px;
-  }
-  .viewtabs .viewtab {
-    flex: 0 0 auto;
-    font-size: 13px;
-    padding: 8px 14px;
-  }
   .playbook-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px 12px;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 10px 12px !important;
   }
   .tool-group {
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 2px;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px !important;
   }
   .playbook-save-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
   }
   .canvas-wrapper {
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
+    touch-action: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    border-radius: var(--radius-sm) !important;
   }
   #field-canvas {
-    touch-action: none;
+    touch-action: none !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 2 / 1 !important;
   }
 
   /* Mobile Rankings list card view */
   #strat-rankings-list .itemrow {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 8px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 14px !important;
+    border-radius: var(--radius-sm) !important;
+    margin-bottom: 8px !important;
   }
   #strat-rankings-pagination {
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-    text-align: center;
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: center !important;
+    text-align: center !important;
   }
   #strat-sort-tabs {
-    overflow-x: auto;
-    white-space: nowrap;
-    padding-bottom: 6px;
-  }
-}
-
-/* Mobile Bottom Bar Navigation */
-.mobile-bottom-nav {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  body {
-    font-size: 13.5px;
-    -webkit-text-size-adjust: 100%;
-    padding-bottom: 74px !important; /* space for bottom bar */
-  }
-  .app-main {
-    padding-bottom: 20px;
-  }
-  .dashboard {
-    padding: 12px 14px 24px;
-  }
-  .welcome {
-    padding: 16px 18px;
-    margin-bottom: 12px;
-  }
-  .welcome h1 {
-    font-size: 24px;
-  }
-  .playbook-container {
-    padding: 10px 8px !important;
-  }
-  .panel {
-    border-radius: var(--radius-sm);
-  }
-  .toolbar {
-    padding: 12px 14px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .toolbar-actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-  .toolbar-actions .search {
-    width: 100% !important;
-  }
-  .btn {
-    padding: 8px 14px;
-    font-size: 12.5px;
-    min-height: 40px;
-  }
-  .tool-btn, .size-btn, .viewtab, .catbtn {
-    min-height: 38px;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 6px !important;
   }
 
   /* Fixed Mobile Bottom Navigation Bar */
   .mobile-bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 62px;
-    background: rgba(15, 17, 23, 0.95);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-top: 1px solid var(--line-strong);
-    z-index: 999;
-    justify-content: space-around;
-    align-items: center;
-    padding: 4px 8px env(safe-area-inset-bottom, 6px);
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 62px !important;
+    background: rgba(15, 17, 23, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-top: 1px solid var(--line-strong) !important;
+    z-index: 9999 !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 4px 8px env(safe-area-inset-bottom, 8px) !important;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.5) !important;
   }
   [data-theme="light"] .mobile-bottom-nav {
-    background: rgba(255, 255, 255, 0.95);
-    border-top-color: var(--line-strong);
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08) !important;
   }
   .mobile-nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    flex: 1;
-    max-width: 110px;
-    transition: color 0.15s, transform 0.1s;
-    -webkit-tap-highlight-color: transparent;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-muted) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    flex: 1 !important;
+    max-width: 110px !important;
+    transition: color 0.15s, transform 0.1s !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
   .mobile-nav-item .nav-icon {
-    font-size: 20px;
-    line-height: 1;
+    font-size: 20px !important;
+    line-height: 1 !important;
   }
   .mobile-nav-item.active {
-    color: var(--accent-bright);
+    color: var(--accent-bright) !important;
   }
   .mobile-nav-item:active {
-    transform: scale(0.95);
+    transform: scale(0.95) !important;
   }
   .mobile-nav-item.secrets-item.active {
-    color: #f43f5e;
-  }
-
-  /* Responsive field canvas */
-  .canvas-wrapper {
-    -webkit-user-select: none;
-    user-select: none;
-    max-width: 100%;
-    overflow: hidden;
-    border-radius: var(--radius-sm);
-    position: relative;
-  }
-  #field-canvas {
-    width: 100% !important;
-    height: auto !important;
-    max-width: 100%;
-    aspect-ratio: 2 / 1;
-    display: block;
+    color: #f43f5e !important;
   }
 }
 
@@ -1326,7 +1510,6 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
 }
 
 @media (max-width: 950px) and (orientation: landscape) {
-  /* On mobile landscape orientation, offer automatic full-screen canvas ergonomics */
   body.auto-landscape-playbook .playbook-container {
     padding: 6px !important;
   }
@@ -2466,7 +2649,10 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
               <span class="eyebrow" style="color:#f43f5e;">CONFIDENTIAL DOSSIERS</span>
               <h3 style="margin:0;">Classified Personnel Database (<span id="secret-dossier-count">0</span>)</h3>
             </div>
-            <input type="search" id="secret-search-input" placeholder="⌕ Search intel..." style="width:200px; font-size:13px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn--ghost btn--sm" id="btn-refresh-secrets" type="button" style="padding:4px 8px; font-size:12px;">↻ Refresh Cloud</button>
+              <input type="search" id="secret-search-input" placeholder="Search intel..." style="width:160px; font-size:13px;">
+            </div>
           </div>
 
           <div id="secret-intel-list">
@@ -3852,15 +4038,21 @@ async function loadMembers() {
   html += active.map(p => {
     const depts = (p.departments && p.departments.length) ? p.departments.join(", ") : "Mechanical";
     return `
-      <div class="itemrow" style="grid-template-columns: 2fr 1.5fr auto;">
+      <div class="itemrow" style="grid-template-columns: 1.8fr 1.8fr auto;">
         <div>
           <b>${esc(p.full_name)}</b>
           ${p.is_admin ? '<span class="pill" style="border-color:var(--accent-bright); color:var(--accent-bright); font-size:10px;">Admin</span>' : ''}
           ${p.is_strategy ? '<span class="pill" style="border-color:#38bdf8; color:#38bdf8; font-size:10px;">Strategy</span>' : ''}
-          <div class="muted small mono">${depts} ${p.id === currentUser.id ? '· (You)' : ''}</div>
+          ${p.is_secret ? '<span class="pill" style="border-color:#f43f5e; color:#f43f5e; font-size:10px;">Secret</span>' : ''}
+          <div class="muted small mono">${depts} ${p.id === currentUser.id ? '(You)' : ''}</div>
         </div>
-        <div>
-          <span class="muted small mono">Approved</span>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn--sm ${p.is_secret ? 'btn--primary' : 'btn--ghost'}" data-action="toggle-role" data-role="is_secret" data-id="${p.id}" data-state="${!!p.is_secret}" style="padding:3px 7px; font-size:11px; ${p.is_secret ? 'background:#f43f5e; border-color:#f43f5e; color:#fff;' : 'color:#f43f5e;'}">
+            ${p.is_secret ? '★ Secret ON' : '☆ Secret OFF'}
+          </button>
+          <button class="btn btn--sm ${p.is_strategy ? 'btn--primary' : 'btn--ghost'}" data-action="toggle-role" data-role="is_strategy" data-id="${p.id}" data-state="${!!p.is_strategy}" style="padding:3px 7px; font-size:11px; ${p.is_strategy ? 'background:#38bdf8; border-color:#38bdf8; color:#000;' : 'color:#38bdf8;'}">
+            ${p.is_strategy ? '★ Strategy ON' : '☆ Strategy OFF'}
+          </button>
         </div>
         <div>
           ${p.id !== currentUser.id ? `
@@ -4915,6 +5107,18 @@ $("#admin-members-list").addEventListener("click", async e => {
       await logAction(approve ? "MEMBER_APPROVED" : "MEMBER_REVOKED", "profiles", id, { member_name: name });
       await loadMembers();
       toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
+    }
+  } else if (action === "toggle-role") {
+    const role = b.dataset.role;
+    const currentState = b.dataset.state === "true";
+    const updateObj = {};
+    updateObj[role] = !currentState;
+    const { error } = await supabase.from("profiles").update(updateObj).eq("id", id);
+    if (error) {
+      toast("Role toggle failed: " + error.message, true);
+    } else {
+      toast(`Role updated successfully!`);
+      await loadMembers();
     }
   }
 });
@@ -7122,13 +7326,15 @@ function initSecretsCenter() {
 async function loadSecretIntel(quiet) {
   try {
     const raw = localStorage.getItem("nyx_secret_intel");
-    if (raw && !quiet) secretDossiers = JSON.parse(raw);
+    if (raw && !quiet && (!secretDossiers || secretDossiers.length === 0)) {
+      secretDossiers = JSON.parse(raw);
+    }
   } catch (err) {
     secretDossiers = [];
   }
   if (!quiet) renderSecretIntel();
 
-  // Load directly from Supabase for all secret-cleared members
+  // Load directly from Supabase for all team members with secret clearance
   if (supabase && currentUser) {
     try {
       const { data, error } = await supabase.from("secret_personnel_intel")
@@ -7136,7 +7342,8 @@ async function loadSecretIntel(quiet) {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.warn("Secret personnel intel load notice:", error.message);
+        console.error("Secret personnel intel load error:", error);
+        toast("Cloud database sync error: " + error.message, true);
       } else if (Array.isArray(data)) {
         secretDossiers = data;
         try {
@@ -7145,7 +7352,7 @@ async function loadSecretIntel(quiet) {
         renderSecretIntel();
       }
     } catch (e) {
-      console.warn("Could not query secret intel from remote database:", e);
+      console.error("Could not query secret intel from remote database:", e);
     }
   }
 }
@@ -7242,6 +7449,11 @@ function renderSecretIntel() {
 }
 
 function setupSecretsEvents() {
+  $("#btn-refresh-secrets")?.addEventListener("click", async () => {
+    toast("Syncing with cloud database...");
+    await loadSecretIntel();
+    toast("Cloud database synchronized!");
+  });
   $("#secret-scout-form")?.addEventListener("submit", async e => {
     e.preventDefault();
     if (!currentProfile?.is_secret) {
@@ -7284,11 +7496,19 @@ function setupSecretsEvents() {
     $("#secret-scout-form")?.reset();
     $("#secret-team-num")?.focus();
 
-    // 2. Background Supabase persistence
+    // 2. Supabase Cloud Persistence with immediate feedback
     if (supabase) {
-      supabase.from("secret_personnel_intel").insert(dossier).catch(err => {
-        console.warn("Secret intel db sync:", err);
-      });
+      try {
+        const { error: dbErr } = await supabase.from("secret_personnel_intel").insert(dossier);
+        if (dbErr) {
+          console.error("Secret dossier insert failed:", dbErr);
+          toast("Database sync failed: " + dbErr.message + " (Saved locally)", true);
+        } else {
+          toast(`Dossier for Team ${teamNum} synced to cloud database!`);
+        }
+      } catch (err) {
+        console.error("Secret intel db sync exception:", err);
+      }
     }
   });
 
