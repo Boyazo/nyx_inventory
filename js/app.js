@@ -889,6 +889,327 @@ async function loadMembers() {
 }
 
 /* Load Admin Audit Logs */
+let allAuditLogs = [];
+
+function formatActionBadge(action) {
+  const icons = {
+    ITEM_CREATED: "📦 ITEM ADDED",
+    ITEM_UPDATED: "🔄 ITEM UPDATED",
+    ITEM_DELETED: "🗑️ ITEM REMOVED",
+    TOOL_CHECKOUT: "🛠️ TOOL BORROWED",
+    TOOL_CHECKIN: "↩️ TOOL RETURNED",
+    PLANNER_TASK_CREATED: "📋 TASK CREATED",
+    PLANNER_TASK_UPDATED: "⚡ TASK UPDATED",
+    PLANNER_TASK_COMPLETED: "✅ TASK FINISHED",
+    PLANNER_TASK_DELETED: "🗑️ TASK REMOVED",
+    PART_NEEDED_CREATED: "🛒 PART REQUESTED",
+    PART_STATUS_UPDATED: "🏷️ PART STATUS",
+    PART_NEEDED_DELETED: "🗑️ PART REMOVED",
+    SPENDING_RECORDED: "💰 SPENDING ADDED",
+    SPENDING_DELETED: "🗑️ SPENDING REMOVED",
+    SHIFT_CREATED: "📅 SHIFT SCHEDULED",
+    SHIFT_ATTENDED: "🙋 SHIFT SIGNUP",
+    SHIFT_LEFT: "🚶 LEFT SHIFT",
+    SHIFT_ATTENDEE_REMOVED: "🚫 ROSTER REMOVAL",
+    SHIFT_DELETED: "🗑️ SHIFT REMOVED",
+    PLAYBOOK_SAVED: "🎯 PLAYBOOK SAVED",
+    PLAYBOOK_DELETED: "🗑️ PLAYBOOK REMOVED",
+    SCOUTING_SUBMITTED: "📊 MATCH SCOUTED",
+    SCOUTING_DELETED: "🗑️ SCOUT RECORD REMOVED",
+    MEMBER_APPROVED: "✅ ACCESS APPROVED",
+    MEMBER_REVOKED: "⛔ ACCESS REVOKED",
+    USER_LOGIN: "🔑 USER SIGNED IN"
+  };
+  const label = icons[action] || action.replace(/_/g, " ");
+  return `<span class="logaction ${esc(action)}">${label}</span>`;
+}
+
+function renderVerboseLogDetails(log) {
+  const a = log.action;
+  const d = log.details || {};
+  let narrative = "";
+  let pills = [];
+
+  switch (a) {
+    case "ITEM_CREATED":
+      narrative = `Added new catalog item: <strong>${esc(d.name || "Item")}</strong> (${esc(d.qty != null ? d.qty : 0)} ${esc(d.unit || "pcs")})`;
+      if (d.category) pills.push(`<b>Category:</b> ${esc(d.category)}`);
+      if (d.location) pills.push(`<b>Location:</b> ${esc(d.location)}`);
+      if (d.is_tool) pills.push(`<b>Type:</b> Shop Tool`);
+      if (d.part_number) pills.push(`<b>P/N:</b> ${esc(d.part_number)}`);
+      if (d.min_quantity) pills.push(`<b>Min Qty:</b> ${esc(d.min_quantity)}`);
+      if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
+      break;
+
+    case "ITEM_UPDATED":
+      if (d.delta != null) {
+        const sign = Number(d.delta) > 0 ? `+${d.delta}` : `${d.delta}`;
+        const diffClass = Number(d.delta) >= 0 ? "pos" : "neg";
+        narrative = `Adjusted inventory quantity for <strong>${esc(d.name || "Item")}</strong>: <span class="log-diff-pill ${diffClass}">${sign}</span> → New total: <strong>${esc(d.qty != null ? d.qty : (d.new_qty != null ? d.new_qty : 0))} ${esc(d.unit || "pcs")}</strong>`;
+        if (d.previous_qty != null) pills.push(`<b>Previous:</b> ${esc(d.previous_qty)}`);
+        if (d.location) pills.push(`<b>Location:</b> ${esc(d.location)}`);
+      } else {
+        narrative = `Updated item details for <strong>${esc(d.name || "Item")}</strong>`;
+        if (d.qty != null) pills.push(`<b>Quantity:</b> ${esc(d.qty)} ${esc(d.unit || "pcs")}`);
+        if (d.category) pills.push(`<b>Category:</b> ${esc(d.category)}`);
+        if (d.location) pills.push(`<b>Location:</b> ${esc(d.location)}`);
+        if (d.is_tool != null) pills.push(`<b>Type:</b> ${d.is_tool ? "Shop Tool" : "Component"}`);
+        if (d.part_number) pills.push(`<b>P/N:</b> ${esc(d.part_number)}`);
+        if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
+      }
+      break;
+
+    case "ITEM_DELETED":
+      narrative = `Removed item <strong>${esc(d.name || "Item")}</strong> permanently from inventory catalog.`;
+      if (d.category) pills.push(`<b>Category:</b> ${esc(d.category)}`);
+      if (d.quantity != null) pills.push(`<b>Had Quantity:</b> ${esc(d.quantity)}`);
+      if (d.location) pills.push(`<b>Stored at:</b> ${esc(d.location)}`);
+      break;
+
+    case "TOOL_CHECKOUT":
+      narrative = `Checked out <strong>${esc(d.qty || 1)} × ${esc(d.name || "Tool")}</strong> from shop stock.`;
+      if (d.user_name) pills.push(`<b>Borrower:</b> ${esc(d.user_name)}`);
+      if (d.expected_return) pills.push(`<b>Due Back:</b> ${esc(d.expected_return)}`);
+      if (d.notes) pills.push(`<b>Purpose:</b> ${esc(d.notes)}`);
+      break;
+
+    case "TOOL_CHECKIN":
+      narrative = `Returned <strong>${esc(d.qty || 1)} × ${esc(d.name || "Tool")}</strong> back to shop inventory.`;
+      if (d.user_name) pills.push(`<b>Returned By:</b> ${esc(d.user_name)}`);
+      if (d.duration) pills.push(`<b>Duration:</b> ${esc(d.duration)}`);
+      break;
+
+    case "PLANNER_TASK_CREATED":
+      narrative = `Created team task: <strong>${esc(d.title || "Task")}</strong>`;
+      if (d.subsystem) pills.push(`<b>Subsystem:</b> ${esc(d.subsystem)}`);
+      if (d.priority) pills.push(`<b>Priority:</b> ${esc(d.priority.toUpperCase())}`);
+      if (d.status) pills.push(`<b>Initial Status:</b> ${esc(d.status)}`);
+      if (d.assigned_to) pills.push(`<b>Assignee:</b> ${esc(d.assigned_to)}`);
+      if (d.due_date) pills.push(`<b>Due:</b> ${esc(d.due_date)}`);
+      if (d.description) pills.push(`<b>Desc:</b> ${esc(d.description)}`);
+      break;
+
+    case "PLANNER_TASK_UPDATED":
+    case "PLANNER_TASK_COMPLETED":
+      if (d.previous_status && d.new_status) {
+        narrative = `Task <strong>${esc(d.title || "Task")}</strong> moved: <span class="pill" style="font-size:10px;">${esc(d.previous_status)}</span> ➔ <span class="pill" style="font-size:10px; color:var(--accent-bright);">${esc(d.new_status)}</span>`;
+      } else {
+        narrative = `${a === "PLANNER_TASK_COMPLETED" ? "Completed" : "Updated"} task: <strong>${esc(d.title || "Task")}</strong> (Status: ${esc(d.status || "in_progress")})`;
+      }
+      if (d.subsystem) pills.push(`<b>Subsystem:</b> ${esc(d.subsystem)}`);
+      if (d.priority) pills.push(`<b>Priority:</b> ${esc(d.priority)}`);
+      if (d.assigned_to) pills.push(`<b>Assignee:</b> ${esc(d.assigned_to)}`);
+      if (d.due_date) pills.push(`<b>Due:</b> ${esc(d.due_date)}`);
+      break;
+
+    case "PLANNER_TASK_DELETED":
+      narrative = `Deleted task <strong>${esc(d.title || "Task")}</strong> from team planner board.`;
+      if (d.subsystem) pills.push(`<b>Subsystem:</b> ${esc(d.subsystem)}`);
+      break;
+
+    case "PART_NEEDED_CREATED":
+      narrative = `Requested robot order: <strong>${esc(d.quantity || 1)} × ${esc(d.part_name || "Part")}</strong>`;
+      if (d.subsystem) pills.push(`<b>Subsystem:</b> ${esc(d.subsystem)}`);
+      if (d.vendor) pills.push(`<b>Vendor:</b> ${esc(d.vendor)}`);
+      if (d.priority) pills.push(`<b>Priority:</b> ${esc(d.priority)}`);
+      if (d.estimated_cost != null && Number(d.estimated_cost) > 0) pills.push(`<b>Est Cost:</b> $${Number(d.estimated_cost).toFixed(2)}`);
+      if (d.part_number) pills.push(`<b>P/N:</b> ${esc(d.part_number)}`);
+      if (d.url) pills.push(`<b>Link:</b> <a href="${esc(d.url)}" target="_blank" rel="noopener" style="color:var(--accent-soft); text-decoration:underline;">Product Page</a>`);
+      if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
+      break;
+
+    case "PART_STATUS_UPDATED":
+      if (d.previous_status && d.new_status) {
+        narrative = `Updated tracking for <strong>${esc(d.part_name || "Part")}</strong>: <span class="pill" style="font-size:10px;">${esc(d.previous_status)}</span> ➔ <strong style="color:var(--accent-bright);">${esc(d.new_status)}</strong>`;
+      } else {
+        narrative = `Updated tracking for <strong>${esc(d.part_name || "Part")}</strong> to status: <strong style="color:var(--accent-bright);">${esc(d.status || d.new_status)}</strong>`;
+      }
+      if (d.vendor) pills.push(`<b>Vendor:</b> ${esc(d.vendor)}`);
+      if (d.quantity) pills.push(`<b>Qty:</b> ${esc(d.quantity)}`);
+      break;
+
+    case "PART_NEEDED_DELETED":
+      narrative = `Removed <strong>${esc(d.part_name || "Part")}</strong> from parts ordering queue.`;
+      if (d.vendor) pills.push(`<b>Vendor:</b> ${esc(d.vendor)}`);
+      if (d.quantity) pills.push(`<b>Qty:</b> ${esc(d.quantity)}`);
+      break;
+
+    case "SPENDING_RECORDED":
+      narrative = `Logged PO purchase: <strong>${esc(d.title || "Purchase")}</strong> for <strong>$${Number(d.amount || 0).toFixed(2)}</strong> at <strong>${esc(d.vendor || "Vendor")}</strong>`;
+      if (d.category) pills.push(`<b>Category:</b> ${esc(d.category)}`);
+      if (d.order_number) pills.push(`<b>PO / Order #:</b> ${esc(d.order_number)}`);
+      if (d.order_date) pills.push(`<b>Date:</b> ${esc(d.order_date)}`);
+      if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
+      break;
+
+    case "SPENDING_DELETED":
+      narrative = `Deleted spending record <strong>${esc(d.title || "Record")}</strong> ($${Number(d.amount || 0).toFixed(2)} at ${esc(d.vendor || "Vendor")}).`;
+      break;
+
+    case "SHIFT_CREATED":
+      narrative = `Scheduled lab shift: <strong>${esc(d.title || "Lab Shift")}</strong> (${esc(d.shift_date || "")} · ${esc(d.start_time || "")} - ${esc(d.end_time || "")})`;
+      if (d.department) pills.push(`<b>Dept:</b> ${esc(d.department)}`);
+      if (d.location) pills.push(`<b>Location:</b> ${esc(d.location)}`);
+      if (d.repeatWeekly) pills.push(`<b>Recurring:</b> ${esc(d.repeatCount || 4)} weeks series`);
+      if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
+      break;
+
+    case "SHIFT_ATTENDED":
+      narrative = `<strong>${esc(d.member_name || log.user_name)}</strong> signed up for lab shift: <strong>${esc(d.shift_title || "Shift")}</strong> on ${esc(d.shift_date || "")}`;
+      if (d.department) pills.push(`<b>Dept:</b> ${esc(d.department)}`);
+      if (d.location) pills.push(`<b>Location:</b> ${esc(d.location)}`);
+      break;
+
+    case "SHIFT_LEFT":
+      narrative = `<strong>${esc(d.member_name || log.user_name)}</strong> removed themselves from shift: <strong>${esc(d.shift_title || "Shift")}</strong> on ${esc(d.shift_date || "")}`;
+      if (d.department) pills.push(`<b>Dept:</b> ${esc(d.department)}`);
+      break;
+
+    case "SHIFT_ATTENDEE_REMOVED":
+      narrative = `Removed <strong>${esc(d.removed_attendee || "Member")}</strong> from shift roster: <strong>${esc(d.shift_title || "Shift")}</strong>`;
+      break;
+
+    case "SHIFT_DELETED":
+      narrative = `Removed lab shift <strong>${esc(d.title || "Shift")}</strong> on ${esc(d.shift_date || "")} from schedule.${d.series ? " (Deleted entire weekly series)" : ""}`;
+      if (d.department) pills.push(`<b>Dept:</b> ${esc(d.department)}`);
+      break;
+
+    case "PLAYBOOK_SAVED":
+      narrative = `Saved strategy whiteboard play: <strong>${esc(d.play_name || "Play")}</strong>`;
+      if (d.strokes_count != null) pills.push(`<b>Strokes Drawn:</b> ${esc(d.strokes_count)}`);
+      if (d.match_context) pills.push(`<b>Context:</b> ${esc(d.match_context)}`);
+      break;
+
+    case "PLAYBOOK_DELETED":
+      narrative = `Deleted saved playbook: <strong>${esc(d.play_name || "Play")}</strong>`;
+      break;
+
+    case "SCOUTING_SUBMITTED":
+      narrative = `Logged match scouting data for <strong>Team ${esc(d.team_num || "")}</strong> in <strong>Match ${esc(d.match_type || "Q")}${esc(d.match_num || "")}</strong> (${esc(d.event_name || "Competition")})`;
+      if (d.est_points != null) pills.push(`<b>Est Points:</b> <strong style="color:var(--green);">${esc(d.est_points)}</strong>`);
+      if (d.auto_fuel != null) pills.push(`<b>Auto Fuel:</b> ${esc(d.auto_fuel)}`);
+      if (d.tele_fuel != null) pills.push(`<b>Teleop Fuel:</b> ${esc(d.tele_fuel)}`);
+      if (d.climb) pills.push(`<b>Endgame Climb:</b> ${esc(d.climb)}`);
+      if (d.died) pills.push(`<b style="color:#f87171;">ROBOT BROKE</b>`);
+      if (d.scout_name) pills.push(`<b>Scout:</b> ${esc(d.scout_name)}`);
+      if (d.station) pills.push(`<b>Station:</b> ${esc(d.station)}`);
+      if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
+      break;
+
+    case "SCOUTING_DELETED":
+      narrative = `Deleted match scouting log for <strong>Team ${esc(d.team_num || "")}</strong> (Match ${esc(d.match_type || "Q")}${esc(d.match_num || "")})`;
+      break;
+
+    case "MEMBER_APPROVED":
+      narrative = `Granted verified team access to <strong>${esc(d.member_name || "Member")}</strong>`;
+      if (d.email) pills.push(`<b>Email:</b> ${esc(d.email)}`);
+      break;
+
+    case "MEMBER_REVOKED":
+      narrative = `Revoked workspace access for <strong>${esc(d.member_name || "Member")}</strong>`;
+      break;
+
+    case "USER_LOGIN":
+      narrative = `Authenticated session for <strong>${esc(log.user_name || "Team Member")}</strong>`;
+      if (d.email) pills.push(`<b>Email:</b> ${esc(d.email)}`);
+      if (d.ip) pills.push(`<b>Origin:</b> ${esc(d.ip)}`);
+      break;
+
+    default:
+      narrative = `Performed <strong>${esc(a)}</strong> on ${esc(log.entity_type || "system")}`;
+      if (d.title) pills.push(`<b>Title:</b> ${esc(d.title)}`);
+      if (d.name) pills.push(`<b>Name:</b> ${esc(d.name)}`);
+      if (d.part_name) pills.push(`<b>Part:</b> ${esc(d.part_name)}`);
+      if (d.amount != null) pills.push(`<b>Amount:</b> $${Number(d.amount).toFixed(2)}`);
+      if (d.qty != null) pills.push(`<b>Qty:</b> ${esc(d.qty)}`);
+      if (d.status) pills.push(`<b>Status:</b> ${esc(d.status)}`);
+      if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
+      break;
+  }
+
+  const pillsHtml = pills.length ? `<div class="log-pill-cloud">${pills.map(p => `<span class="log-pill">${p}</span>`).join("")}</div>` : "";
+  const rawJson = JSON.stringify(d, null, 2);
+  const rawDetailsHtml = Object.keys(d).length > 0 ? `
+    <details class="log-raw-details">
+      <summary>View Raw JSON Payload ▾</summary>
+      <pre>${esc(rawJson)}</pre>
+    </details>
+  ` : "";
+
+  return `
+    <div>
+      <div class="log-narrative">${narrative}</div>
+      ${pillsHtml}
+      ${rawDetailsHtml}
+    </div>
+  `;
+}
+
+function renderAuditLogs() {
+  const list = $("#logs-list");
+  if (!list) return;
+
+  const searchTerm = ($("#log-search-input")?.value || "").toLowerCase().trim();
+  const filterCat = $("#log-action-filter")?.value || "ALL";
+
+  let filtered = allAuditLogs;
+
+  if (filterCat !== "ALL") {
+    filtered = filtered.filter(log => {
+      const a = log.action || "";
+      if (filterCat === "INVENTORY") return a.startsWith("ITEM_");
+      if (filterCat === "CHECKOUTS") return a.startsWith("TOOL_");
+      if (filterCat === "PLANNER") return a.startsWith("PLANNER_");
+      if (filterCat === "PARTS") return a.startsWith("PART_");
+      if (filterCat === "SHIFTS") return a.startsWith("SHIFT_");
+      if (filterCat === "SPENDING") return a.startsWith("SPENDING_");
+      if (filterCat === "STRATEGY") return a.startsWith("PLAYBOOK_");
+      if (filterCat === "SCOUTING") return a.startsWith("SCOUTING_");
+      if (filterCat === "MEMBERS") return a.startsWith("MEMBER_");
+      return true;
+    });
+  }
+
+  if (searchTerm) {
+    filtered = filtered.filter(log => {
+      const actor = (log.user_name || "").toLowerCase();
+      const action = (log.action || "").toLowerCase();
+      const detailsStr = JSON.stringify(log.details || {}).toLowerCase();
+      return actor.includes(searchTerm) || action.includes(searchTerm) || detailsStr.includes(searchTerm);
+    });
+  }
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:40px; text-align:center;" class="muted">${allAuditLogs.length ? "No matching audit log entries found for current filters." : "No activity logged yet."}</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(log => {
+    const dObj = new Date(log.created_at);
+    const dateFormatted = dObj.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+    const timeFormatted = dObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+    return `
+      <article class="logrow">
+        <div class="logtime">
+          <strong>${dateFormatted}</strong><br>
+          <span style="opacity:0.8;">${timeFormatted}</span>
+        </div>
+        <div>
+          ${formatActionBadge(log.action)}
+        </div>
+        <div>
+          ${renderVerboseLogDetails(log)}
+        </div>
+        <div style="padding-top:2px;">
+          <strong class="mono small" style="color:var(--accent-bright); display:block; word-break:break-word;">${esc(log.user_name || "Member")}</strong>
+          <small class="muted" style="font-size:10px;">${esc(log.entity_type || "")}</small>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
 async function loadLogs() {
   if (!supabase || !currentProfile?.is_admin) return;
   const list = $("#logs-list");
@@ -899,39 +1220,19 @@ async function loadLogs() {
     .from("activity_logs")
     .select("id, action, entity_type, entity_id, details, user_name, created_at")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(200);
 
   if (error) {
     list.innerHTML = `<div style="padding:40px; text-align:center;" class="muted">Could not load logs: ${esc(error.message)}</div>`;
     return;
   }
 
-  if (!data || !data.length) {
-    list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">No activity logged yet.</div>';
-    return;
-  }
-
-  list.innerHTML = data.map(log => {
-    let detailsText = "";
-    if (log.details?.title) detailsText += `<strong>${esc(log.details.title)}</strong> `;
-    if (log.details?.part_name) detailsText += `<strong>${esc(log.details.part_name)}</strong> `;
-    if (log.details?.name) detailsText += `<strong>${esc(log.details.name)}</strong> `;
-    if (log.details?.amount != null) detailsText += `($${Number(log.details.amount).toFixed(2)}) `;
-    if (log.details?.qty != null) detailsText += `(Qty: ${esc(log.details.qty)}) `;
-    if (log.details?.status) detailsText += `Status: ${esc(log.details.status)} `;
-    if (log.details?.notes) detailsText += `— ${esc(log.details.notes)}`;
-    if (!detailsText) detailsText = JSON.stringify(log.details);
-
-    return `
-      <div class="logrow">
-        <span class="logtime">${new Date(log.created_at).toLocaleDateString([], { month:'numeric', day:'numeric' })} ${new Date(log.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</span>
-        <div><span class="logaction ${esc(log.action)}">${esc(log.action)}</span></div>
-        <div class="muted" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${detailsText}</div>
-        <div class="mono small" style="color:var(--accent-bright)">${esc(log.user_name)}</div>
-      </div>
-    `;
-  }).join("");
+  allAuditLogs = data || [];
+  renderAuditLogs();
 }
+
+$("#log-search-input")?.addEventListener("input", renderAuditLogs);
+$("#log-action-filter")?.addEventListener("change", renderAuditLogs);
 
 /* Modals */
 function openProfileModal() {
@@ -1267,11 +1568,27 @@ async function saveItem(e) {
     return;
   }
 
+  const prevItem = editingItemId ? allItems.find(x => x.id === editingItemId) : null;
   await logAction(
     editingItemId ? "ITEM_UPDATED" : "ITEM_CREATED",
     "inventory_items",
     editingItemId || "new",
-    { name, category, is_tool, qty: quantity }
+    {
+      name,
+      category,
+      is_tool,
+      qty: quantity,
+      unit,
+      location,
+      min_quantity,
+      part_number,
+      notes,
+      ...(prevItem ? {
+        previous_qty: prevItem.quantity,
+        previous_location: prevItem.location,
+        previous_category: prevItem.category
+      } : {})
+    }
   );
 
   closeItemModal();
@@ -1317,7 +1634,18 @@ async function savePartNeeded(e) {
     return;
   }
 
-  await logAction("PART_NEEDED_CREATED", "parts_needed", null, { part_name, quantity, vendor, status });
+  await logAction("PART_NEEDED_CREATED", "parts_needed", null, {
+    part_name,
+    quantity,
+    subsystem,
+    vendor,
+    priority,
+    status,
+    estimated_cost,
+    part_number,
+    url,
+    notes
+  });
   closePartNeededModal();
   await loadPartsNeeded();
   toast("Part added to robot ordering queue.");
@@ -1369,11 +1697,21 @@ async function saveTask(e) {
     return;
   }
 
+  const prevTask = editingTaskId ? allTasks.find(t => t.id === editingTaskId) : null;
   await logAction(
     editingTaskId ? "PLANNER_TASK_UPDATED" : "PLANNER_TASK_CREATED",
     "planner_tasks",
     editingTaskId || "new",
-    { title, subsystem, status, priority, assigned_to }
+    {
+      title,
+      subsystem,
+      status,
+      priority,
+      assigned_to,
+      due_date,
+      description,
+      ...(prevTask ? { previous_status: prevTask.status, previous_assignee: prevTask.assigned_to } : {})
+    }
   );
 
   closeTaskModal();
@@ -1416,7 +1754,15 @@ async function saveSpending(e) {
     return;
   }
 
-  await logAction("SPENDING_RECORDED", "spending_records", null, { title, vendor, amount, category });
+  await logAction("SPENDING_RECORDED", "spending_records", null, {
+    title,
+    vendor,
+    amount,
+    category,
+    order_date,
+    order_number,
+    notes
+  });
   closeSpendingModal();
   await loadSpending();
   toast(`Recorded purchase: $${amount.toFixed(2)} at ${vendor}`);
@@ -1430,12 +1776,21 @@ async function updateQty(id, delta) {
   }
   const item = allItems.find(x => x.id === id);
   if (!item) return;
-  const newQty = Math.max(0, Number(item.quantity) + delta);
+  const prevQty = Number(item.quantity);
+  const newQty = Math.max(0, prevQty + delta);
   const { error } = await supabase.from("inventory_items").update({ quantity: newQty, updated_by: currentUser.id }).eq("id", id);
   if (error) {
     toast("Could not update quantity: " + error.message, true);
   } else {
-    await logAction("ITEM_UPDATED", "inventory_items", id, { name: item.name, delta, qty: newQty });
+    await logAction("ITEM_UPDATED", "inventory_items", id, {
+      name: item.name,
+      delta,
+      previous_qty: prevQty,
+      new_qty: newQty,
+      qty: newQty,
+      unit: item.unit || "pcs",
+      location: item.location || ""
+    });
     await loadItems(true);
   }
 }
@@ -1459,6 +1814,10 @@ $("#signin-form").addEventListener("submit", async e => {
       message(error.message, true);
       return;
     }
+    await logAction("USER_LOGIN", "auth", data.user?.id, {
+      email: data.user?.email || $("#signin-email").value.trim(),
+      client_timestamp: new Date().toISOString()
+    });
     await checkUser(data.user);
   } catch (err) {
     console.error("Sign in error:", err);
@@ -1605,7 +1964,9 @@ $("#checkout-form").addEventListener("submit", async e => {
   await logAction("TOOL_CHECKOUT", "tool_checkouts", checkingOutItem.id, {
     name: checkingOutItem.name,
     qty,
-    notes
+    notes,
+    user_name: currentProfile?.full_name || currentUser.email || "Team Member",
+    location: checkingOutItem.location || "Shop"
   });
 
   closeCheckoutModal();
@@ -1671,7 +2032,13 @@ $("#items-list").addEventListener("click", async e => {
         toast("Delete failed: " + error.message, true);
         await loadItems(true);
       } else {
-        await logAction("ITEM_DELETED", "inventory_items", id, { name: item.name });
+        await logAction("ITEM_DELETED", "inventory_items", id, {
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          location: item.location,
+          is_tool: item.is_tool
+        });
         toast("Item deleted.");
       }
     }
@@ -1681,10 +2048,16 @@ $("#items-list").addEventListener("click", async e => {
       returned_at: new Date().toISOString()
     }).eq("id", id);
 
+    const co = allCheckouts.find(c => c.id === id);
     if (error) {
       toast("Return failed: " + error.message, true);
     } else {
-      await logAction("TOOL_CHECKIN", "tool_checkouts", id, { checkout_id: id });
+      await logAction("TOOL_CHECKIN", "tool_checkouts", id, {
+        checkout_id: id,
+        name: co?.item_name || "Tool",
+        qty: co?.quantity || 1,
+        user_name: currentProfile?.full_name || currentUser.email || "Team Member"
+      });
       await Promise.all([loadCheckouts(true), loadItems(true)]);
       toast("Tool returned to shop.");
     }
@@ -1717,6 +2090,18 @@ $("#shifts-list").addEventListener("click", async e => {
     if (error) {
       toast("Failed to update roster: " + error.message, true);
     } else {
+      await logAction(
+        isAttending ? "SHIFT_LEFT" : "SHIFT_ATTENDED",
+        "team_shifts",
+        id,
+        {
+          shift_title: shift.title,
+          shift_date: shift.shift_date,
+          department: shift.department,
+          location: shift.location,
+          member_name: myName
+        }
+      );
       await loadShifts(true);
       toast(isAttending ? "Removed yourself from shift roster." : "Signed up for shift!");
     }
@@ -1803,10 +2188,18 @@ $("#parts-needed-list").addEventListener("change", async e => {
       updated_at: new Date().toISOString()
     }).eq("id", id);
 
+    const targetPart = allPartsNeeded.find(p => p.id === id);
     if (error) {
       toast("Failed to update status: " + error.message, true);
     } else {
-      await logAction("PART_STATUS_UPDATED", "parts_needed", id, { status: newStatus });
+      await logAction("PART_STATUS_UPDATED", "parts_needed", id, {
+        part_name: targetPart?.part_name || "Part",
+        previous_status: targetPart?.status || "needed",
+        new_status: newStatus,
+        status: newStatus,
+        vendor: targetPart?.vendor || "",
+        quantity: targetPart?.quantity || 1
+      });
       await loadPartsNeeded(true);
       toast(`Status updated to ${newStatus}.`);
     }
@@ -1825,11 +2218,18 @@ $("#parts-needed-list").addEventListener("click", async e => {
       allPartsNeeded = allPartsNeeded.filter(p => p.id !== id);
       renderPartsNeeded();
 
+      const targetPn = allPartsNeeded.find(p => p.id === id);
       const { error } = await supabase.from("parts_needed").delete().eq("id", id);
       if (error) {
         toast("Failed to delete: " + error.message, true);
         await loadPartsNeeded(true);
       } else {
+        await logAction("PART_NEEDED_DELETED", "parts_needed", id, {
+          part_name: targetPn?.part_name || "Part",
+          vendor: targetPn?.vendor || "",
+          quantity: targetPn?.quantity || 1,
+          status: targetPn?.status || "needed"
+        });
         toast("Part removed from queue.");
       }
     }
@@ -1843,6 +2243,7 @@ $("#checkouts-list").addEventListener("click", async e => {
   const checkoutId = b.dataset.id;
   const itemName = b.dataset.name;
 
+  const coRecord = allCheckouts.find(c => c.id === checkoutId);
   const { error } = await supabase.from("tool_checkouts").update({
     status: "returned",
     returned_at: new Date().toISOString()
@@ -1851,7 +2252,11 @@ $("#checkouts-list").addEventListener("click", async e => {
   if (error) {
     toast("Check-in failed: " + error.message, true);
   } else {
-    await logAction("TOOL_CHECKIN", "tool_checkouts", checkoutId, { name: itemName });
+    await logAction("TOOL_CHECKIN", "tool_checkouts", checkoutId, {
+      name: itemName,
+      qty: coRecord?.quantity || 1,
+      user_name: currentProfile?.full_name || currentUser.email || "Team Member"
+    });
     await Promise.all([loadCheckouts(true), loadItems(true)]);
     toast(`Returned ${itemName} to shop.`);
   }
@@ -1877,7 +2282,14 @@ $("#view-planner").addEventListener("click", async e => {
       toast("Failed to update status: " + error.message, true);
     } else {
       const logType = newStatus === "done" ? "PLANNER_TASK_COMPLETED" : "PLANNER_TASK_UPDATED";
-      await logAction(logType, "planner_tasks", id, { title: task?.title, status: newStatus });
+      await logAction(logType, "planner_tasks", id, {
+        title: task?.title,
+        previous_status: task?.status || "todo",
+        new_status: newStatus,
+        status: newStatus,
+        subsystem: task?.subsystem || "General",
+        assigned_to: task?.assigned_to || ""
+      });
       await loadTasks(true);
       toast(newStatus === "done" ? "Task marked complete! 🎉" : "Task moved to in progress.");
     }
@@ -1896,7 +2308,11 @@ $("#view-planner").addEventListener("click", async e => {
         toast("Delete failed: " + error.message, true);
         await loadTasks(true);
       } else {
-        await logAction("PLANNER_TASK_DELETED", "planner_tasks", id, { title: task?.title });
+        await logAction("PLANNER_TASK_DELETED", "planner_tasks", id, {
+          title: task?.title,
+          subsystem: task?.subsystem,
+          assigned_to: task?.assigned_to
+        });
         toast("Task removed.");
       }
     }
@@ -1913,11 +2329,18 @@ $("#spending-list").addEventListener("click", async e => {
     allSpending = allSpending.filter(s => s.id !== id);
     renderSpending();
 
+    const targetSpend = allSpending.find(s => s.id === id);
     const { error } = await supabase.from("spending_records").delete().eq("id", id);
     if (error) {
       toast("Failed to delete record: " + error.message, true);
       await loadSpending(true);
     } else {
+      await logAction("SPENDING_DELETED", "spending_records", id, {
+        title: targetSpend?.title,
+        amount: targetSpend?.amount,
+        vendor: targetSpend?.vendor,
+        category: targetSpend?.category
+      });
       toast("Purchase record deleted.");
     }
   }
@@ -1937,7 +2360,11 @@ $("#admin-members-list").addEventListener("click", async e => {
     if (error) {
       toast("Member update failed: " + error.message, true);
     } else {
-      await logAction(approve ? "MEMBER_APPROVED" : "MEMBER_REVOKED", "profiles", id, { member_name: name });
+      await logAction(approve ? "MEMBER_APPROVED" : "MEMBER_REVOKED", "profiles", id, {
+        member_name: name,
+        approved: approve,
+        timestamp: new Date().toISOString()
+      });
       await loadMembers();
       toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
     }
@@ -3209,6 +3636,11 @@ async function savePlaybookPlay() {
         created_by: currentUser.id,
         created_by_name: myName
       });
+      await logAction("PLAYBOOK_SAVED", "strategy_plays", null, {
+        play_name: name,
+        strokes_count: playHistory.length,
+        match_context: $("#strat-sim-match-type")?.value || "General Strategy"
+      });
     } catch (err) {
       console.warn("Supabase strategy play insert notice:", err);
     }
@@ -3310,8 +3742,13 @@ $("#saved-plays-grid")?.addEventListener("click", async e => {
     toast(`Play "${playName}" deleted 🗑️`);
 
     // Background sync to Supabase (match uuid or custom id)
+    const targetPlay = strategyPlays.find(p => String(p.id) === String(id));
     if (supabase) {
-      supabase.from("strategy_plays").delete().eq("id", id).catch(err => {
+      supabase.from("strategy_plays").delete().eq("id", id).then(() => {
+        logAction("PLAYBOOK_DELETED", "strategy_plays", id, {
+          play_name: targetPlay?.name || "Strategy Play"
+        });
+      }).catch(err => {
         console.warn("Background delete failed:", err);
       });
     }
@@ -4043,6 +4480,22 @@ function setupScoutingEvents() {
         created_by: currentUser.id
       }).then(({ error }) => {
         if (error) console.warn("Supabase scouting upload notice:", error.message);
+        else {
+          logAction("SCOUTING_SUBMITTED", "match_scouting_logs", record.id, {
+            team_num: record.team_num,
+            match_num: record.match_num,
+            match_type: record.match_type,
+            event_name: record.event_name,
+            est_points: record.est_points,
+            auto_fuel: record.auto_fuel,
+            tele_fuel: record.tele_fuel,
+            climb: record.climb,
+            died: record.died,
+            scout_name: record.scout_name,
+            station: record.station,
+            notes: record.notes
+          });
+        }
       }).catch(() => {});
     }
 
@@ -4166,10 +4619,18 @@ $("#scout-records-list")?.addEventListener("click", async e => {
     renderScoutingRecords();
     toast("Scouting record deleted.");
 
+    const targetScout = scoutingRecords.find(r => String(r.id) === String(id));
     // Background asynchronous DB removal
     if (supabase) {
       supabase.from("match_scouting_logs").delete().eq("id", id).then(({ error }) => {
         if (error) console.warn("Supabase scouting delete warning:", error.message);
+        else {
+          logAction("SCOUTING_DELETED", "match_scouting_logs", id, {
+            team_num: targetScout?.team_num,
+            match_num: targetScout?.match_num,
+            match_type: targetScout?.match_type
+          });
+        }
       }).catch(err => console.warn(err));
     }
   }

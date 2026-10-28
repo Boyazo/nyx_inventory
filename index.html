@@ -512,17 +512,32 @@
 
     <!-- 8. ADMIN ONLY: AUDIT LOGS VIEW -->
     <section id="view-logs" class="panel hidden">
-      <div class="toolbar">
+      <div class="toolbar" style="flex-wrap:wrap; gap:14px; align-items:flex-start;">
         <div>
           <h2>Audit & Activity Logs 🔒</h2>
-          <p class="muted small">Protected administrative event log. Tracks all inventory modifications, tool checkouts, planner actions, shifts, and spending records.</p>
+          <p class="muted small">Comprehensive system event journal. Captures every inventory change, checkout, task status, shift signup, spending entry, and scouting log with full before/after detail.</p>
         </div>
-        <button class="btn btn--ghost btn--sm" id="refresh-logs-btn" type="button">↻ Refresh Logs</button>
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap;">
+          <input type="text" id="log-search-input" placeholder="Search actor, item, play, notes…" style="width:230px; font-size:12px; padding:6px 10px;" />
+          <select id="log-action-filter" style="width:160px; font-size:12px; padding:6px 8px;">
+            <option value="ALL">All Event Types</option>
+            <option value="INVENTORY">📦 Inventory & Tools</option>
+            <option value="CHECKOUTS">🛠 Checkouts & Returns</option>
+            <option value="PLANNER">📋 Team Tasks</option>
+            <option value="PARTS">🛒 Robot Parts Needed</option>
+            <option value="SHIFTS">📅 Shop Shifts & Attendance</option>
+            <option value="SPENDING">💰 Spending & Budget</option>
+            <option value="STRATEGY">🎯 Strategy & Whiteboard</option>
+            <option value="SCOUTING">📊 Match Scouting Logs</option>
+            <option value="MEMBERS">👥 Member Permissions</option>
+          </select>
+          <button class="btn btn--ghost btn--sm" id="refresh-logs-btn" type="button">↻ Refresh Logs</button>
+        </div>
       </div>
-      <div style="display:grid; grid-template-columns:140px minmax(130px, 1fr) minmax(180px, 2fr) 120px; gap:12px; padding:10px 20px; background:rgba(255,255,255,.02); border-bottom:1px solid var(--line); font-family:var(--font-mono); font-size:10px; color:var(--text-faint);">
+      <div class="log-table-header" style="display:grid; grid-template-columns:135px 175px 1fr 140px; gap:12px; padding:10px 20px; background:rgba(255,255,255,.02); border-bottom:1px solid var(--line); font-family:var(--font-mono); font-size:10px; color:var(--text-faint);">
         <span>TIMESTAMP</span>
-        <span>ACTION</span>
-        <span>DETAILS</span>
+        <span>EVENT TYPE</span>
+        <span>DETAILED CHANGE SUMMARY</span>
         <span>PERFORMED BY</span>
       </div>
       <div id="logs-list">
