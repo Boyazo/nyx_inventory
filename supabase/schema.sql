@@ -131,6 +131,13 @@ create table if not exists public.spending_records (
 );
 
 create index if not exists spending_records_order_date_idx on public.spending_records(order_date desc);
+-- Spending Records Enhancement: Receipt image, Season Period, Edit Version History
+alter table public.spending_records add column if not exists receipt_url text not null default '';
+alter table public.spending_records add column if not exists receipt_data text not null default '';
+alter table public.spending_records add column if not exists season_period text not null default 'offseason';
+alter table public.spending_records add column if not exists edit_history jsonb not null default '[]'::jsonb;
+alter table public.spending_records add column if not exists updated_at timestamptz not null default now();
+create index if not exists spending_records_season_period_idx on public.spending_records(season_period);
 
 -- 8. Department Shifts & Calendar Table (Admins Schedule/Delete, All Members RSVP)
 create table if not exists public.team_shifts (

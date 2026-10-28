@@ -16,6 +16,8 @@ let allTasks = [];
 let allPartsNeeded = [];
 let allShifts = [];
 let allSpending = [];
+let spendingPeriodFilter = "all";
+let editingSpendingId = null;
 let activeCategory = "All";
 let activePlannerSubsystem = "All";
 let activePartsFilter = "All";
@@ -405,7 +407,7 @@ async function loadSpending(quiet) {
 
   const { data, error } = await supabase
     .from("spending_records")
-    .select("id, title, vendor, amount, category, order_date, order_number, notes, created_by_name, created_at")
+    .select("id, title, vendor, amount, category, order_date, order_number, notes, receipt_url, receipt_data, season_period, edit_history, created_by_name, created_at, updated_at")
     .order("order_date", { ascending: false });
 
   if (error) {
@@ -787,16 +789,39 @@ function renderTasks() {
   const elTasksDone = $("#tasks-done"); if (elTasksDone) elTasksDone.innerHTML = doneTasks.length ? doneTasks.map(renderCard).join("") : '<div class="muted small" style="text-align:center; padding:30px 10px;">No completed tasks yet</div>';
 }
 
+/* Helper: determine season period */
+function getSeasonPeriod(orderDate, chosenPeriod) {
+  if (chosenPeriod && chosenPeriod !== "auto") return chosenPeriod;
+  if (!orderDate) return "inseason";
+  return orderDate < "2026-01-09" ? "offseason" : "inseason";
+}
+
 /* Render Spending (Admin only) */
 function renderSpending() {
   if (!currentProfile?.is_admin) return;
-  const total = allSpending.reduce((sum, s) => sum + Number(s.amount || 0), 0);
-  const elSta = $("#spending-total-amt"); if (elSta) elSta.textContent = "$" + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const elStc = $("#spending-total-count"); if (elStc) elStc.textContent = allSpending.length;
 
-  // Find top vendor
+  // Filter based on period tab
+  const filtered = allSpending.filter(s => {
+    const period = s.season_period || getSeasonPeriod(s.order_date);
+    if (spendingPeriodFilter === "inseason") return period === "inseason";
+    if (spendingPeriodFilter === "offseason") return period === "offseason";
+    return true;
+  });
+
+  const total = filtered.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+  const elSta = $("#spending-total-amt"); if (elSta) elSta.textContent = "$" + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const elStc = $("#spending-total-count"); if (elStc) elStc.textContent = filtered.length;
+
+  const elLbl = $("#spending-total-label");
+  if (elLbl) {
+    if (spendingPeriodFilter === "inseason") elLbl.textContent = "2026 IN-SEASON TOTAL SPENT";
+    else if (spendingPeriodFilter === "offseason") elLbl.textContent = "OFFSEASON TOTAL SPENT";
+    else elLbl.textContent = "ALL-TIME TOTAL SPENT";
+  }
+
+  // Find top vendor in filtered set
   const vendorTotals = {};
-  allSpending.forEach(s => {
+  filtered.forEach(s => {
     const v = s.vendor || "Other";
     vendorTotals[v] = (vendorTotals[v] || 0) + Number(s.amount || 0);
   });
@@ -809,26 +834,47 @@ function renderSpending() {
   const list = $("#spending-list");
   if (!list) return;
 
-  if (!allSpending.length) {
-    list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">No purchases recorded yet. Click "＋ Record Purchase" to track orders!</div>';
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:40px; text-align:center;" class="muted">No purchases found for "${spendingPeriodFilter === 'all' ? 'All' : spendingPeriodFilter}". Click "＋ Record Purchase" to track orders!</div>`;
     return;
   }
 
-  list.innerHTML = allSpending.map(s => `
-    <article class="itemrow" style="grid-template-columns: 100px minmax(180px, 2fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 110px 80px;">
+  list.innerHTML = filtered.map(s => {
+    const period = s.season_period || getSeasonPeriod(s.order_date);
+    const hasReceipt = Boolean(s.receipt_data || s.receipt_url);
+    const historyCount = Array.isArray(s.edit_history) ? s.edit_history.length : 0;
+
+    return `
+    <article class="itemrow" style="grid-template-columns: 105px minmax(180px, 2fr) minmax(110px, 1.1fr) minmax(100px, 1fr) 95px 105px 110px;">
       <div class="mono small muted">${s.order_date || '—'}</div>
       <div>
-        <div class="itemname">${esc(s.title)}</div>
+        <div class="itemname" style="display:flex; align-items:center; gap:6px;">
+          <span>${esc(s.title)}</span>
+          ${historyCount > 0 ? `<button class="actionbtn" data-action="view-history" data-id="${s.id}" style="font-size:10px; padding:1px 6px; border-radius:4px; background:rgba(245, 158, 11, 0.15); color:#fbbf24; border:1px solid rgba(245, 158, 11, 0.3);" title="View ${historyCount} version edit(s)">v${historyCount + 1} history</button>` : ''}
+        </div>
         <div class="itemnotes">${s.order_number ? `PO: ${esc(s.order_number)} · ` : ''}${esc(s.notes || "No notes")}</div>
       </div>
       <div><b>${esc(s.vendor)}</b></div>
-      <div><span class="pill">${esc(s.category)}</span></div>
+      <div>
+        ${period === 'inseason'
+          ? '<span class="pill" style="background:rgba(16, 185, 129, 0.15); color:#34d399; border:1px solid rgba(16, 185, 129, 0.3);">⚡ In-Season</span>'
+          : '<span class="pill" style="background:rgba(148, 163, 184, 0.15); color:#cbd5e1; border:1px solid rgba(148, 163, 184, 0.3);">🛠️ Offseason</span>'
+        }
+      </div>
+      <div>
+        ${hasReceipt ? `
+          <button type="button" class="actionbtn" data-action="view-receipt" data-id="${s.id}" style="color:#60a5fa; border:1px solid rgba(96, 165, 250, 0.3); background:rgba(96, 165, 250, 0.1); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;" title="View attached receipt / card charge">📸 View</button>
+        ` : `
+          <span class="muted small" style="opacity:0.6;">None</span>
+        `}
+      </div>
       <div><strong class="mono" style="color:var(--green); font-size:14px;">$${Number(s.amount).toFixed(2)}</strong></div>
-      <div class="actions">
+      <div class="actions" style="display:flex; gap:4px; justify-content:flex-end;">
+        <button class="actionbtn" data-action="edit-spending" data-id="${s.id}" title="Edit purchase order">✏️</button>
         <button class="actionbtn delete" data-action="delete-spending" data-id="${s.id}" title="Delete record">🗑</button>
       </div>
     </article>
-  `).join("");
+  `}).join("");
 }
 
 /* Load Admin Members List */
@@ -1384,16 +1430,64 @@ function closeTaskModal() {
   editingTaskId = null;
 }
 
-function openSpendingModal() {
+function openSpendingModal(recordToEdit) {
   if (!currentProfile?.is_admin) return;
   $("#spending-form").reset();
-  $("#spend-date").value = new Date().toISOString().slice(0, 10);
+  $("#spend-receipt-data").value = "";
+  $("#spend-receipt-file").value = "";
+  $("#spend-receipt-preview-wrap").classList.add("hidden");
+  $("#spend-receipt-preview-img").src = "";
+
+  const titleEl = $("#spending-modal-title");
+  const saveBtn = $("#save-spending-btn");
+  const reasonWrap = $("#spend-edit-reason-wrap");
+  const reasonInput = $("#spend-edit-reason");
+
+  if (recordToEdit && recordToEdit.id) {
+    editingSpendingId = recordToEdit.id;
+    if (titleEl) titleEl.textContent = "✏️ Edit Purchase Record";
+    if (saveBtn) saveBtn.textContent = "Save Changes & Log History";
+    if (reasonWrap) reasonWrap.classList.remove("hidden");
+    if (reasonInput) {
+      reasonInput.required = true;
+      reasonInput.value = "";
+    }
+
+    $("#spend-title").value = recordToEdit.title || "";
+    $("#spend-vendor").value = recordToEdit.vendor || "";
+    $("#spend-amount").value = recordToEdit.amount != null ? recordToEdit.amount : "";
+    $("#spend-category").value = recordToEdit.category || "Robot Hardware";
+    $("#spend-date").value = recordToEdit.order_date || new Date().toISOString().slice(0, 10);
+    $("#spend-order-number").value = recordToEdit.order_number || "";
+    $("#spend-notes").value = recordToEdit.notes || "";
+    $("#spend-season-period").value = recordToEdit.season_period || "auto";
+
+    if (recordToEdit.receipt_data || recordToEdit.receipt_url) {
+      const src = recordToEdit.receipt_data || recordToEdit.receipt_url;
+      $("#spend-receipt-data").value = src;
+      $("#spend-receipt-preview-img").src = src;
+      $("#spend-receipt-preview-wrap").classList.remove("hidden");
+    }
+  } else {
+    editingSpendingId = null;
+    if (titleEl) titleEl.textContent = "Record Purchase Order";
+    if (saveBtn) saveBtn.textContent = "Save Record";
+    if (reasonWrap) reasonWrap.classList.add("hidden");
+    if (reasonInput) {
+      reasonInput.required = false;
+      reasonInput.value = "";
+    }
+    $("#spend-date").value = new Date().toISOString().slice(0, 10);
+    $("#spend-season-period").value = "auto";
+  }
+
   $("#spending-modal").classList.remove("hidden");
   $("#spend-title").focus();
 }
 
 function closeSpendingModal() {
   $("#spending-modal").classList.add("hidden");
+  editingSpendingId = null;
 }
 
 /* Save User Profile (Name & Departments) */
@@ -1720,7 +1814,7 @@ async function saveTask(e) {
   toast(editingTaskId ? "Task updated." : "Task added to team planner.");
 }
 
-/* Spending Save (Admin only) */
+/* Spending Save (Admin only) - supports Editing + Receipt Screenshot + Auto Season Period + Version History */
 async function saveSpending(e) {
   e.preventDefault();
   if (!currentProfile?.is_admin) return;
@@ -1732,41 +1826,133 @@ async function saveSpending(e) {
   const order_date = $("#spend-date").value || new Date().toISOString().slice(0, 10);
   const order_number = $("#spend-order-number").value.trim();
   const notes = $("#spend-notes").value.trim();
+  const chosenPeriod = $("#spend-season-period").value;
+  const season_period = getSeasonPeriod(order_date, chosenPeriod);
+  const receipt_data = $("#spend-receipt-data").value.trim();
+  const editReason = $("#spend-edit-reason")?.value.trim() || "";
 
   if (!title || !vendor || isNaN(amount) || amount < 0) {
     toast("Enter a valid title, vendor, and amount.", true);
     return;
   }
 
-  const btn = $("#save-spending-btn");
-  btn.disabled = true;
-
-  const payload = {
-    title, vendor, amount, category, order_date, order_number, notes,
-    created_by: currentUser.id,
-    created_by_name: currentProfile?.full_name || "Admin"
-  };
-
-  const { error } = await supabase.from("spending_records").insert(payload);
-  btn.disabled = false;
-
-  if (error) {
-    toast("Failed to record spending: " + error.message, true);
+  // Force screenshot of receipt or credit card charge
+  if (!receipt_data) {
+    toast("A receipt / credit card charge screenshot is mandatory for expense verification.", true);
+    $("#spend-receipt-file")?.focus();
     return;
   }
 
-  await logAction("SPENDING_RECORDED", "spending_records", null, {
-    title,
-    vendor,
-    amount,
-    category,
-    order_date,
-    order_number,
-    notes
-  });
-  closeSpendingModal();
-  await loadSpending();
-  toast(`Recorded purchase: $${amount.toFixed(2)} at ${vendor}`);
+  if (editingSpendingId && !editReason) {
+    toast("Please enter the reason for editing this expense (for version history).", true);
+    $("#spend-edit-reason")?.focus();
+    return;
+  }
+
+  const btn = $("#save-spending-btn");
+  btn.disabled = true;
+
+  if (editingSpendingId) {
+    const existing = allSpending.find(s => s.id === editingSpendingId);
+    const existingHistory = Array.isArray(existing?.edit_history) ? [...existing.edit_history] : [];
+
+    const changes = {};
+    if (existing) {
+      if (existing.title !== title) changes.title = { from: existing.title, to: title };
+      if (existing.vendor !== vendor) changes.vendor = { from: existing.vendor, to: vendor };
+      if (Number(existing.amount) !== amount) changes.amount = { from: existing.amount, to: amount };
+      if (existing.category !== category) changes.category = { from: existing.category, to: category };
+      if (existing.order_date !== order_date) changes.order_date = { from: existing.order_date, to: order_date };
+      if ((existing.order_number || "") !== order_number) changes.order_number = { from: existing.order_number || "", to: order_number };
+      if ((existing.notes || "") !== notes) changes.notes = { from: existing.notes || "", to: notes };
+      if ((existing.season_period || getSeasonPeriod(existing.order_date)) !== season_period) {
+        changes.season_period = { from: existing.season_period || getSeasonPeriod(existing.order_date), to: season_period };
+      }
+    }
+
+    const versionEntry = {
+      version: existingHistory.length + 1,
+      edited_at: new Date().toISOString(),
+      edited_by: currentUser.id,
+      edited_by_name: currentProfile?.full_name || "Admin",
+      reason: editReason,
+      changes: Object.keys(changes).length ? changes : { note: "Receipt or metadata updated" }
+    };
+
+    existingHistory.push(versionEntry);
+
+    const updatePayload = {
+      title,
+      vendor,
+      amount,
+      category,
+      order_date,
+      order_number,
+      notes,
+      season_period,
+      receipt_data,
+      edit_history: existingHistory,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from("spending_records").update(updatePayload).eq("id", editingSpendingId);
+    btn.disabled = false;
+
+    if (error) {
+      toast("Failed to update spending record: " + error.message, true);
+      return;
+    }
+
+    await logAction("SPENDING_UPDATED", "spending_records", editingSpendingId, {
+      title,
+      amount,
+      vendor,
+      reason: editReason,
+      changes
+    });
+
+    closeSpendingModal();
+    await loadSpending();
+    toast(`Updated expense: $${amount.toFixed(2)} at ${vendor} (v${existingHistory.length} saved)`);
+  } else {
+    const payload = {
+      title,
+      vendor,
+      amount,
+      category,
+      order_date,
+      order_number,
+      notes,
+      season_period,
+      receipt_data,
+      edit_history: [],
+      created_by: currentUser.id,
+      created_by_name: currentProfile?.full_name || "Admin"
+    };
+
+    const { error } = await supabase.from("spending_records").insert(payload);
+    btn.disabled = false;
+
+    if (error) {
+      toast("Failed to record spending: " + error.message, true);
+      return;
+    }
+
+    await logAction("SPENDING_RECORDED", "spending_records", null, {
+      title,
+      vendor,
+      amount,
+      category,
+      order_date,
+      order_number,
+      season_period,
+      notes
+    });
+
+    closeSpendingModal();
+    await loadSpending();
+    toast(`Recorded purchase: $${amount.toFixed(2)} at ${vendor}`);
+  }
 }
 
 /* Update Quantity Quick Buttons (Admin only) */
@@ -2323,32 +2509,208 @@ $("#view-planner").addEventListener("click", async e => {
   }
 });
 
-/* Spending Actions */
+/* Spending Actions (Edit, Delete, Receipt View, History View) */
 $("#spending-list").addEventListener("click", async e => {
-  const b = e.target.closest("button[data-action='delete-spending']");
-  if (!b || !currentProfile?.is_admin) return;
-  const id = b.dataset.id;
-  if (confirm("Delete this purchase order record?")) {
-    // Optimistic instant UI update
-    allSpending = allSpending.filter(s => s.id !== id);
-    renderSpending();
+  const deleteBtn = e.target.closest("button[data-action='delete-spending']");
+  const editBtn = e.target.closest("button[data-action='edit-spending']");
+  const receiptBtn = e.target.closest("button[data-action='view-receipt']");
+  const historyBtn = e.target.closest("button[data-action='view-history']");
 
-    const targetSpend = allSpending.find(s => s.id === id);
-    const { error } = await supabase.from("spending_records").delete().eq("id", id);
-    if (error) {
-      toast("Failed to delete record: " + error.message, true);
-      await loadSpending(true);
+  if (editBtn && currentProfile?.is_admin) {
+    const id = editBtn.dataset.id;
+    const item = allSpending.find(s => s.id === id);
+    if (item) openSpendingModal(item);
+    return;
+  }
+
+  if (receiptBtn) {
+    const id = receiptBtn.dataset.id;
+    const item = allSpending.find(s => s.id === id);
+    if (item && (item.receipt_data || item.receipt_url)) {
+      openReceiptViewer(item);
     } else {
-      await logAction("SPENDING_DELETED", "spending_records", id, {
-        title: targetSpend?.title,
-        amount: targetSpend?.amount,
-        vendor: targetSpend?.vendor,
-        category: targetSpend?.category
-      });
-      toast("Purchase record deleted.");
+      toast("No receipt image attached to this record.", true);
+    }
+    return;
+  }
+
+  if (historyBtn) {
+    const id = historyBtn.dataset.id;
+    const item = allSpending.find(s => s.id === id);
+    if (item) openSpendingHistory(item);
+    return;
+  }
+
+  if (deleteBtn && currentProfile?.is_admin) {
+    const id = deleteBtn.dataset.id;
+    if (confirm("Delete this purchase order record?")) {
+      const targetSpend = allSpending.find(s => s.id === id);
+      allSpending = allSpending.filter(s => s.id !== id);
+      renderSpending();
+
+      const { error } = await supabase.from("spending_records").delete().eq("id", id);
+      if (error) {
+        toast("Failed to delete record: " + error.message, true);
+        await loadSpending(true);
+      } else {
+        await logAction("SPENDING_DELETED", "spending_records", id, {
+          title: targetSpend?.title,
+          amount: targetSpend?.amount,
+          vendor: targetSpend?.vendor,
+          category: targetSpend?.category
+        });
+        toast("Purchase record deleted.");
+      }
     }
   }
 });
+
+/* Spending Season Filter Tabs */
+$("#spending-season-filter-tabs")?.addEventListener("click", e => {
+  const pill = e.target.closest(".filterpill");
+  if (!pill) return;
+  $$("#spending-season-filter-tabs .filterpill").forEach(p => p.classList.remove("active"));
+  pill.classList.add("active");
+  spendingPeriodFilter = pill.dataset.period || "all";
+  renderSpending();
+});
+
+/* Receipt File Upload with Image Compression (to avoid 500MB bloat) */
+$("#spend-receipt-file")?.addEventListener("change", e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    toast("Please choose an image file (PNG, JPG, WebP).", true);
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const rawData = evt.target.result;
+    // Compress image via offscreen canvas to optimize storage
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 1200;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedData = canvas.toDataURL("image/jpeg", 0.78);
+
+      $("#spend-receipt-data").value = compressedData;
+      $("#spend-receipt-preview-img").src = compressedData;
+      $("#spend-receipt-preview-wrap").classList.remove("hidden");
+    };
+    img.src = rawData;
+  };
+  reader.readAsDataURL(file);
+});
+
+$("#spend-receipt-remove-btn")?.addEventListener("click", () => {
+  $("#spend-receipt-data").value = "";
+  $("#spend-receipt-file").value = "";
+  $("#spend-receipt-preview-img").src = "";
+  $("#spend-receipt-preview-wrap").classList.add("hidden");
+});
+
+/* Receipt Viewer Modal Logic */
+function openReceiptViewer(record) {
+  const src = record.receipt_data || record.receipt_url;
+  if (!src) return;
+  const modal = $("#receipt-modal");
+  const img = $("#receipt-modal-img");
+  const title = $("#receipt-modal-title");
+  const caption = $("#receipt-modal-caption");
+
+  if (title) title.textContent = `Receipt: ${record.title} ($${Number(record.amount).toFixed(2)})`;
+  if (caption) caption.textContent = `Vendor: ${record.vendor} · Date: ${record.order_date || '—'}`;
+  if (img) img.src = src;
+
+  const downloadBtn = $("#download-receipt-img-btn");
+  if (downloadBtn) {
+    downloadBtn.onclick = () => {
+      const a = document.createElement("a");
+      a.href = src;
+      a.download = `Receipt_${(record.vendor || "order").replace(/\s+/g, "_")}_${record.order_date || "2026"}.jpg`;
+      a.click();
+    };
+  }
+
+  modal?.classList.remove("hidden");
+}
+
+function closeReceiptViewer() {
+  $("#receipt-modal")?.classList.add("hidden");
+}
+
+$("#close-receipt-modal")?.addEventListener("click", closeReceiptViewer);
+$("#receipt-modal")?.addEventListener("click", e => { if (e.target.id === "receipt-modal") closeReceiptViewer(); });
+
+/* Version History Modal Logic */
+function openSpendingHistory(record) {
+  const modal = $("#spending-history-modal");
+  const list = $("#spending-history-list");
+  const title = $("#spending-history-modal-title");
+
+  if (title) title.textContent = `History: ${record.title} (${record.vendor})`;
+
+  const history = Array.isArray(record.edit_history) ? record.edit_history : [];
+  if (!history.length) {
+    list.innerHTML = `<div class="muted small" style="padding:20px; text-align:center;">No previous edits recorded for this entry.</div>`;
+  } else {
+    list.innerHTML = history.slice().reverse().map(h => {
+      const changeItems = Object.entries(h.changes || {}).map(([key, diff]) => {
+        if (diff && typeof diff === 'object' && 'from' in diff && 'to' in diff) {
+          return `<li><b>${esc(key)}:</b> <span style="text-decoration:line-through; opacity:0.6;">${esc(String(diff.from))}</span> ➔ <span style="color:#34d399;">${esc(String(diff.to))}</span></li>`;
+        }
+        return `<li><b>${esc(key)}:</b> ${esc(JSON.stringify(diff))}</li>`;
+      }).join("");
+
+      return `
+        <div style="background:rgba(255,255,255,0.04); border:1px solid var(--line-glass); border-radius:8px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="color:#fbbf24; font-size:13px;">Version ${h.version || '—'}</strong>
+            <span class="mono muted small">${h.edited_at ? new Date(h.edited_at).toLocaleString() : '—'}</span>
+          </div>
+          <div class="small" style="margin-bottom:6px;">
+            <span class="muted">Edited by:</span> <b>${esc(h.edited_by_name || "Admin")}</b>
+          </div>
+          <div class="small" style="margin-bottom:8px; background:rgba(251, 191, 36, 0.1); border-left:3px solid #fbbf24; padding:6px 10px; border-radius:4px;">
+            <span class="muted">Reason:</span> <i>"${esc(h.reason || "No reason given")}"</i>
+          </div>
+          <div class="small">
+            <span class="muted">Modifications:</span>
+            <ul style="margin:4px 0 0 16px; padding:0; display:flex; flex-direction:column; gap:2px;">
+              ${changeItems || '<li>Metadata updated</li>'}
+            </ul>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  modal?.classList.remove("hidden");
+}
+
+function closeSpendingHistory() {
+  $("#spending-history-modal")?.classList.add("hidden");
+}
+
+$("#close-spending-history-modal")?.addEventListener("click", closeSpendingHistory);
+$("#spending-history-modal")?.addEventListener("click", e => { if (e.target.id === "spending-history-modal") closeSpendingHistory(); });
 
 /* Admin Member Actions */
 $("#admin-members-list").addEventListener("click", async e => {
@@ -3162,19 +3524,27 @@ function initPlaybook() {
       playHistory.push({ type: 'token', x: coords.x, y: coords.y, label: `R${(redCount % 3) + 1}`, color: '#ef4444' });
       renderCanvas();
       isDrawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      activePointerId = null;
     } else if (activeTool === "token-blue") {
       const blueCount = playHistory.filter(a => a.type === 'token' && a.label?.startsWith('B')).length;
       playHistory.push({ type: 'token', x: coords.x, y: coords.y, label: `B${(blueCount % 3) + 1}`, color: '#3b82f6' });
       renderCanvas();
       isDrawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      activePointerId = null;
     } else if (activeTool === "piece-fuel") {
       playHistory.push({ type: 'piece', x: coords.x, y: coords.y, kind: 'fuel' });
       renderCanvas();
       isDrawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      activePointerId = null;
     } else if (activeTool === "piece-relic") {
       playHistory.push({ type: 'piece', x: coords.x, y: coords.y, kind: 'relic' });
       renderCanvas();
       isDrawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      activePointerId = null;
     } else if (activeTool === "eraser") {
       eraseAtPoint(coords.x, coords.y);
     }

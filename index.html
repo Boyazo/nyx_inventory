@@ -477,11 +477,11 @@
       </div>
 
       <!-- Spending Summary Metrics -->
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; padding: 0 24px 20px;">
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; padding: 0 24px 14px;">
         <div class="stat" style="padding:14px 18px;">
-          <small>TOTAL SEASON SPENT</small>
+          <small id="spending-total-label">FILTERED TOTAL SPENT</small>
           <strong id="spending-total-amt" style="color:var(--green); font-size:28px;">$0.00</strong>
-          <p class="muted">All recorded purchase orders</p>
+          <p class="muted" id="spending-total-sub">Showing current filter</p>
         </div>
         <div class="stat" style="padding:14px 18px;">
           <small>RECORDED ORDERS</small>
@@ -495,11 +495,24 @@
         </div>
       </div>
 
-      <div class="tablehead" style="grid-template-columns: 100px minmax(180px, 2fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 110px 80px;">
+      <!-- Season Separation Filters -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0 24px 16px; flex-wrap:wrap; gap:10px;">
+        <div class="filterbar" id="spending-season-filter-tabs" style="display:flex; gap:8px;">
+          <button class="filterpill active" data-period="all" type="button">All Purchases</button>
+          <button class="filterpill" data-period="inseason" type="button">⚡ In-Season 2026 (Jan 9+)</button>
+          <button class="filterpill" data-period="offseason" type="button">🛠️ Offseason Pre-Kickoff</button>
+        </div>
+        <div class="muted small" style="display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span> Kickoff Threshold: Jan 9, 2026
+        </div>
+      </div>
+
+      <div class="tablehead" style="grid-template-columns: 105px minmax(180px, 2fr) minmax(110px, 1.1fr) minmax(100px, 1fr) 95px 105px 110px;">
         <span>DATE</span>
         <span>ORDER / TITLE</span>
         <span>VENDOR</span>
-        <span>CATEGORY</span>
+        <span>PERIOD</span>
+        <span>RECEIPT</span>
         <span>AMOUNT</span>
         <span>ACTIONS</span>
       </div>
@@ -1734,11 +1747,40 @@
           </div>
         </div>
 
-        <label for="spend-order-number">Order # / PO Reference</label>
-        <input id="spend-order-number" maxlength="60" placeholder="e.g. PO-2026-11744-012">
+        <div class="formgrid">
+          <div>
+            <label for="spend-season-period">Season Period *</label>
+            <select id="spend-season-period">
+              <option value="auto">⚡ Auto (Kickoff is Jan 9, 2026)</option>
+              <option value="offseason">🛠️ Offseason Purchase</option>
+              <option value="inseason">🏆 In-Season Build Purchase</option>
+            </select>
+          </div>
+          <div>
+            <label for="spend-order-number">Order # / PO Reference</label>
+            <input id="spend-order-number" maxlength="60" placeholder="e.g. PO-2026-11744-012">
+          </div>
+        </div>
+
+        <!-- Mandatory Receipt / Charge Screenshot -->
+        <div style="background:rgba(255,255,255,0.03); border:1px dashed var(--accent-line); border-radius:10px; padding:14px; margin:14px 0;">
+          <label style="margin-top:0; font-weight:700; color:var(--accent-bright);">📸 Receipt / Credit Card Charge Screenshot * (Mandatory)</label>
+          <p class="muted small" style="margin-bottom:8px;">Upload a screenshot of the credit card charge, invoice, or store receipt to verify team expense reporting.</p>
+          <input type="file" id="spend-receipt-file" accept="image/*" style="font-size:12px; padding:6px;">
+          <div id="spend-receipt-preview-wrap" class="hidden" style="margin-top:10px; display:flex; align-items:center; gap:12px;">
+            <img id="spend-receipt-preview-img" src="" alt="Receipt Preview" style="max-height:90px; border-radius:6px; border:1px solid var(--line-glass); object-fit:contain; background:#fff;" />
+            <button type="button" class="btn btn--danger btn--sm" id="spend-receipt-remove-btn" style="padding:4px 8px; font-size:11px;">Remove Image</button>
+          </div>
+          <input type="hidden" id="spend-receipt-data" />
+        </div>
 
         <label for="spend-notes">Notes / Grant / Card Details</label>
-        <textarea id="spend-notes" maxlength="600" rows="2" placeholder="Purchased with NASA Grant, invoice saved in Google Drive…"></textarea>
+        <textarea id="spend-notes" maxlength="600" rows="2" placeholder="Purchased with NASA Grant, credit card ending in 4122…"></textarea>
+
+        <div id="spend-edit-reason-wrap" class="hidden" style="margin-top:10px;">
+          <label for="spend-edit-reason" style="color:#fbbf24;">Reason for Editing (Logged to Version History) *</label>
+          <input id="spend-edit-reason" maxlength="160" placeholder="e.g. Adjusted tax & shipping charges from final invoice">
+        </div>
 
         <div class="modalactions">
           <button type="button" class="btn btn--ghost" id="cancel-spending-modal">Cancel</button>
@@ -1966,6 +2008,39 @@
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
         <button class="btn btn--primary btn--sm" id="print-barcode-btn" type="button">🖨️ Print Shop Label</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Receipt Viewer Modal -->
+  <div id="receipt-modal" class="modalback hidden" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:540px; text-align:center;">
+      <div class="modalhead">
+        <h3 id="receipt-modal-title">Receipt / Charge Verification</h3>
+        <button class="close" id="close-receipt-modal" type="button">✕</button>
+      </div>
+      <div style="margin:16px 0; max-height:65vh; overflow-y:auto; background:rgba(0,0,0,0.4); border-radius:10px; padding:10px;">
+        <img id="receipt-modal-img" src="" alt="Receipt Screenshot" style="max-width:100%; border-radius:8px;" />
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="receipt-modal-caption" class="muted small"></span>
+        <button class="btn btn--ghost btn--sm" id="download-receipt-img-btn" type="button">Download Image</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spending Version History Modal -->
+  <div id="spending-history-modal" class="modalback hidden" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:620px;">
+      <div class="modalhead">
+        <div>
+          <span class="eyebrow">AUDIT TRAIL</span>
+          <h3 id="spending-history-modal-title" style="margin:2px 0 0 0;">Expense Edit Version History</h3>
+        </div>
+        <button class="close" id="close-spending-history-modal" type="button">✕</button>
+      </div>
+      <div id="spending-history-list" style="margin-top:16px; display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto;">
+        <!-- Populated dynamically -->
       </div>
     </div>
   </div>
