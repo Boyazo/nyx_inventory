@@ -497,6 +497,7 @@ function renderItems() {
         </div>
 
         <div class="actions">
+          <button class="actionbtn" data-action="label-qr" data-id="${esc(x.id)}" title="Print bin label & QR code">🏷️ Label</button>
           ${x.is_tool ? `
             <button class="actionbtn checkout" data-action="checkout" data-id="${esc(x.id)}">Borrow ↗</button>
           ` : ''}
@@ -2004,7 +2005,10 @@ $("#items-list").addEventListener("click", async e => {
   const id = b.dataset.id;
   const isAdmin = !!currentProfile?.is_admin;
 
-  if (action === "edit") {
+  if (action === "label-qr") {
+    const item = allItems.find(x => x.id === id);
+    if (item) openBarcodeModal(item);
+  } else if (action === "edit") {
     if (!isAdmin) return;
     const item = allItems.find(x => x.id === id);
     if (item) openItemModal(item);
@@ -5173,6 +5177,268 @@ function initMobilePopupSheets() {
     });
   });
 }
+
+
+/* --------------------------------------------------------------------------
+   CSV EXPORTERS FOR INVENTORY, PARTS NEEDED, AND SPENDING
+   -------------------------------------------------------------------------- */
+function downloadCSV(filename, csvContent) {
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportInventoryCSV() {
+  if (!allItems || !allItems.length) {
+    toast("No inventory items to export.", true);
+    return;
+  }
+  const headers = ["ID", "Name", "Category", "IsTool", "Quantity", "MinQuantity", "Unit", "Location", "PartNumber", "Notes", "UpdatedAt"];
+  const rows = allItems.map(item => [
+    item.id,
+    `"${(item.name || '').replace(/"/g, '""')}"`,
+    item.category || '',
+    item.is_tool ? 'Yes' : 'No',
+    item.quantity ?? 0,
+    item.min_quantity ?? 1,
+    `"${(item.unit || 'pcs').replace(/"/g, '""')}"`,
+    `"${(item.location || '').replace(/"/g, '""')}"`,
+    `"${(item.part_number || '').replace(/"/g, '""')}"`,
+    `"${(item.notes || '').replace(/"/g, '""')}"`,
+    item.updated_at || ''
+  ]);
+  const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  downloadCSV(`nyx11744_inventory_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  toast(`Exported ${allItems.length} inventory items to CSV!`);
+}
+
+function exportPartsNeededCSV() {
+  if (!allPartsNeeded || !allPartsNeeded.length) {
+    toast("No parts needed records to export.", true);
+    return;
+  }
+  const headers = ["ID", "PartName", "Subsystem", "Quantity", "Vendor", "Priority", "Status", "EstimatedCost", "PartNumber", "URL", "Notes", "CreatedAt"];
+  const rows = allPartsNeeded.map(p => [
+    p.id,
+    `"${(p.part_name || '').replace(/"/g, '""')}"`,
+    p.subsystem || 'Mechanical',
+    p.quantity ?? 1,
+    `"${(p.vendor || '').replace(/"/g, '""')}"`,
+    p.priority || 'medium',
+    p.status || 'needed',
+    p.estimated_cost ?? 0,
+    `"${(p.part_number || '').replace(/"/g, '""')}"`,
+    `"${(p.url || '').replace(/"/g, '""')}"`,
+    `"${(p.notes || '').replace(/"/g, '""')}"`,
+    p.created_at || ''
+  ]);
+  const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  downloadCSV(`nyx11744_robot_parts_needed_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  toast(`Exported ${allPartsNeeded.length} parts needed records to CSV!`);
+}
+
+function exportSpendingCSV() {
+  if (!allSpending || !allSpending.length) {
+    toast("No spending records to export.", true);
+    return;
+  }
+  const headers = ["ID", "Title", "Vendor", "Amount", "Category", "OrderDate", "OrderNumber", "Notes", "LoggedBy", "CreatedAt"];
+  const rows = allSpending.map(s => [
+    s.id,
+    `"${(s.title || '').replace(/"/g, '""')}"`,
+    `"${(s.vendor || '').replace(/"/g, '""')}"`,
+    s.amount ?? 0,
+    s.category || 'Mechanical',
+    s.order_date || '',
+    `"${(s.order_number || '').replace(/"/g, '""')}"`,
+    `"${(s.notes || '').replace(/"/g, '""')}"`,
+    `"${(s.created_by_name || 'Admin').replace(/"/g, '""')}"`,
+    s.created_at || ''
+  ]);
+  const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  downloadCSV(`nyx11744_spending_ledger_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  toast(`Exported ${allSpending.length} purchase orders to CSV!`);
+}
+
+$("#export-inventory-csv-btn")?.addEventListener("click", exportInventoryCSV);
+$("#export-parts-needed-csv-btn")?.addEventListener("click", exportPartsNeededCSV);
+$("#export-spending-csv-btn")?.addEventListener("click", exportSpendingCSV);
+
+/* --------------------------------------------------------------------------
+   UNIVERSAL COMMAND PALETTE (CTRL+K / CMD+K) & KEYBOARD SHORTCUTS
+   -------------------------------------------------------------------------- */
+const commandList = [
+  { id: "goto-inventory", label: "Go to Shop Inventory", icon: "📦", category: "Navigation", run: () => { screens("inventory"); views("inventory"); } },
+  { id: "goto-checkouts", label: "Go to Active Checkouts", icon: "🛠️", category: "Navigation", run: () => { screens("inventory"); views("checkouts"); } },
+  { id: "goto-parts", label: "Go to Robot Parts Needed", icon: "🤖", category: "Navigation", run: () => { screens("inventory"); views("parts-needed"); } },
+  { id: "goto-shifts", label: "Go to Lab Shifts & Calendar", icon: "📅", category: "Navigation", run: () => { screens("inventory"); views("shifts"); } },
+  { id: "goto-planner", label: "Go to Team Planner", icon: "📋", category: "Navigation", run: () => { screens("inventory"); views("planner"); } },
+  { id: "goto-spending", label: "Go to Spending & Budget Tracker", icon: "💰", category: "Navigation", run: () => { screens("inventory"); views("spending"); } },
+  { id: "goto-members", label: "Go to Member Permissions & Access", icon: "👥", category: "Navigation", run: () => { screens("inventory"); views("members"); } },
+  { id: "goto-logs", label: "Go to Audit & Activity Logs", icon: "🔒", category: "Navigation", run: () => { screens("inventory"); views("logs"); } },
+  { id: "goto-playbook", label: "Go to Strategy Tactical Whiteboard", icon: "🎯", category: "Strategy", run: () => { screens("strategy"); stratViews("playbook"); } },
+  { id: "goto-rankings", label: "Go to Statbotics Team Rankings", icon: "📊", category: "Strategy", run: () => { screens("strategy"); stratViews("rankings"); } },
+  { id: "goto-scouting", label: "Go to Match Scouting Sheet", icon: "📝", category: "Strategy", run: () => { screens("strategy"); stratViews("scouting"); } },
+  { id: "goto-simulator", label: "Go to Match Simulator (Monte Carlo)", icon: "🎲", category: "Strategy", run: () => { screens("strategy"); stratViews("simulator"); } },
+  { id: "action-theme", label: "Toggle Dark / Light Mode", icon: "🌓", category: "Settings", run: () => {
+    const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+    setTheme(isDark ? "light" : "dark");
+  }},
+  { id: "action-profile", label: "Edit My Name & Departments", icon: "⚙️", category: "Profile", run: () => openProfileModal() },
+  { id: "action-add-item", label: "Add New Inventory Item", icon: "＋", category: "Action", run: () => openItemModal() },
+  { id: "action-add-shift", label: "Schedule Lab Shift", icon: "＋", category: "Action", run: () => openShiftModal() },
+  { id: "action-add-task", label: "Create Team Task", icon: "＋", category: "Action", run: () => openTaskModal() }
+];
+
+function openCommandPalette() {
+  const modal = $("#command-palette-modal");
+  const input = $("#command-palette-input");
+  if (!modal || !input) return;
+  modal.classList.remove("hidden");
+  input.value = "";
+  renderCommandPaletteResults("");
+  input.focus();
+}
+
+function closeCommandPalette() {
+  $("#command-palette-modal")?.classList.add("hidden");
+}
+
+function renderCommandPaletteResults(query) {
+  const container = $("#command-palette-results");
+  if (!container) return;
+  const q = query.toLowerCase().trim();
+
+  // Search built-in commands
+  let matchedCmds = commandList.filter(cmd => {
+    if (cmd.id === "goto-spending" || cmd.id === "goto-members" || cmd.id === "goto-logs" || cmd.id === "action-add-item" || cmd.id === "action-add-shift") {
+      if (!currentProfile?.is_admin) return false;
+    }
+    return !q || cmd.label.toLowerCase().includes(q) || cmd.category.toLowerCase().includes(q);
+  });
+
+  // Search items directly
+  const matchedItems = (allItems || []).filter(item => {
+    return q && (item.name.toLowerCase().includes(q) || (item.location || '').toLowerCase().includes(q) || (item.part_number || '').toLowerCase().includes(q));
+  }).slice(0, 5);
+
+  let html = "";
+
+  if (matchedCmds.length) {
+    html += matchedCmds.map(cmd => `
+      <div class="cmd-item" data-cmd-id="${cmd.id}">
+        <div class="cmd-item-left">
+          <span class="cmd-item-icon">${cmd.icon}</span>
+          <strong>${esc(cmd.label)}</strong>
+        </div>
+        <span class="cmd-item-badge">${esc(cmd.category)}</span>
+      </div>
+    `).join("");
+  }
+
+  if (matchedItems.length) {
+    html += `<div style="font-family:var(--font-mono); font-size:10px; color:var(--text-faint); margin:8px 6px 4px;">SHOP INVENTORY MATCHES</div>`;
+    html += matchedItems.map(item => `
+      <div class="cmd-item" data-item-id="${item.id}">
+        <div class="cmd-item-left">
+          <span class="cmd-item-icon">📦</span>
+          <span><strong>${esc(item.name)}</strong> · ${item.quantity} ${esc(item.unit || 'pcs')}</span>
+        </div>
+        <span class="cmd-item-badge">${esc(item.location || 'Shop')}</span>
+      </div>
+    `).join("");
+  }
+
+  if (!html) {
+    html = `<div style="padding:24px; text-align:center;" class="muted">No commands or items matching "${esc(query)}"</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+$("#command-palette-input")?.addEventListener("input", e => {
+  renderCommandPaletteResults(e.target.value);
+});
+
+$("#command-palette-results")?.addEventListener("click", e => {
+  const cmdRow = e.target.closest(".cmd-item");
+  if (!cmdRow) return;
+
+  const cmdId = cmdRow.dataset.cmdId;
+  const itemId = cmdRow.dataset.itemId;
+
+  if (cmdId) {
+    const cmd = commandList.find(c => c.id === cmdId);
+    if (cmd) {
+      closeCommandPalette();
+      cmd.run();
+    }
+  } else if (itemId) {
+    const item = allItems.find(x => x.id === itemId);
+    closeCommandPalette();
+    if (item) {
+      screens("inventory");
+      views("inventory");
+      $("#search-items").value = item.name;
+      renderItems();
+    }
+  }
+});
+
+$("#global-command-trigger")?.addEventListener("click", openCommandPalette);
+
+window.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    const modal = $("#command-palette-modal");
+    if (modal && !modal.classList.contains("hidden")) {
+      closeCommandPalette();
+    } else {
+      openCommandPalette();
+    }
+  } else if (e.key === "Escape") {
+    closeCommandPalette();
+    $("#barcode-modal")?.classList.add("hidden");
+  }
+});
+
+$("#command-palette-modal")?.addEventListener("click", e => {
+  if (e.target.id === "command-palette-modal") closeCommandPalette();
+});
+
+/* --------------------------------------------------------------------------
+   ITEM QR LABEL GENERATOR & MODAL
+   -------------------------------------------------------------------------- */
+function openBarcodeModal(item) {
+  if (!item) return;
+  const modal = $("#barcode-modal");
+  if (!modal) return;
+
+  $("#barcode-item-name").textContent = item.name;
+  $("#barcode-part-num").textContent = item.part_number ? `P/N: ${item.part_number}` : `CAT: ${item.category.toUpperCase()}`;
+  $("#barcode-location").textContent = `STORAGE: ${item.location || 'Main Shop Bin'} · QTY: ${item.quantity} ${item.unit || 'pcs'}`;
+
+  // QR Code generator using quick lightweight SVG QR
+  const qrContainer = $("#barcode-qr-container");
+  const encodedData = encodeURIComponent(`NYX11744-ITEM:${item.id}|${item.name}`);
+  qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodedData}" alt="QR Label" width="160" height="160" style="border: 2px solid #000; border-radius: 8px;" />`;
+
+  modal.classList.remove("hidden");
+}
+
+$("#close-barcode-modal")?.addEventListener("click", () => {
+  $("#barcode-modal")?.classList.add("hidden");
+});
+
+$("#print-barcode-btn")?.addEventListener("click", () => {
+  window.print();
+});
 
 initMobilePopupSheets();
 initSupabase();

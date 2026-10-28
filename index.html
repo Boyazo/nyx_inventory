@@ -98,6 +98,13 @@
         </div>
         
         <div class="top-controls">
+          <!-- Global Command Search Trigger (Cmd+K) -->
+          <button type="button" id="global-command-trigger" class="global-search-btn" title="Quick Command Palette (Ctrl+K)">
+            <span class="search-icon">🔍</span>
+            <span class="search-label">Quick Jump...</span>
+            <kbd class="shortcut-kbd">Ctrl+K</kbd>
+          </button>
+
           <!-- 2-state Segmented Theme Toggle -->
           <div class="theme-switch-box" role="radiogroup" aria-label="Color theme">
             <button class="theme-opt-btn" id="theme-btn-dark" type="button" aria-checked="true">🌙 Dark</button>
@@ -287,6 +294,7 @@
           <p class="muted small">All members can browse tools & check stock. Admins manage catalog items.</p>
         </div>
         <div class="toolbar-actions">
+          <button class="btn btn--ghost btn--sm" id="export-inventory-csv-btn" type="button" title="Download inventory spreadsheet">📥 Export CSV</button>
           <button class="btn btn--primary btn--sm hidden" id="add-item-button" type="button">＋ Add Item (Admin)</button>
         </div>
       </div>
@@ -362,6 +370,7 @@
           <p class="muted small">Team-wide Bill of Needs: parts required for current robot mechanisms, ordering queue, and arrival status.</p>
         </div>
         <div class="toolbar-actions">
+          <button class="btn btn--ghost btn--sm" id="export-parts-needed-csv-btn" type="button" title="Download ordering queue spreadsheet">📥 Export CSV</button>
           <button class="btn btn--primary btn--sm hidden" id="add-part-needed-btn" type="button">＋ Request Robot Part (Admin)</button>
         </div>
       </div>
@@ -461,7 +470,10 @@
           <h2>Team Spending & Budget Tracker 💰</h2>
           <p class="muted small">Restricted administrative ledger for team orders, vendor invoices, and robot expense tracking.</p>
         </div>
-        <button class="btn btn--primary btn--sm" id="add-spending-btn" type="button">＋ Record Purchase</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn btn--ghost btn--sm" id="export-spending-csv-btn" type="button" title="Download purchase orders spreadsheet">📥 Export CSV</button>
+          <button class="btn btn--primary btn--sm" id="add-spending-btn" type="button">＋ Record Purchase</button>
+        </div>
       </div>
 
       <!-- Spending Summary Metrics -->
@@ -1924,6 +1936,40 @@
   </nav>
 </div> <!-- .app-layout -->
 
-<script type="module" src="js/app.js"></script>
+  <!-- Universal Quick Command Palette (Ctrl+K / Cmd+K) -->
+  <div id="command-palette-modal" class="modalback hidden" role="dialog" aria-modal="true" aria-labelledby="cmd-palette-title">
+    <div class="modal cmd-palette-modal" style="max-width:560px; padding:20px;">
+      <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line); padding-bottom:14px;">
+        <span style="font-size:18px;">⚡</span>
+        <input type="text" id="command-palette-input" placeholder="Type a command, item name, view, or action..." autocomplete="off" style="border:none; background:transparent; font-size:16px; font-weight:600; padding:0; box-shadow:none;" />
+        <kbd class="shortcut-kbd" style="font-size:11px;">ESC</kbd>
+      </div>
+      <div class="cmd-palette-results" id="command-palette-results">
+        <!-- Dynamically populated options -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Barcode / QR Label Modal for Shop Items -->
+  <div id="barcode-modal" class="modalback hidden" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:440px; text-align:center;">
+      <div class="modalhead">
+        <h3 id="barcode-modal-title">Item Bin Label & QR</h3>
+        <button class="close" id="close-barcode-modal" type="button">✕</button>
+      </div>
+      <div id="barcode-modal-content" style="padding:20px; background:#fff; border-radius:12px; margin:16px 0; color:#000;">
+        <!-- QR Code / Label Display -->
+        <h2 id="barcode-item-name" style="margin:0 0 6px 0; color:#000; font-size:18px;"></h2>
+        <div id="barcode-part-num" style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;"></div>
+        <div id="barcode-qr-container" style="display:flex; justify-content:center; margin:10px 0;"></div>
+        <div id="barcode-location" style="font-size:12px; color:#64748b; margin-top:8px;"></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+        <button class="btn btn--primary btn--sm" id="print-barcode-btn" type="button">🖨️ Print Shop Label</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
