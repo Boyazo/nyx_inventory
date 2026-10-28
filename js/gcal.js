@@ -9,7 +9,7 @@
  * (e.g. https://<user>.github.io) to Authorized JavaScript origins, enable the Google Calendar API,
  * and paste the client id below. Until then members get one-click "Add to Google Calendar" links.
  */
-export const GOOGLE_CLIENT_ID = "";
+export const GOOGLE_CLIENT_ID = "660009158487-nobnqsqsapa5vp2pfsa921gqlgi4m7d8.apps.googleusercontent.com";
 
 const TEAM_TIMEZONE = "America/Los_Angeles";
 const SCOPE = "https://www.googleapis.com/auth/calendar.events";
