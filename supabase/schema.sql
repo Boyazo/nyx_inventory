@@ -254,8 +254,14 @@ for select to authenticated using(id=(select auth.uid()) or (select public.is_te
 drop policy if exists "Members can update their own display name" on public.profiles;
 drop policy if exists "Members can update their own profile" on public.profiles;
 create policy "Members can update their own profile" on public.profiles
-for update to authenticated using(id=(select auth.uid()))
-with check(id=(select auth.uid()));
+for update to authenticated using(id = (select auth.uid()))
+with check(
+  id = (select auth.uid())
+  and is_admin = (select is_admin from public.profiles where id = (select auth.uid()))
+  and is_secret = (select is_secret from public.profiles where id = (select auth.uid()))
+  and is_strategy = (select is_strategy from public.profiles where id = (select auth.uid()))
+  and is_approved = (select is_approved from public.profiles where id = (select auth.uid()))
+);
 
 drop policy if exists "Admins update member approval" on public.profiles;
 create policy "Admins update member approval" on public.profiles
@@ -432,17 +438,19 @@ create table if not exists public.secret_personnel_intel (
 alter table public.secret_personnel_intel add column if not exists votes jsonb not null default '{}'::jsonb;
 alter table public.secret_personnel_intel replica identity full;
 
-create or replace function public.is_secret_admin()
+create or replace function public.is_secret_member()
 returns boolean
 language sql
 security definer
 stable
+set search_path = public
 as $$
   select exists (
     select 1
     from public.profiles
-    where id = auth.uid()
+    where id = (select auth.uid())
       and is_approved = true
+      and is_secret = true
   );
 $$;
 
@@ -451,23 +459,23 @@ alter table public.secret_personnel_intel enable row level security;
 drop policy if exists "Secret admins can select secret intel" on public.secret_personnel_intel;
 drop policy if exists "Secret members can select secret intel" on public.secret_personnel_intel;
 create policy "Secret members can select secret intel" on public.secret_personnel_intel
-for select to authenticated using(true);
+for select to authenticated using((select public.is_secret_member()));
 
 drop policy if exists "Secret admins can insert secret intel" on public.secret_personnel_intel;
 drop policy if exists "Secret members can insert secret intel" on public.secret_personnel_intel;
 create policy "Secret members can insert secret intel" on public.secret_personnel_intel
-for insert to authenticated with check(true);
+for insert to authenticated with check((select public.is_secret_member()));
 
 drop policy if exists "Secret admins can update secret intel" on public.secret_personnel_intel;
 drop policy if exists "Secret members can update secret intel" on public.secret_personnel_intel;
 create policy "Secret members can update secret intel" on public.secret_personnel_intel
-for update to authenticated using(true)
-with check(true);
+for update to authenticated using((select public.is_secret_member()))
+with check((select public.is_secret_member()));
 
 drop policy if exists "Secret admins can delete secret intel" on public.secret_personnel_intel;
 drop policy if exists "Secret members can delete secret intel" on public.secret_personnel_intel;
 create policy "Secret members can delete secret intel" on public.secret_personnel_intel
-for delete to authenticated using(true);
+for delete to authenticated using((select public.is_team_admin()));
 
 -- 12. Realtime configuration
 do $$
