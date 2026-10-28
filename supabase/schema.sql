@@ -246,23 +246,54 @@ alter table public.parts_needed enable row level security;
 alter table public.spending_records enable row level security;
 alter table public.team_shifts enable row level security;
 
--- Profiles policies: users can read profiles, and edit their OWN name & departments!
-drop policy if exists "Members read own profile; admins read all" on public.profiles;
-create policy "Members read own profile; admins read all" on public.profiles
-for select to authenticated using(id=(select auth.uid()) or (select public.is_team_admin()));
+-- Trigger to prevent non-admins from modifying privilege flags (is_admin, is_secret, is_strategy, is_approved)
+create or replace function public.check_profile_update()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+declare
+  caller_is_admin boolean;
+begin
+  -- If privilege flags are untouched, allow user update (name, departments)
+  if (old.is_admin is not distinct from new.is_admin)
+     and (old.is_secret is not distinct from new.is_secret)
+     and (old.is_strategy is not distinct from new.is_strategy)
+     and (old.is_approved is not distinct from new.is_approved) then
+    return new;
+  end if;
 
+  -- Privilege flags were modified; check if the caller is an active team admin
+  select (is_admin = true and is_approved = true) into caller_is_admin
+  from public.profiles
+  where id = auth.uid();
+
+  if caller_is_admin is true then
+    return new;
+  end if;
+
+  raise exception 'Permission Denied: Only team admins can change membership roles or approvals.';
+end;
+$$;
+
+drop trigger if exists tr_check_profile_update on public.profiles;
+create trigger tr_check_profile_update
+before update on public.profiles
+for each row execute procedure public.check_profile_update();
+
+-- Profiles RLS policies (Zero subquery recursion)
+-- 1. All authenticated members can read profiles (needed for roster, shift attendance, checkouts, and team planner)
+drop policy if exists "Members read own profile; admins read all" on public.profiles;
+drop policy if exists "Authenticated members can read profiles" on public.profiles;
+create policy "Authenticated members can read profiles" on public.profiles
+for select to authenticated using(true);
+
+-- 2. Users can update their own profile row (privilege escalation is strictly blocked by the trigger above)
 drop policy if exists "Members can update their own display name" on public.profiles;
 drop policy if exists "Members can update their own profile" on public.profiles;
 create policy "Members can update their own profile" on public.profiles
-for update to authenticated using(id = (select auth.uid()))
-with check(
-  id = (select auth.uid())
-  and is_admin = (select is_admin from public.profiles where id = (select auth.uid()))
-  and is_secret = (select is_secret from public.profiles where id = (select auth.uid()))
-  and is_strategy = (select is_strategy from public.profiles where id = (select auth.uid()))
-  and is_approved = (select is_approved from public.profiles where id = (select auth.uid()))
-);
+for update to authenticated using(id = auth.uid())
+with check(id = auth.uid());
 
+-- 3. Admins can update any member row (e.g. approve/revoke membership in Member Access tab)
 drop policy if exists "Admins update member approval" on public.profiles;
 create policy "Admins update member approval" on public.profiles
 for update to authenticated using((select public.is_team_admin()))
