@@ -1,5 +1,5 @@
 ﻿<!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028c">
+<link rel="stylesheet" href="css/style.css?v=20261028d">
 </head>
 <body>
 
@@ -32,20 +32,28 @@
           <img src="logo.png" alt="Nyx Logo" class="sidebar-logo" width="36" height="36">
           <div>
             <strong>NYX 11744</strong>
-            <small class="mono">TEAM WORKSPACE</small>
+            <small>Team Workspace</small>
           </div>
         </div>
         <button class="btn btn--ghost btn--sm" id="sidebar-close-btn" type="button" style="padding:4px 8px; font-size:14px; border:none; color:var(--text-muted);" title="Collapse Sidebar">✕</button>
       </div>
-      <div class="sidebar-slogan">“Born in the dark, built to dominate”</div>
     </div>
 
-    <div class="sidebar-section-title">NAVIGATION</div>
+    <div class="sidebar-section-title">Main menu</div>
     <nav class="sidebar-nav">
       <button class="sidebar-link active" id="sidebar-btn-dashboard" data-page="dashboard" type="button">
         <span class="sidebar-icon">🛠</span>
         <span class="sidebar-label">Dashboard</span>
       </button>
+      <div class="sidebar-subnav" id="sidebar-subnav">
+        <button class="sidebar-sublink" data-subview="inventory" type="button">Inventory <span data-badge="badge-all"></span></button>
+        <button class="sidebar-sublink" data-subview="checkouts" type="button">Checkouts <span data-badge="badge-checkouts"></span></button>
+        <button class="sidebar-sublink" data-subview="parts-needed" type="button">Parts Needed <span data-badge="badge-parts-needed"></span></button>
+        <button class="sidebar-sublink" data-subview="shifts" type="button">Shifts <span data-badge="badge-shifts"></span></button>
+        <button class="sidebar-sublink" data-subview="planner" type="button">Planner <span data-badge="badge-planner"></span></button>
+        <button class="sidebar-sublink" data-subview="spending" type="button">Spending</button>
+        <button class="sidebar-sublink" data-subview="members" type="button">Members <span data-badge="badge-members"></span></button>
+      </div>
       <button class="sidebar-link" id="sidebar-btn-strategy" data-page="strategy" type="button">
         <span class="sidebar-icon">🎯</span>
         <span class="sidebar-label">Strategy & Scouting</span>
@@ -56,19 +64,6 @@
       </button>
     </nav>
 
-    <div class="sidebar-section-title">FRC REBUILT 2026</div>
-    <div class="sidebar-stat-chip">
-      <span class="muted small">Team Number</span>
-      <strong class="mono" style="color:var(--accent-bright)">11744</strong>
-    </div>
-    <div class="sidebar-stat-chip">
-      <span class="muted small">Game</span>
-      <strong class="mono" style="color:var(--text)">REBUILT</strong>
-    </div>
-    <div class="sidebar-stat-chip">
-      <span class="muted small">Regional</span>
-      <strong class="mono" style="color:var(--text)">San Diego</strong>
-    </div>
 
     <div class="sidebar-footer">
       <div class="sidebar-user" id="sidebar-open-profile-btn" title="Click to view & edit departments">
@@ -92,7 +87,6 @@
             <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
             <span class="brandtext">
               <strong>NYX 11744</strong>
-              <small>BORN IN THE DARK, BUILT TO DOMINATE</small>
             </span>
           </a>
         </div>
@@ -107,8 +101,8 @@
 
           <!-- 2-state Segmented Theme Toggle -->
           <div class="theme-switch-box" role="radiogroup" aria-label="Color theme">
-            <button class="theme-opt-btn" id="theme-btn-dark" type="button" aria-checked="true">🌙 Dark</button>
-            <button class="theme-opt-btn" id="theme-btn-light" type="button" aria-checked="false">☀️ Light</button>
+            <button class="theme-opt-btn" id="theme-btn-dark" type="button" aria-checked="false">Dark</button>
+            <button class="theme-opt-btn" id="theme-btn-light" type="button" aria-checked="true">Light</button>
           </div>
 
           <div class="topnote">
@@ -214,10 +208,8 @@
   <main id="inventory-screen" class="dashboard hidden">
     <section class="welcome">
       <div>
-        <span class="eyebrow">FRC 11744 / ROBOTICS WORKSHOP</span>
-        <h1>Team <em>workspace.</em></h1>
-        <p class="slogan-motto">“Born in the dark, built to dominate.”</p>
-        <p class="muted">Shop inventory, department shifts calendar, robot parts tracking, and equipment checkouts.</p>
+        <h1>Team Workspace</h1>
+        <p class="muted">Inventory, parts, shifts and planning for FRC 11744.</p>
       </div>
 
       <!-- User Chip Block with Audit Logs & Profile Right Below -->
@@ -243,23 +235,23 @@
     <!-- Stats -->
     <section class="stats">
       <article class="stat">
-        <small>CATALOGED ITEMS</small>
+        <small>Cataloged items</small>
         <strong id="stat-items">0</strong>
-        <p class="muted">In shop inventory</p>
+        <div id="stock-breakdown"><p class="muted">In shop inventory</p></div>
       </article>
       <article class="stat">
-        <small>PARTS NEEDED</small>
-        <strong id="stat-parts-needed" style="color:var(--red)">0</strong>
+        <small>Parts needed</small>
+        <strong id="stat-parts-needed">0</strong>
         <p class="muted">For current robot build</p>
       </article>
       <article class="stat">
-        <small>UPCOMING SHIFTS</small>
-        <strong id="stat-shifts" style="color:var(--accent-bright)">0</strong>
+        <small>Upcoming shifts</small>
+        <strong id="stat-shifts">0</strong>
         <p class="muted">Lab shifts scheduled</p>
       </article>
       <article class="stat">
-        <small>TOOLS IN USE</small>
-        <strong id="stat-checkouts" style="color:var(--amber)">0</strong>
+        <small>Tools in use</small>
+        <strong id="stat-checkouts">0</strong>
         <p class="muted">Checked out by teammates</p>
       </article>
     </section>
@@ -279,19 +271,19 @@
     <!-- Navigation Tabs -->
     <nav class="viewtabs">
       <button class="viewtab active" data-view="inventory">Parts & Tools <span class="badgenum" id="badge-all">0</span></button>
-      <button class="viewtab" data-view="checkouts">Active Checkouts <span class="badgenum" id="badge-checkouts">0</span></button>
-      <button class="viewtab" data-view="parts-needed">Parts Needed for Robot 🤖 <span class="badgenum" id="badge-parts-needed">0</span></button>
-      <button class="viewtab" data-view="shifts">Shifts & Calendar 📅 <span class="badgenum" id="badge-shifts">0</span></button>
-      <button class="viewtab" data-view="planner">Team Planner 📋 <span class="badgenum" id="badge-planner">0</span></button>
-      <button class="viewtab hidden" id="tab-spending" data-view="spending">Spending & Budget 💰</button>
-      <button class="viewtab hidden" id="tab-members" data-view="members">Member Access <span class="badgenum" id="badge-members">0</span></button>
+      <button class="viewtab" data-view="checkouts">Checkouts <span class="badgenum" id="badge-checkouts">0</span></button>
+      <button class="viewtab" data-view="parts-needed">Parts Needed <span class="badgenum" id="badge-parts-needed">0</span></button>
+      <button class="viewtab" data-view="shifts">Shifts <span class="badgenum" id="badge-shifts">0</span></button>
+      <button class="viewtab" data-view="planner">Planner <span class="badgenum" id="badge-planner">0</span></button>
+      <button class="viewtab hidden" id="tab-spending" data-view="spending">Spending</button>
+      <button class="viewtab hidden" id="tab-members" data-view="members">Members <span class="badgenum" id="badge-members">0</span></button>
     </nav>
 
     <!-- 1. INVENTORY VIEW -->
     <section id="view-inventory" class="panel">
       <div class="toolbar">
         <div>
-          <h2>Shop Inventory</h2>
+          <h2>Inventory</h2>
           <p class="muted small">All members can browse tools & check stock. Admins manage catalog items.</p>
         </div>
         <div class="toolbar-actions">
@@ -315,15 +307,15 @@
           <button class="catbtn" data-category="Miscellaneous">Misc <span id="count-miscellaneous">0</span></button>
           <button class="catbtn" data-category="ToolsOnly">🛠 Tools Only <span id="count-tools">0</span></button>
         </div>
-        <input class="search" id="search-items" type="search" placeholder="⌕ Search name, location, part #..." aria-label="Search inventory">
+        <input class="search" id="search-items" type="search" placeholder="Search name, location, part #" aria-label="Search inventory">
       </div>
 
       <div class="tablehead">
-        <span>ITEM / PART #</span>
-        <span>SUBSYSTEM</span>
-        <span>LOCATION</span>
-        <span>STOCK & STATUS</span>
-        <span>ACTIONS</span>
+        <span>Item / Part #</span>
+        <span>Subsystem</span>
+        <span>Location</span>
+        <span>Stock</span>
+        <span>Actions</span>
       </div>
 
       <div id="items-list">
@@ -340,7 +332,7 @@
     <section id="view-shifts" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>Build Shifts & Department Calendar 📅</h2>
+          <h2>Shifts</h2>
           <p class="muted small">Schedule lab meetings and track attendance for Mechanical, Electrical, Software, and Business departments. Admins schedule shifts; all members can sign up!</p>
         </div>
         <div class="toolbar-actions">
@@ -368,7 +360,7 @@
     <section id="view-parts-needed" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>Parts Needed for Robot 🤖</h2>
+          <h2>Parts Needed</h2>
           <p class="muted small">Team-wide Bill of Needs: parts required for current robot mechanisms, ordering queue, and arrival status.</p>
         </div>
         <div class="toolbar-actions">
@@ -388,11 +380,11 @@
       </div>
 
       <div class="tablehead" style="grid-template-columns: minmax(220px, 2.5fr) minmax(110px, 1.2fr) minmax(110px, 1fr) minmax(120px, 1.2fr) minmax(130px, 1.4fr);">
-        <span>PART & DETAILS</span>
-        <span>SUBTEAM</span>
-        <span>QTY & VENDOR</span>
-        <span>ORDER STATUS</span>
-        <span>ACTIONS</span>
+        <span>Part & Details</span>
+        <span>Subteam</span>
+        <span>Qty & Vendor</span>
+        <span>Order Status</span>
+        <span>Actions</span>
       </div>
 
       <div id="parts-needed-list">
@@ -404,7 +396,7 @@
     <section id="view-checkouts" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>Active Tool & Equipment Checkouts</h2>
+          <h2>Checkouts</h2>
           <p class="muted small">Anyone can borrow tools for shop work and return them when done.</p>
         </div>
       </div>
@@ -417,7 +409,7 @@
     <section id="view-planner" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>Team Build & Task Planner 📋</h2>
+          <h2>Planner</h2>
           <p class="muted small">Roadmap for build season milestones and pit prep. Anyone can advance task progress; admins manage tasks.</p>
         </div>
         <button class="btn btn--primary btn--sm hidden" id="add-task-btn" type="button">＋ Add Task (Admin)</button>
@@ -439,7 +431,7 @@
         <!-- Column 1: To Do -->
         <div class="planner-col" id="col-todo">
           <div class="col-header">
-            <span>📌 TO DO</span>
+            <span>To do</span>
             <span class="col-count" id="count-todo">0</span>
           </div>
           <div id="tasks-todo" style="display:flex; flex-direction:column; gap:10px;"></div>
@@ -448,7 +440,7 @@
         <!-- Column 2: In Progress -->
         <div class="planner-col" id="col-in-progress">
           <div class="col-header" style="color:var(--amber);">
-            <span>⚡ IN PROGRESS</span>
+            <span>In progress</span>
             <span class="col-count" id="count-in-progress">0</span>
           </div>
           <div id="tasks-in-progress" style="display:flex; flex-direction:column; gap:10px;"></div>
@@ -457,7 +449,7 @@
         <!-- Column 3: Done -->
         <div class="planner-col" id="col-done">
           <div class="col-header" style="color:var(--green);">
-            <span>✅ COMPLETED</span>
+            <span>Completed</span>
             <span class="col-count" id="count-done">0</span>
           </div>
           <div id="tasks-done" style="display:flex; flex-direction:column; gap:10px;"></div>
@@ -469,7 +461,7 @@
     <section id="view-spending" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>Team Spending & Budget Tracker 💰</h2>
+          <h2>Spending</h2>
           <p class="muted small">Restricted administrative ledger for team orders, vendor invoices, and robot expense tracking.</p>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
@@ -510,13 +502,13 @@
       </div>
 
       <div class="tablehead" style="grid-template-columns: 105px minmax(180px, 2fr) minmax(110px, 1.1fr) minmax(100px, 1fr) 95px 105px 110px;">
-        <span>DATE</span>
-        <span>ORDER / TITLE</span>
-        <span>VENDOR</span>
-        <span>PERIOD</span>
-        <span>RECEIPT</span>
-        <span>AMOUNT</span>
-        <span>ACTIONS</span>
+        <span>Date</span>
+        <span>Order / Title</span>
+        <span>Vendor</span>
+        <span>Period</span>
+        <span>Receipt</span>
+        <span>Amount</span>
+        <span>Actions</span>
       </div>
 
       <div id="spending-list">
@@ -528,7 +520,7 @@
     <section id="view-members" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>Team Access & Member Approvals</h2>
+          <h2>Members</h2>
           <p class="muted small">Only approved members can view inventory and contribute to the workspace.</p>
         </div>
       </div>
@@ -541,7 +533,7 @@
     <section id="view-logs" class="panel hidden">
       <div class="toolbar" style="flex-wrap:wrap; gap:14px; align-items:flex-start;">
         <div>
-          <h2>Audit & Activity Logs 🔒</h2>
+          <h2>Audit Log</h2>
           <p class="muted small">Comprehensive system event journal. Captures every inventory change, checkout, task status, shift signup, spending entry, and scouting log with full before/after detail.</p>
         </div>
         <div style="display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap;">
@@ -721,16 +713,16 @@
       </div>
 
       <div class="tablehead" style="grid-template-columns: 60px minmax(180px, 2fr) minmax(110px, 1fr) 85px 75px 75px 85px 85px 80px 100px;">
-        <span>RANK</span>
-        <span>TEAM</span>
-        <span>LOCATION</span>
-        <span>TOTAL EPA</span>
-        <span>AUTO</span>
-        <span>TELEOP</span>
-        <span>TOWER</span>
-        <span>SCOUTED</span>
-        <span>WIN %</span>
-        <span>ACTION</span>
+        <span>Rank</span>
+        <span>Team</span>
+        <span>Location</span>
+        <span>Total Epa</span>
+        <span>Auto</span>
+        <span>Teleop</span>
+        <span>Tower</span>
+        <span>Scouted</span>
+        <span>Win %</span>
+        <span>Action</span>
       </div>
 
       <div id="strat-rankings-list">
@@ -1007,16 +999,16 @@
           </div>
 
           <div class="tablehead" style="grid-template-columns: 70px 70px 80px 80px 85px 80px 70px 80px 1fr 60px;">
-            <span>MATCH</span>
-            <span>TEAM</span>
-            <span>SCOUT</span>
-            <span>AUTO FUEL</span>
-            <span>TELE FUEL</span>
-            <span>CLIMB</span>
-            <span>EST PTS</span>
-            <span>STATUS</span>
-            <span>NOTES</span>
-            <span>DEL</span>
+            <span>Match</span>
+            <span>Team</span>
+            <span>Scout</span>
+            <span>Auto Fuel</span>
+            <span>Tele Fuel</span>
+            <span>Climb</span>
+            <span>Est Pts</span>
+            <span>Status</span>
+            <span>Notes</span>
+            <span>Del</span>
           </div>
 
           <div id="scout-records-list">
@@ -1414,78 +1406,8 @@
         <button class="close" id="close-modal" type="button" aria-label="Close">×</button>
       </div>
 
-      <!-- Quick FRC Preset Dropdown -->
-      <div class="frc-preset-box">
-        <label for="frc-quick-picker">⚡ Quick FRC Component Autofill (Select to Populate Fields):</label>
-        <select id="frc-quick-picker" style="margin-top:6px;">
-          <option value="">-- Choose a standard FRC component or tool --</option>
-          <optgroup label="Motors & Gearboxes">
-            <option value='{"name":"Kraken X60 Motor w/ Talon FX","cat":"Electrical","tool":false,"unit":"pcs","pn":"WCP-0907","notes":"CTRE / WCP Brushless Motor"}'>Kraken X60 Motor w/ Talon FX (WCP-0907)</option>
-            <option value='{"name":"Falcon 500 Motor w/ Talon FX","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-FALCON","notes":"CTRE / VEX Brushless Motor"}'>Falcon 500 Motor (CTRE)</option>
-            <option value='{"name":"NEO Brushless Motor v1.1","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-21-1650","notes":"REV Robotics Brushless Motor"}'>NEO Brushless Motor v1.1 (REV-21-1650)</option>
-            <option value='{"name":"NEO Vortex Brushless Motor","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-21-2800","notes":"High power high RPM brushless"}'>NEO Vortex Motor (REV-21-2800)</option>
-            <option value='{"name":"NEO 550 Motor","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-21-1651","notes":"Compact high RPM brushless"}'>NEO 550 Motor (REV-21-1651)</option>
-            <option value='{"name":"CIM Motor","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-0255","notes":"2.5 in Brushed DC Motor"}'>CIM Motor (am-0255)</option>
-            <option value='{"name":"SPARK MAX Motor Controller","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-2158","notes":"PWM/CAN controller"}'>SPARK MAX Motor Controller (REV-11-2158)</option>
-            <option value='{"name":"SPARK Flex Motor Controller","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-2159","notes":"Direct mount to NEO Vortex"}'>SPARK Flex Controller (REV-11-2159)</option>
-            <option value='{"name":"REV MAXPlanetary Gearbox Base Kit","cat":"Mechanical","tool":false,"unit":"pcs","pn":"REV-21-2100","notes":"Modular planetary gearbox kit"}'>REV MAXPlanetary Gearbox (REV-21-2100)</option>
-          </optgroup>
-          <optgroup label="Control System & Electronics">
-            <option value='{"name":"NI RoboRIO 2.0","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-3000b","notes":"Main robot controller"}'>NI RoboRIO 2.0 (am-3000b)</option>
-            <option value='{"name":"REV Power Distribution Hub (PDH)","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-1850","notes":"20-channel high current PDH"}'>REV Power Distribution Hub (REV-11-1850)</option>
-            <option value='{"name":"CTRE Power Distribution Panel (PDP)","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-2856","notes":"16-channel legacy PDP"}'>CTRE Power Distribution Panel (am-2856)</option>
-            <option value='{"name":"REV Pneumatics Hub (PH)","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-1852","notes":"CAN-controlled solenoid & sensor hub"}'>REV Pneumatics Hub (REV-11-1852)</option>
-            <option value='{"name":"REV Radio Power Module (RPM)","cat":"Electrical","tool":false,"unit":"pcs","pn":"REV-11-1856","notes":"Regulated 12V Ethernet PoE for radio"}'>REV Radio Power Module (REV-11-1856)</option>
-            <option value='{"name":"VH-109 Open-Mesh FRC Radio","cat":"Electrical","tool":false,"unit":"pcs","pn":"VH-109","notes":"Official FRC Wi-Fi 6 Access Point"}'>VH-109 Official FRC Radio</option>
-            <option value='{"name":"CTRE CANivore USB-to-CAN","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-CANIVORE","notes":"High speed CAN FD bus adapter"}'>CTRE CANivore (USB-to-CAN FD)</option>
-            <option value='{"name":"CTRE Pigeon 2.0 9-Axis IMU","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-PIGEON2","notes":"High-precision gyro & accelerometer"}'>CTRE Pigeon 2.0 IMU</option>
-            <option value='{"name":"Limelight 3G Smart Camera","cat":"Electrical","tool":false,"unit":"pcs","pn":"LL-3G","notes":"Global shutter AprilTag / neural camera"}'>Limelight 3G Smart Vision Camera</option>
-            <option value='{"name":"CTRE CANcoder Absolute Encoder","cat":"Electrical","tool":false,"unit":"pcs","pn":"CTRE-21-CANCODER","notes":"Rotary magnetic absolute encoder"}'>CTRE CANcoder (Magnetic Absolute)</option>
-            <option value='{"name":"Main Breaker 120A (Panel Mount)","cat":"Electrical","tool":false,"unit":"pcs","pn":"CB185-120","notes":"Bussmann 120 Amp Main Breaker"}'>Main Breaker 120A (CB185-120)</option>
-            <option value='{"name":"Snap-Action Breaker 40A","cat":"Electrical","tool":false,"unit":"pcs","pn":"VB3-A40-P","notes":"40 Amp automatic breaker for PDH/PDP"}'>Snap-Action 40A Breaker</option>
-          </optgroup>
-          <optgroup label="Fasteners & Raw Materials">
-            <option value='{"name":"10-32 × 1/2 in Socket Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92196A241","notes":"Black-Oxide Alloy Steel, McMaster"}'>10-32 × 1/2 in Socket Cap Screw</option>
-            <option value='{"name":"10-32 × 3/4 in Socket Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92196A244","notes":"Black-Oxide Alloy Steel, McMaster"}'>10-32 × 3/4 in Socket Cap Screw</option>
-            <option value='{"name":"10-32 × 1.0 in Socket Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92196A248","notes":"Black-Oxide Alloy Steel, McMaster"}'>10-32 × 1.0 in Socket Cap Screw</option>
-            <option value='{"name":"10-32 Steel Nyloc Jam Nut","cat":"Mechanical","tool":false,"unit":"pcs","pn":"90631A011","notes":"Zinc-Plated Steel Locknut"}'>10-32 Steel Nyloc Locknut</option>
-            <option value='{"name":"1/4-20 × 1/2 in Button Head Cap Screw","cat":"Mechanical","tool":false,"unit":"pcs","pn":"92949A533","notes":"Black-Oxide Alloy Steel"}'>1/4-20 × 1/2 in Button Head Screw</option>
-            <option value='{"name":"1/4-20 Nyloc Nut","cat":"Mechanical","tool":false,"unit":"pcs","pn":"90631A029","notes":"Steel Nylon-Insert Locknut"}'>1/4-20 Nyloc Nut</option>
-            <option value='{"name":"3/16 in Aluminum Pop Rivets (1/4 Grip)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"97524A105","notes":"Dome head blind rivets"}'>3/16 in Aluminum Pop Rivets</option>
-            <option value='{"name":"1/2 in Hex ThunderHex Shaft (3ft)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"WCP-0050","notes":"6061-T6 Aluminum with 0.201in center hole"}'>1/2 in ThunderHex Shaft (3ft)</option>
-            <option value='{"name":"1/2 in Hex Bearing (Flanged, Shielded)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"FR8ZZ-Hex","notes":"Standard FRC hex shaft bearing"}'>1/2 in Hex Flanged Bearing (FR8ZZ)</option>
-          </optgroup>
-          <optgroup label="Swerve & Motion">
-            <option value='{"name":"SDS MK4i Swerve Module Kit","cat":"Mechanical","tool":false,"unit":"pcs","pn":"MK4i-L2","notes":"Swerve Drive Specialties Inverted Swerve"}'>SDS MK4i Swerve Module (L2)</option>
-            <option value='{"name":"REV MAXSwerve Module Kit","cat":"Mechanical","tool":false,"unit":"pcs","pn":"REV-21-3005","notes":"Compact planetary swerve drive"}'>REV MAXSwerve Module</option>
-            <option value='{"name":"Colson Performa Wheel 4×1.5 in","cat":"Mechanical","tool":false,"unit":"pcs","pn":"am-2640","notes":"High traction rubber swerve/drive wheel"}'>Colson 4×1.5 in Wheel</option>
-            <option value='{"name":"#25 Roller Chain (10 ft)","cat":"Mechanical","tool":false,"unit":"ft","pn":"am-0370","notes":"Standard drive and intake chain"}'>#25 Roller Chain (10 ft)</option>
-            <option value='{"name":"HTD 5mm Timing Belt (9mm Width)","cat":"Mechanical","tool":false,"unit":"pcs","pn":"HTD-5M-9","notes":"Pitch 5mm synchronous timing belt"}'>HTD 5mm Timing Belt (9mm wide)</option>
-          </optgroup>
-          <optgroup label="Batteries & Power">
-            <option value='{"name":"12V 18Ah SLA Robot Battery (Interstate)","cat":"Electrical","tool":false,"unit":"pcs","pn":"SLA1116","notes":"Standard FRC competition battery"}'>12V 18Ah SLA Battery (Interstate)</option>
-            <option value='{"name":"SB50 Anderson Battery Connector (Red)","cat":"Electrical","tool":false,"unit":"pcs","pn":"am-0009","notes":"50A quick disconnect for main power"}'>SB50 Anderson Battery Connector</option>
-            <option value='{"name":"4 AWG Flexible Battery Cable (Red/Black)","cat":"Electrical","tool":false,"unit":"ft","pn":"am-0099","notes":"High-strand count battery lead wire"}'>4 AWG Battery Cable (per foot)</option>
-            <option value='{"name":"Anderson Powerpole 45A Contacts & Housings","cat":"Electrical","tool":false,"unit":"set","pn":"am-0878","notes":"Red/Black housings with 45A crimp contacts"}'>Anderson Powerpole 45A (10-pack)</option>
-            <option value='{"name":"WAGO 221 Lever Nuts (3-Conductor)","cat":"Electrical","tool":false,"unit":"pcs","pn":"221-413","notes":"Quick wire splice connector"}'>WAGO 221 Lever Nuts (3-wire)</option>
-          </optgroup>
-          <optgroup label="Shop & Pit Tools">
-            <option value='{"name":"Heavy-Duty Hand Riveter Tool","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-RIVET","notes":"Supports 3/16 and 1/8 in rivets"}'>Heavy-Duty Hand Riveter (Tool)</option>
-            <option value='{"name":"Milwaukee M12 Cordless Drill","cat":"Mechanical","tool":true,"unit":"pcs","pn":"2407-20","notes":"3/8 in chuck compact cordless drill"}'>Milwaukee M12 Cordless Drill (Tool)</option>
-            <option value='{"name":"Milwaukee M12 1/4 in Hex Impact Driver","cat":"Mechanical","tool":true,"unit":"pcs","pn":"2462-20","notes":"Fastener driver for 10-32 & 1/4-20"}'>Milwaukee M12 Impact Driver (Tool)</option>
-            <option value='{"name":"Automatic Wire Stripper 10-24 AWG","cat":"Electrical","tool":true,"unit":"pcs","pn":"TOOL-STRIPPER","notes":"Self-adjusting wire stripper and cutter"}'>Automatic Wire Stripper (Tool)</option>
-            <option value='{"name":"TRIcrimp Anderson Powerpole Crimper","cat":"Electrical","tool":true,"unit":"pcs","pn":"am-3324","notes":"Ratchet crimper for 15/30/45A contacts"}'>Anderson TRIcrimp Crimping Tool</option>
-            <option value='{"name":"T-Handle Hex Key 5/32 in (for 10-32)","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-THANDLE-532","notes":"Shop staple for 10-32 socket screws"}'>T-Handle 5/32 in Hex Key (Tool)</option>
-            <option value='{"name":"T-Handle Hex Key 3/16 in (for 1/4-20)","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-THANDLE-316","notes":"Shop staple for 1/4-20 socket screws"}'>T-Handle 3/16 in Hex Key (Tool)</option>
-            <option value='{"name":"CTRE Battery Beak Battery Analyzer","cat":"Electrical","tool":true,"unit":"pcs","pn":"am-2195","notes":"Instant battery charge & internal resistance tester"}'>CTRE Battery Beak Analyzer (Tool)</option>
-            <option value='{"name":"6-inch Digital Calipers","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-CALIPER","notes":"Stainless steel 0.0005 in accuracy"}'>6-inch Digital Calipers (Tool)</option>
-            <option value='{"name":"Deburring Tool with Swivel Blade","cat":"Mechanical","tool":true,"unit":"pcs","pn":"TOOL-DEBURR","notes":"For cleaning cut edges on aluminum and lexan"}'>Deburring Tool w/ Swivel Blade</option>
-          </optgroup>
-        </select>
-      </div>
-
       <form id="item-form">
-        <label for="item-name">Item Name *</label>
+        <label for="item-name">Item Name * <span class="muted small">— type to search our inventory, team presets &amp; the FRCDesign COTS library</span></label>
         <input id="item-name" maxlength="120" required placeholder="e.g. Kraken X60 Motor, 10-32 × 1/2in Bolt">
 
         <div class="formgrid">
@@ -1587,7 +1509,7 @@
       </div>
 
       <form id="part-needed-form">
-        <label for="pn-part-name">Part Name *</label>
+        <label for="pn-part-name">Part Name * <span class="muted small">— type to search what we have &amp; COTS parts</span></label>
         <input id="pn-part-name" maxlength="120" required placeholder="e.g. Swerve Colson Wheels 4in, Limelight 3G, 10-32 Bolts">
 
         <div class="formgrid">
@@ -2071,7 +1993,7 @@
       <div class="modalhead">
         <div>
           <span class="eyebrow">CLAUDE CONNECTOR · MCP</span>
-          <h2>Control NYX from Claude 🤖</h2>
+          <h2>Control NYX from Claude</h2>
           <p class="muted small">Add the workspace to Claude, then send it a photo of a receipt, whiteboard, parts shelf or schedule and it records purchases, creates tasks, schedules shifts and updates stock for you. It acts as <b id="claude-connect-who">you</b>, with your permissions.</p>
         </div>
         <button class="close" id="close-claude-connect-modal" type="button" aria-label="Close">×</button>
@@ -2099,6 +2021,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028c"></script>
+  <script type="module" src="js/app.js?v=20261028d"></script>
 </body>
 </html>

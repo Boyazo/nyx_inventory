@@ -4,8 +4,8 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
 
 ## Key Features
 
-- **Intuitive Light & Dark Mode**: Segmented pill switch in the topbar (`🌙 Dark` / `☀️ Light`) with automatic local persistence and smooth transitions.
-- **Quick FRC Component Autofill Dropdown**: In the "Add / Edit Item" modal, an extensive FRC parts and tools dropdown with 30+ official components across Motors (Kraken, Falcon, NEO, CIM), Electronics (RoboRIO 2, PDH, PDP, CANivore, Limelight, Pigeon 2), Fasteners (10-32, 1/4-20, Rivets), Swerve (MK4i, MAXSwerve), Batteries, and Pit Tools that autofills name, category, tool status, part numbers, and units with one click.
+- **Clean Light & Dark Mode**: A flat, low-distraction layout (light by default) with a sidebar menu, stock status at a glance, and a Light/Dark switch in the top bar.
+- **Searchable Part Picker**: The item name field in *Add Item* and *Parts Needed* searches everything we already have (with stock and location), the team's quick-fill presets, and all ~570 COTS parts from the [FRCDesign library](https://app.frcdesign.org/app/library/frc-design-lib) with their vendors. Picking an item we already stock offers to update it instead of adding a duplicate. Refresh the COTS list with `python3 tools/update_cots_catalog.py`.
 - **Parts Needed for Robot 🤖 (Bill of Needs)**:
   - **Everyone can view**: Live tracking of mechanism parts needed, vendor links, quantities, and statuses (`Needed 🔴`, `Ordered 🟡`, `Shipped 🚚`, `Arrived in Shop 🟢`).
   - **Admins only edit**: Only coaches and team leads can add, update order status, or remove needed parts.

@@ -1,4 +1,5 @@
-import * as gcal from "./gcal.js?v=20261028c";
+import * as gcal from "./gcal.js?v=20261028d";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028d";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -36,13 +37,15 @@ let channel = null;
 
 /* Light/Dark Segmented Controller */
 function initTheme() {
-  const saved = localStorage.getItem("nyx_theme") || "dark";
-  applyTheme(saved);
+  // v2: the clean redesign defaults to light; earlier versions auto-saved "dark" for everyone
+  let saved = null;
+  try { saved = localStorage.getItem("nyx_theme_v2"); } catch (e) {}
+  applyTheme(saved || "light");
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("nyx_theme", theme);
+  try { localStorage.setItem("nyx_theme_v2", theme); } catch (e) {}
   
   const darkBtn = $("#theme-btn-dark");
   const lightBtn = $("#theme-btn-light");
@@ -124,6 +127,7 @@ function switchPage(pageName) {
   }
 
   currentAppPage = pageName;
+  syncSidebarSubnav();
   $("#sidebar-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#sidebar-btn-strategy")?.classList.toggle("active", pageName === "strategy");
   $("#sidebar-btn-secrets")?.classList.toggle("active", pageName === "secrets");
@@ -145,20 +149,46 @@ function switchPage(pageName) {
   }
 }
 
+/* Sidebar sub-navigation mirrors the view tabs (visibility, active state, counts) */
+function syncSidebarSubnav() {
+  $$("#sidebar-subnav .sidebar-sublink").forEach(link => {
+    const tab = document.querySelector(`.viewtab[data-view="${link.dataset.subview}"]`);
+    link.classList.toggle("hidden", !tab || tab.classList.contains("hidden"));
+    link.classList.toggle("active", currentAppPage === "dashboard" && link.dataset.subview === currentView);
+    const badge = link.querySelector("[data-badge]");
+    if (badge) {
+      const n = document.getElementById(badge.dataset.badge)?.textContent || "";
+      badge.textContent = n && n !== "0" ? n : "";
+    }
+  });
+}
+
+$("#sidebar-subnav")?.addEventListener("click", e => {
+  const link = e.target.closest("[data-subview]");
+  if (!link) return;
+  switchPage("dashboard");
+  switchView(link.dataset.subview);
+  if (window.innerWidth <= 1024) $("#sidebar-close-btn")?.click();
+});
+
+const viewTabsEl = document.querySelector(".viewtabs");
+if (viewTabsEl) new MutationObserver(syncSidebarSubnav).observe(viewTabsEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class"] });
+
 function switchView(viewName) {
   currentView = viewName;
+  syncSidebarSubnav();
   $$(".viewtab").forEach(tab => tab.classList.toggle("active", tab.dataset.view === viewName));
   $$("#mobile-view-options .sheet-option").forEach(opt => opt.classList.toggle("active", opt.dataset.view === viewName));
 
   const viewLabels = {
     "inventory": "Parts & Tools",
     "checkouts": "Active Checkouts",
-    "parts-needed": "Parts Needed for Robot 🤖",
-    "shifts": "Shifts & Calendar 📅",
-    "planner": "Team Planner 📋",
-    "spending": "Spending & Budget 💰",
-    "members": "Member Access",
-    "logs": "Audit & Activity Logs 🔒"
+    "parts-needed": "Parts Needed",
+    "shifts": "Shifts",
+    "planner": "Planner",
+    "spending": "Spending",
+    "members": "Members",
+    "logs": "Audit Log"
   };
 
   const elMobileViewLbl = $("#mobile-current-view-label");
@@ -464,7 +494,29 @@ async function loadSpending(quiet) {
   renderSpending();
 }
 
+function stockStatus(x) {
+  const qty = Number(x.quantity) || 0;
+  if (qty <= 0) return "out";
+  return qty <= Number(x.min_quantity ?? 1) ? "low" : "in";
+}
+function stockPill(x) {
+  const st = stockStatus(x);
+  const label = { in: "In stock", low: "Low stock", out: "Out of stock" }[st];
+  return `<span class="stock-pill stock-pill--${st}">${label}</span>`;
+}
+function renderStockBar() {
+  const counts = { in: 0, low: 0, out: 0 };
+  allItems.forEach(x => counts[stockStatus(x)]++);
+  const el = $("#stock-breakdown");
+  if (!el) return;
+  const total = allItems.length || 1;
+  el.innerHTML = `
+    <div class="stockbar">${["in", "low", "out"].map(k => counts[k] ? `<i class="stockbar-${k}" style="flex:${counts[k] / total}"></i>` : "").join("")}</div>
+    <div class="stocklegend"><span class="dot-in"></span>In stock <b>${counts.in}</b><span class="dot-low"></span>Low <b>${counts.low}</b><span class="dot-out"></span>Out <b>${counts.out}</b></div>`;
+}
+
 function renderItems() {
+  renderStockBar();
   const toolsCount = allItems.filter(x => x.is_tool).length;
 
   const elStatItems = $("#stat-items"); if (elStatItems) elStatItems.textContent = allItems.length;
@@ -512,7 +564,7 @@ function renderItems() {
         <div>
           <div class="itemname">
             ${esc(x.name)}
-            ${x.is_tool ? '<span class="pill tool">🛠 Tool</span>' : ''}
+            ${x.is_tool ? '<span class="pill tool">Tool</span>' : ''}
             ${x.part_number ? `<span class="parttag">${esc(x.part_number)}</span>` : ''}
           </div>
           <div class="itemnotes">${esc(x.notes || "No details provided")}</div>
@@ -532,6 +584,7 @@ function renderItems() {
 
         <div class="location muted">${esc(x.location || "Shop")}</div>
 
+        <div class="stockcell">
         <div class="quantity">
           ${isAdmin ? `
             <button class="qtybtn" data-action="qtyminus" data-id="${esc(x.id)}" aria-label="Decrease">−</button>
@@ -542,11 +595,13 @@ function renderItems() {
           ` : ''}
           <span class="muted">${esc(x.unit || "pcs")}</span>
         </div>
+        ${stockPill(x)}
+        </div>
 
         <div class="actions">
-          <button class="actionbtn" data-action="label-qr" data-id="${esc(x.id)}" title="Print bin label & QR code">🏷️ Label</button>
+          <button class="actionbtn" data-action="label-qr" data-id="${esc(x.id)}" title="Print bin label & QR code">Label</button>
           ${x.is_tool ? `
-            <button class="actionbtn checkout" data-action="checkout" data-id="${esc(x.id)}">Borrow ↗</button>
+            <button class="actionbtn checkout" data-action="checkout" data-id="${esc(x.id)}">Borrow</button>
           ` : ''}
           ${isAdmin ? `
             <button class="actionbtn" data-action="edit" data-id="${esc(x.id)}">Edit</button>
@@ -1724,7 +1779,6 @@ function openItemModal(item) {
   }
   editingItemId = item ? item.id : null;
   $("#item-form").reset();
-  $("#frc-quick-picker").value = "";
   $("#modal-title").textContent = item ? "Edit Inventory Item" : "Add Inventory Item";
   $("#save-item-button").textContent = item ? "Save Changes ↗" : "Save Item ↗";
   $("#item-name").value = item ? item.name : "";
@@ -1745,20 +1799,58 @@ function closeItemModal() {
   editingItemId = null;
 }
 
-/* Quick FRC Preset Picker Handler */
-$("#frc-quick-picker").addEventListener("change", e => {
-  const val = e.target.value;
-  if (!val) return;
-  try {
-    const data = JSON.parse(val);
-    $("#item-name").value = data.name || "";
-    $("#item-category").value = data.cat || "Mechanical";
-    $("#item-is-tool").value = data.tool ? "true" : "false";
-    $("#item-unit").value = data.unit || "pcs";
-    $("#item-part-number").value = data.pn || "";
-    if (data.notes) $("#item-notes").value = data.notes;
-  } catch (err) {
-    console.error("Preset parse error", err);
+/* Part pickers: inventory + team presets + FRCDesign COTS library */
+function vendorNote(entry) {
+  const links = vendorLinks(entry.vendors);
+  const names = entry.vendorNames.length ? entry.vendorNames.join(" / ") : "vendor unlisted";
+  return `COTS · ${entry.category} · ${names}${links.length ? ` (${links.map(l => l[1].replace(/^https?:\/\/(www\.)?/, "")).join(", ")})` : ""}`;
+}
+
+attachPartPicker($("#item-name"), {
+  getInventory: () => allItems,
+  onPick: entry => {
+    if (entry.type === "inventory") {
+      if (entry.item.id === editingItemId) return;
+      if (confirm(`"${entry.item.name}" is already in inventory (${entry.item.quantity} ${entry.item.unit || "pcs"}${entry.item.location ? ` at ${entry.item.location}` : ""}).\n\nOpen it to update the count instead of adding a duplicate?`)) {
+        openItemModal(entry.item);
+      } else {
+        $("#item-name").value = entry.item.name;
+      }
+      return;
+    }
+    if (entry.type === "preset") {
+      const p = entry.preset;
+      $("#item-name").value = p.name || "";
+      $("#item-category").value = p.cat || "Mechanical";
+      $("#item-is-tool").value = p.tool ? "true" : "false";
+      $("#item-unit").value = p.unit || "pcs";
+      $("#item-part-number").value = p.pn || "";
+      if (p.notes && !$("#item-notes").value.trim()) $("#item-notes").value = p.notes;
+      return;
+    }
+    $("#item-name").value = entry.name;
+    $("#item-category").value = entry.appCategory;
+    $("#item-is-tool").value = "false";
+    if (!$("#item-notes").value.trim()) $("#item-notes").value = vendorNote(entry);
+  }
+});
+
+attachPartPicker($("#pn-part-name"), {
+  getInventory: () => allItems,
+  onPick: entry => {
+    $("#pn-part-name").value = entry.name;
+    if (entry.type === "inventory") {
+      if (entry.item.part_number) $("#pn-part-number").value = entry.item.part_number;
+      toast(`We already have ${entry.item.quantity} ${entry.item.unit || "pcs"}${entry.item.location ? ` at ${entry.item.location}` : ""}.`);
+    } else if (entry.type === "preset") {
+      if (entry.preset.pn) $("#pn-part-number").value = entry.preset.pn;
+      $("#pn-subsystem").value = entry.preset.cat === "Electrical" ? "Electrical" : "Mechanical";
+    } else {
+      $("#pn-subsystem").value = entry.appCategory;
+      if (entry.vendorNames.length) $("#pn-vendor").value = entry.vendorNames.join(" / ");
+      const link = vendorLinks(entry.vendors)[0];
+      if (link && !$("#pn-url").value.trim()) $("#pn-url").placeholder = `Product link (vendor: ${link[1]})`;
+    }
   }
 });
 
