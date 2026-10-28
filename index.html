@@ -1668,6 +1668,12 @@ label { display: block; font-size: 12px; font-weight: 600; color: var(--text); m
   background: rgba(255, 255, 255, 0.08);
 }
 
+
+/* By default on PC/Desktop screens (>900px), hide mobile bottom navigation bar */
+.mobile-bottom-nav {
+  display: none !important;
+}
+
 /* Modal Bottom Sheets */
 .bottom-sheet-backdrop {
   position: fixed;
@@ -3786,6 +3792,8 @@ function screens(which) {
   $("#pending-screen").classList.toggle("hidden", which !== "pending");
   const elSidebar = $("#app-sidebar");
   if (elSidebar) elSidebar.classList.toggle("hidden", !isWorkspace);
+  const elMobBottomBar = $("#mobile-bottom-bar");
+  if (elMobBottomBar) elMobBottomBar.classList.toggle("hidden", !isWorkspace);
 
   if (isWorkspace) {
     switchPage(currentAppPage);
@@ -5612,7 +5620,7 @@ $("#admin-members-list").addEventListener("click", async e => {
       await loadMembers();
       toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
     }
-
+  }
 });
 
 /* Refresh logs */
