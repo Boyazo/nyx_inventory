@@ -1,12 +1,12 @@
-import * as gcal from "./gcal.js?v=20261028r";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028r";
-import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028r";
-import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028r";
-import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028r";
-import { initActivity, loadShopSession } from "./activity.js?v=20261028r";
-import { initAnalytics } from "./analytics.js?v=20261028r";
-import { initDuties } from "./duties.js?v=20261028r";
-import { initScoutHub } from "./scouting.js?v=20261028r";
+import * as gcal from "./gcal.js?v=20261028s";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028s";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028s";
+import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028s";
+import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028s";
+import { initActivity, loadShopSession } from "./activity.js?v=20261028s";
+import { initAnalytics } from "./analytics.js?v=20261028s";
+import { initDuties } from "./duties.js?v=20261028s";
+import { initScoutHub } from "./scouting.js?v=20261028s";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -1299,7 +1299,7 @@ async function loadMembers() {
             </label>`).join("")}
         </div>
         <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
-          ${!p.is_admin ? `<button class="btn btn--ghost btn--sm" data-action="set-pin" data-id="${p.id}" data-name="${esc(p.full_name)}" title="Give ${esc(p.full_name)} a new sign-in PIN"><i class=fa-grip aria-hidden=true></i> PIN</button>` : ""}
+          ${!p.is_admin || currentProfile?.is_admin ? `<button class="btn btn--ghost btn--sm" data-action="set-pin" data-id="${p.id}" data-name="${esc(p.full_name)}" title="Give ${esc(p.full_name)} a new sign-in PIN"><i class=fa-grip aria-hidden=true></i> PIN</button>` : ""}
           ${p.id !== currentUser.id ? `
             <button class="btn btn--danger btn--sm" data-action="revoke-member" data-id="${p.id}" data-name="${esc(p.full_name)}">Revoke</button>
           ` : ''}

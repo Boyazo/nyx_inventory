@@ -123,11 +123,6 @@ export async function loadPinStatus() {
   const box = $("#pin-profile");
   if (!box) return;
   const st = $("#pin-profile-status"), add = $("#pin-profile-new"), rm = $("#pin-profile-remove");
-  if (ctx.getProfile()?.is_admin) {
-    st.textContent = "Admin accounts sign in with email and password, so they don't get a PIN.";
-    add.classList.add("hidden"); rm.classList.add("hidden");
-    return;
-  }
   const res = await call("status", {}, true);
   if (res.error) { st.textContent = res.error; add.classList.add("hidden"); rm.classList.add("hidden"); return; }
   add.classList.remove("hidden");
