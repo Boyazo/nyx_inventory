@@ -28,7 +28,7 @@ const WEBHOOK = Deno.env.get("DISCORD_WEBHOOK_URL") || "";
 const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
 const DIGEST_HOUR = Number(Deno.env.get("DIGEST_HOUR") ?? 7);
 const LEAD_MIN = Number(Deno.env.get("REMINDER_LEAD_MINUTES") ?? 120);
-const SITE_URL = Deno.env.get("SITE_URL") || "https://workspace.nyx11744.org/";
+const SITE_URL = Deno.env.get("SITE_URL") || "https://dashboard.nyx11744.org/";
 const BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN") || "";
 const GUILD_ID = Deno.env.get("DISCORD_GUILD_ID") || "";
 
