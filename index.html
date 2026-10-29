@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028i">
+<link rel="stylesheet" href="css/style.css?v=20261028l">
 </head>
 <body>
 
@@ -345,17 +345,9 @@
         </div>
       </div>
 
-      <div class="filters">
-        <div class="tabslist">
-          <button class="catbtn active" data-shift-dept="All">All Departments</button>
-          <button class="catbtn" data-shift-dept="Mechanical">Mechanical</button>
-          <button class="catbtn" data-shift-dept="Electrical">Electrical</button>
-          <button class="catbtn" data-shift-dept="Software">Software</button>
-          <button class="catbtn" data-shift-dept="Business">Business</button>
-        </div>
-      </div>
+      <div id="shift-calendar"></div>
 
-      <div id="shifts-list" class="shift-grid">
+      <div id="shifts-list" class="shift-grid" hidden>
         <div style="padding:40px; text-align:center; grid-column:1/-1;" class="muted">Loading lab shifts…</div>
       </div>
     </section>
@@ -2064,6 +2056,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028i"></script>
+  <script type="module" src="js/app.js?v=20261028l"></script>
 </body>
 </html>

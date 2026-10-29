@@ -1,7 +1,8 @@
-import * as gcal from "./gcal.js?v=20261028i";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028i";
-import { initDuties } from "./duties.js?v=20261028i";
-import { initScoutHub } from "./scouting.js?v=20261028i";
+import * as gcal from "./gcal.js?v=20261028l";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028l";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028l";
+import { initDuties } from "./duties.js?v=20261028l";
+import { initScoutHub } from "./scouting.js?v=20261028l";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -394,6 +395,33 @@ async function loadShifts(quiet) {
   syncShiftCalendar();
 }
 
+/* Google-Calendar-style shift calendar */
+initShiftCalendar({
+  getShifts: () => allShifts,
+  isAdmin: () => !!currentProfile?.is_admin,
+  myName: () => myShiftName(),
+  esc,
+  cardHtml: s => shiftCardHtml(s),
+  showList: show => { const l = $("#shifts-list"); if (l) l.hidden = !show; },
+  onFilterChange: () => renderShifts(),
+  onCreate: prefill => openShiftModal(null, prefill),
+  onMove: async (shift, patch) => {
+    if (!currentProfile?.is_admin) return renderShifts();
+    const before = { shift_date: shift.shift_date, start_time: shift.start_time, end_time: shift.end_time };
+    Object.assign(shift, patch);   // optimistic
+    renderShifts();
+    const { error } = await supabase.from("team_shifts").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", shift.id);
+    if (error) {
+      Object.assign(shift, before);
+      renderShifts();
+      return toast("Couldn't move shift: " + error.message, true);
+    }
+    await logAction("SHIFT_UPDATED", "team_shifts", shift.id, { title: shift.title, from: before, to: patch, via: "calendar drag" });
+    toast(`Moved "${shift.title}" to ${new Date(patch.shift_date + "T12:00:00").toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}, ${patch.start_time}–${patch.end_time}.`);
+    loadShifts(true);
+  },
+});
+
 /* Google Calendar: push this member's shift sign-ups to their calendar */
 function myShiftName() {
   return currentProfile?.full_name || currentUser?.email || "Team Member";
@@ -626,10 +654,8 @@ function renderShifts() {
   const elStatShifts = $("#stat-shifts"); if (elStatShifts) elStatShifts.textContent = allShifts.length;
   const elBadgeShifts = $("#badge-shifts"); if (elBadgeShifts) elBadgeShifts.textContent = allShifts.length;
 
-  const filtered = allShifts.filter(s => {
-    if (activeShiftDept === "All") return true;
-    return s.department === activeShiftDept || s.department === "All Departments";
-  });
+  const filtered = allShifts.filter(s => isDeptVisible(s.department));
+  renderShiftCalendar();
 
   const list = $("#shifts-list");
   if (!list) return;
@@ -641,10 +667,14 @@ function renderShifts() {
     return;
   }
 
+  list.innerHTML = filtered.map(shiftCardHtml).join("");
+}
+
+/* One shift as a card (Schedule view and the calendar's details popover) */
+function shiftCardHtml(s) {
   const myName = currentProfile?.full_name || currentUser?.email || "Team Member";
   const isAdmin = !!currentProfile?.is_admin;
-
-  list.innerHTML = filtered.map(s => {
+  {
     const attendees = Array.isArray(s.attendees) ? s.attendees : [];
     const isAttending = attendees.includes(myName);
 
@@ -725,7 +755,7 @@ function renderShifts() {
         </div>
       </article>
     `;
-  }).join("");
+  }
 }
 
 /* Render Parts Needed (Viewable by everyone, editable by admins) */
@@ -1223,8 +1253,12 @@ async function loadMembers() {
           ${p.is_admin ? '<span class="pill" style="border-color:var(--accent-bright); color:var(--accent-bright); font-size:10px;">Admin</span>' : ''}
           <div class="muted small mono">${depts} ${p.id === currentUser.id ? '(You)' : ''}</div>
         </div>
-        <div>
-          <span class="pill" style="border-color:var(--accent-bright); color:var(--accent-bright); font-size:11px;">Active</span>
+        <div class="role-toggles">
+          ${[["is_admin", "Admin"], ["is_strategy", "Strategy"], ["is_secret", "Secret"]].map(([flag, label]) => `
+            <label class="role-toggle ${p[flag] ? "is-on" : ""}" title="${p.id === currentUser.id && flag === "is_admin" ? "You can't remove your own admin role" : `Toggle ${label} for ${esc(p.full_name)}`}">
+              <input type="checkbox" data-role-flag="${flag}" data-id="${p.id}" data-name="${esc(p.full_name)}" ${p[flag] ? "checked" : ""} ${p.id === currentUser.id && flag === "is_admin" ? "disabled" : ""}>
+              <span>${label}</span>
+            </label>`).join("")}
         </div>
         <div>
           ${p.id !== currentUser.id ? `
@@ -1701,7 +1735,7 @@ function closeProfileModal() {
   $("#profile-modal").classList.add("hidden");
 }
 
-function openShiftModal(shift) {
+function openShiftModal(shift, prefill) {
   if (!currentProfile?.is_admin) {
     toast("Only admins can schedule or edit shifts.", true);
     return;
@@ -1718,6 +1752,11 @@ function openShiftModal(shift) {
   $("#shift-location").value = shift ? (shift.location || "Main Shop") : "Main Shop";
   $("#shift-notes").value = shift ? (shift.notes || "").replace("[🔁 Weekly Shift]", "").trim() : "";
 
+  if (!shift && prefill) {
+    $("#shift-date").value = prefill.shift_date;
+    $("#shift-start").value = prefill.start_time;
+    $("#shift-end").value = prefill.end_time;
+  }
   shiftAssignSelected = new Set(shift ? (shift.attendees || []) : [myShiftName()]);
   $("#shift-assign-search").value = "";
   renderShiftAssignList();
@@ -2764,7 +2803,7 @@ $("#items-list").addEventListener("click", async e => {
 });
 
 /* Shifts Actions: Join/Leave, Edit, Delete (Everyone can edit) */
-$("#shifts-list").addEventListener("click", async e => {
+$("#view-shifts").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action]");
   if (!b) return;
   const action = b.dataset.action;
@@ -3256,6 +3295,28 @@ $("#admin-members-list").addEventListener("click", async e => {
       toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
     }
   }
+});
+
+/* Member roles (admins): Admin / Strategy / Secret. The profiles trigger only allows admins to change these. */
+$("#admin-members-list").addEventListener("change", async e => {
+  const cb = e.target.closest("input[data-role-flag]");
+  if (!cb || !currentProfile?.is_admin) return;
+  const { roleFlag: flag, id, name } = cb.dataset;
+  const label = { is_admin: "Admin", is_strategy: "Strategy", is_secret: "Secret" }[flag];
+  if (id === currentUser.id && flag === "is_admin" && !cb.checked) { cb.checked = true; return; }
+  if (flag === "is_admin" && cb.checked && !confirm(`Make ${name} an admin? Admins can manage everything, including other members' roles.`)) { cb.checked = false; return; }
+  cb.disabled = true;
+  const { error } = await supabase.from("profiles").update({ [flag]: cb.checked }).eq("id", id);
+  cb.disabled = false;
+  if (error) {
+    cb.checked = !cb.checked;
+    toast(`Couldn't change ${label} for ${name}: ${error.message}`, true);
+    return;
+  }
+  cb.closest(".role-toggle")?.classList.toggle("is-on", cb.checked);
+  await logAction("MEMBER_ROLE_CHANGED", "profiles", id, { member_name: name, role: label, granted: cb.checked });
+  if (id === currentUser.id) currentProfile[flag] = cb.checked;
+  toast(`${cb.checked ? "Granted" : "Removed"} ${label} for ${name}.`);
 });
 
 /* Refresh logs */
