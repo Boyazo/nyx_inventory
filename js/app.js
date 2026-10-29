@@ -1,6 +1,7 @@
-import * as gcal from "./gcal.js?v=20261028h";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028h";
-import { initScoutHub } from "./scouting.js?v=20261028h";
+import * as gcal from "./gcal.js?v=20261028i";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028i";
+import { initDuties } from "./duties.js?v=20261028i";
+import { initScoutHub } from "./scouting.js?v=20261028i";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -117,6 +118,7 @@ function screens(which) {
     $("#inventory-screen")?.classList.add("hidden");
     $("#strategy-screen")?.classList.add("hidden");
     $("#secrets-screen")?.classList.add("hidden");
+    $("#duties-screen")?.classList.add("hidden");
   }
 }
 
@@ -131,6 +133,9 @@ function switchPage(pageName) {
   syncSidebarSubnav();
   $("#sidebar-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#sidebar-btn-strategy")?.classList.toggle("active", pageName === "strategy");
+  $("#sidebar-btn-duties")?.classList.toggle("active", pageName === "duties");
+  $("#mob-btn-duties")?.classList.toggle("active", pageName === "duties");
+  $("#duties-screen")?.classList.toggle("hidden", pageName !== "duties");
   $("#sidebar-btn-secrets")?.classList.toggle("active", pageName === "secrets");
   $("#mob-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#mob-btn-strategy")?.classList.toggle("active", pageName === "strategy");
@@ -143,7 +148,9 @@ function switchPage(pageName) {
   $("#app-sidebar")?.classList.remove("open");
   $("#sidebar-backdrop")?.classList.remove("active");
 
-  if (pageName === "strategy") {
+  if (pageName === "duties") {
+    initDuties({ getClient: () => supabase, getUser: () => currentUser, getProfile: () => currentProfile, toast, esc, logAction });
+  } else if (pageName === "strategy") {
     initStrategyCenter();
   } else if (pageName === "secrets") {
     initSecretsCenter();
@@ -5884,6 +5891,8 @@ $("#sidebar-open-profile-btn")?.addEventListener("click", openProfileModal);
 // Mobile Bottom Nav Bar Clicks
 $("#mob-btn-dashboard")?.addEventListener("click", () => switchPage("dashboard"));
 $("#mob-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
+$("#mob-btn-duties")?.addEventListener("click", () => switchPage("duties"));
+$("#sidebar-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#mob-btn-secrets")?.addEventListener("click", () => switchPage("secrets"));
 $("#mob-btn-menu")?.addEventListener("click", () => {
   const sb = $("#app-sidebar");

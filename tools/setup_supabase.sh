@@ -28,7 +28,7 @@ if ! supabase projects list 2>/dev/null | grep -q "$REF"; then
 fi
 
 say "1/5  Applying database changes (supabase/schema.sql)…"
-supabase db query --project-ref "$REF" -f supabase/schema.sql >/dev/null
+supabase db query --linked --project-ref "$REF" -f supabase/schema.sql >/dev/null
 echo "     done"
 
 say "2/5  Deploying functions…"
@@ -61,7 +61,7 @@ supabase secrets set --project-ref "$REF" "${SECRETS[@]}" >/dev/null
 TMP_SQL="$(mktemp)"
 trap 'rm -f "$TMP_SQL"' EXIT
 sed "s/PASTE_CRON_SECRET_HERE/${CRON_SECRET}/" supabase/discord_reminders.sql > "$TMP_SQL"
-supabase db query --project-ref "$REF" -f "$TMP_SQL" >/dev/null
+supabase db query --linked --project-ref "$REF" -f "$TMP_SQL" >/dev/null
 echo "     done"
 
 say "5/5  Sending a test message to Discord…"

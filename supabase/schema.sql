@@ -702,3 +702,91 @@ begin
     end loop;
   end if;
 end $$;
+
+-- 15. Competition sign-ups: roles x time blocks, member preferences, admin assignments
+create table if not exists public.duty_roles (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  description text not null default '',
+  capacity integer not null default 2 check (capacity >= 0),
+  sort integer not null default 0
+);
+create table if not exists public.duty_blocks (
+  id uuid primary key default gen_random_uuid(),
+  label text not null unique,
+  sort integer not null default 0
+);
+create table if not exists public.duty_prefs (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role_id uuid not null references public.duty_roles(id) on delete cascade,
+  block_id uuid not null references public.duty_blocks(id) on delete cascade,
+  level text not null check (level in ('want', 'can')),
+  user_name text not null default '',
+  updated_at timestamptz not null default now(),
+  primary key (user_id, role_id, block_id)
+);
+create table if not exists public.duty_assignments (
+  id uuid primary key default gen_random_uuid(),
+  role_id uuid not null references public.duty_roles(id) on delete cascade,
+  block_id uuid not null references public.duty_blocks(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  user_name text not null default '',
+  assigned_by_name text not null default '',
+  created_at timestamptz not null default now(),
+  unique (block_id, user_id)   -- one role per person per block
+);
+
+insert into public.duty_roles (name, description, capacity, sort) values
+  ('Pit Crew', 'Repairs, battery swaps, pit setup', 4, 10),
+  ('Match Scouting', 'Scout robots in the stands', 6, 20),
+  ('Pit Scouting', 'Interview other teams in their pits', 2, 30),
+  ('Drive Team', 'Driver, operator, coach, human player', 4, 40),
+  ('Strategy', 'Match strategy and pick-list prep', 2, 50),
+  ('Safety Captain', 'Safety checks and glasses', 1, 60),
+  ('Spirit & Outreach', 'Stands, buttons, talking to judges and visitors', 3, 70),
+  ('Media', 'Photos, video, social posts', 1, 80)
+on conflict (name) do nothing;
+insert into public.duty_blocks (label, sort) values
+  ('Day 1 AM', 10), ('Day 1 PM', 20), ('Day 2 AM', 30), ('Day 2 PM', 40), ('Day 3 AM', 50), ('Day 3 PM', 60)
+on conflict (label) do nothing;
+
+alter table public.duty_roles enable row level security;
+alter table public.duty_blocks enable row level security;
+alter table public.duty_prefs enable row level security;
+alter table public.duty_assignments enable row level security;
+
+drop policy if exists "Members read duty roles" on public.duty_roles;
+create policy "Members read duty roles" on public.duty_roles for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Admins manage duty roles" on public.duty_roles;
+create policy "Admins manage duty roles" on public.duty_roles for all to authenticated using((select public.is_team_admin())) with check((select public.is_team_admin()));
+
+drop policy if exists "Members read duty blocks" on public.duty_blocks;
+create policy "Members read duty blocks" on public.duty_blocks for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Admins manage duty blocks" on public.duty_blocks;
+create policy "Admins manage duty blocks" on public.duty_blocks for all to authenticated using((select public.is_team_admin())) with check((select public.is_team_admin()));
+
+drop policy if exists "Members read duty prefs" on public.duty_prefs;
+create policy "Members read duty prefs" on public.duty_prefs for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Members set own duty prefs" on public.duty_prefs;
+create policy "Members set own duty prefs" on public.duty_prefs for insert to authenticated with check(user_id = (select auth.uid()) and (select public.is_approved_member()));
+drop policy if exists "Members change own duty prefs" on public.duty_prefs;
+create policy "Members change own duty prefs" on public.duty_prefs for update to authenticated using(user_id = (select auth.uid())) with check(user_id = (select auth.uid()));
+drop policy if exists "Members clear own duty prefs" on public.duty_prefs;
+create policy "Members clear own duty prefs" on public.duty_prefs for delete to authenticated using(user_id = (select auth.uid()));
+
+drop policy if exists "Members read duty assignments" on public.duty_assignments;
+create policy "Members read duty assignments" on public.duty_assignments for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Admins manage duty assignments" on public.duty_assignments;
+create policy "Admins manage duty assignments" on public.duty_assignments for all to authenticated using((select public.is_team_admin())) with check((select public.is_team_admin()));
+
+do $$
+declare t text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach t in array array['duty_roles', 'duty_blocks', 'duty_prefs', 'duty_assignments'] loop
+      if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      end if;
+    end loop;
+  end if;
+end $$;

@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028h">
+<link rel="stylesheet" href="css/style.css?v=20261028i">
 </head>
 <body>
 
@@ -54,6 +54,10 @@
         <button class="sidebar-sublink" data-subview="spending" type="button">Spending</button>
         <button class="sidebar-sublink" data-subview="members" type="button">Members <span data-badge="badge-members"></span></button>
       </div>
+      <button class="sidebar-link" id="sidebar-btn-duties" data-page="duties" type="button">
+        <span class="sidebar-icon">🗓</span>
+        <span class="sidebar-label">Competition Sign-ups</span>
+      </button>
       <button class="sidebar-link" id="sidebar-btn-strategy" data-page="strategy" type="button">
         <span class="sidebar-icon">🎯</span>
         <span class="sidebar-label">Strategy & Scouting</span>
@@ -566,6 +570,25 @@
   </main>
 
   <!-- STRATEGY & SCOUTING SCREEN -->
+  <main id="duties-screen" class="dashboard hidden">
+    <section class="welcome">
+      <div>
+        <h1>Competition Sign-ups</h1>
+        <p class="muted">Pick the roles you'd like at competitions — pit crew, scouting, drive team and more. Admins place everyone from here.</p>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="scout-hubbar" style="padding-top:14px;">
+        <nav class="scout-subnav" id="duties-tabs" aria-label="Sign-up sections">
+          <button type="button" class="active" data-duty-tab="mine">My sign-ups</button>
+          <button type="button" data-duty-tab="assign" data-admin hidden>Assign (admin)</button>
+          <button type="button" data-duty-tab="setup" data-admin hidden>Setup (admin)</button>
+        </nav>
+      </div>
+      <div id="duties-body" style="padding:16px 20px 20px;"><div class="muted">Loading…</div></div>
+    </section>
+  </main>
+
   <main id="strategy-screen" class="dashboard hidden">
     <section class="welcome">
       <div>
@@ -1921,6 +1944,10 @@
       <span class="nav-icon">🛠</span>
       <span>Shop</span>
     </button>
+    <button type="button" class="mobile-nav-item" id="mob-btn-duties" data-page="duties">
+      <span class="nav-icon">🗓</span>
+      <span>Sign-ups</span>
+    </button>
     <button type="button" class="mobile-nav-item" id="mob-btn-strategy" data-page="strategy">
       <span class="nav-icon">🎯</span>
       <span>Strategy</span>
@@ -2037,6 +2064,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028h"></script>
+  <script type="module" src="js/app.js?v=20261028i"></script>
 </body>
 </html>
