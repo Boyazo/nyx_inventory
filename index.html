@@ -15,11 +15,27 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028t">
+<style>
+  body.is-loading > :not(#startup-screen):not(script) { display: none !important; }
+  #startup-screen { position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 24px; background: var(--bg, #fff); color: var(--text, #182230); font: 14px system-ui, sans-serif; text-align: center; }
+  #startup-screen[hidden] { display: none; }
+  .startup-logo { width: 100px; height: 100px; object-fit: contain; animation: nyx-loading-pulse 1.8s ease-in-out infinite; }
+  #startup-screen.is-error .startup-logo { animation: none; }
+  @keyframes nyx-loading-pulse { 0%, 100% { opacity: .55; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.04); } }
+  @media (prefers-reduced-motion: reduce) { .startup-logo { animation: none; } }
+</style>
+<script src="js/startup.js?v=20261028v" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="teams_data.js" defer></script>
+<link rel="stylesheet" href="css/style.css?v=20261028v">
 </head>
-<body class="is-auth">
+<body class="is-auth is-loading">
+<div id="startup-screen" role="status" aria-live="polite" aria-busy="true">
+  <img class="startup-logo" src="logo.png" alt="Nyx" width="100" height="100" fetchpriority="high">
+  <span id="startup-message">Loading your workspace…</span>
+  <button id="startup-retry" class="btn btn--primary" type="button" hidden>Try again</button>
+  <noscript>Enable JavaScript to open Nyx Dashboard.</noscript>
+</div>
 
 <div class="app-layout">
   <!-- Mobile Sidebar Backdrop -->
@@ -128,7 +144,7 @@
   </div>
 
   <!-- AUTH SCREEN -->
-  <main id="auth-screen" class="auth-only">
+  <main id="auth-screen" class="auth-only hidden">
     <section class="auth-card" aria-labelledby="auth-title">
       <div class="auth-brand">
         <img src="logo.png" alt="" width="44" height="44">
@@ -292,8 +308,8 @@
     <section id="view-inventory" class="panel">
       <div class="toolbar">
         <div>
-          <h2>Inventory</h2>
-          <p class="muted small">All members can browse tools & check stock. Admins manage catalog items.</p>
+          <h2>Parts &amp; Tools</h2>
+          <p class="muted small">Find a part, locate a tool, and see what's available in the shop.</p>
         </div>
         <div class="toolbar-actions">
           <button class="btn btn--ghost btn--sm hidden" id="manage-categories-btn" type="button"><i class=fa-tags aria-hidden=true></i> Categories</button>
@@ -302,7 +318,24 @@
         </div>
       </div>
 
-      <div class="filters">
+      <div class="inventory-browser">
+        <div class="inventory-kinds" role="group" aria-label="Inventory type">
+          <button type="button" class="inventory-kind active" data-inventory-kind="all" aria-pressed="true">All inventory <span id="inv-count-all">0</span></button>
+          <button type="button" class="inventory-kind" data-inventory-kind="part" aria-pressed="false"><i class="fa-solid fa-box" aria-hidden="true"></i> Parts <span id="inv-count-parts">0</span></button>
+          <button type="button" class="inventory-kind" data-inventory-kind="tool" aria-pressed="false"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i> Tools <span id="inv-count-tools">0</span></button>
+        </div>
+        <div class="inventory-controls">
+          <label class="inventory-search" for="search-items">Search inventory
+            <input id="search-items" type="search" placeholder="Name, part number, location…">
+          </label>
+          <label for="inventory-stock">Stock status
+            <select id="inventory-stock"><option value="all">Any stock level</option><option value="in">In stock</option><option value="low">Low stock</option><option value="out">Out of stock</option></select>
+          </label>
+          <label for="inventory-sort">Sort within category
+            <select id="inventory-sort"><option value="name">Name A–Z</option><option value="location">Location</option><option value="quantity">Lowest stock first</option></select>
+          </label>
+        </div>
+      <div class="inventory-category-filters">
         <div class="mobile-filter-picker-container">
           <button type="button" class="mobile-filter-picker-btn" id="mobile-filter-inv-trigger">
             <span><i class=fa-gear aria-hidden=true></i> Filter Category: <strong id="mobile-current-filter-inv-label">All</strong></span>
@@ -310,12 +343,16 @@
           </button>
         </div>
         <div class="tabslist" id="inv-filter-tabs" aria-label="Inventory categories"></div>
-        <input class="search" id="search-items" type="search" placeholder="Search name, location, part #" aria-label="Search inventory">
+      </div>
+        <div class="inventory-results-bar">
+          <span id="inventory-results" role="status" aria-live="polite"></span>
+          <button id="inventory-reset" type="button" class="textbtn" hidden>Clear filters</button>
+        </div>
       </div>
 
       <div class="tablehead">
         <span>Item / Part #</span>
-        <span>Subsystem</span>
+        <span>Category</span>
         <span>Location</span>
         <span>Stock</span>
         <span>Actions</span>
@@ -326,7 +363,7 @@
       </div>
 
       <div style="border-top:1px solid var(--line); padding:12px 24px; display:flex; justify-content:space-between; font-size:11px;" class="muted">
-        <span><span class="dot"></span> Live PostgreSQL & Realtime Subscription</span>
+        <span><span class="dot"></span> Inventory updates automatically</span>
         <span id="last-sync">Connecting...</span>
       </div>
     </section>
@@ -2080,6 +2117,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028u"></script>
+  <script type="module" src="js/app.js?v=20261028v"></script>
 </body>
 </html>
