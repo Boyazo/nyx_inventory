@@ -1299,7 +1299,7 @@ async function loadMembers() {
             </label>`).join("")}
         </div>
         <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
-          ${!p.is_admin || currentProfile?.is_admin ? `<button class="btn btn--ghost btn--sm" data-action="set-pin" data-id="${p.id}" data-name="${esc(p.full_name)}" title="Give ${esc(p.full_name)} a new sign-in PIN"><i class=fa-grip aria-hidden=true></i> PIN</button>` : ""}
+          ${!p.is_admin || p.id === currentUser.id ? `<button class="btn btn--ghost btn--sm" data-action="set-pin" data-id="${p.id}" data-name="${esc(p.full_name)}" title="Give ${esc(p.full_name)} a new sign-in PIN"><i class=fa-grip aria-hidden=true></i> PIN</button>` : ""}
           ${p.id !== currentUser.id ? `
             <button class="btn btn--danger btn--sm" data-action="revoke-member" data-id="${p.id}" data-name="${esc(p.full_name)}">Revoke</button>
           ` : ''}
