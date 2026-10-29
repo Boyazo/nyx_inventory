@@ -2682,7 +2682,7 @@ h1 em, h2 em { font-style: normal; color: inherit; background: none !important; 
 .badgenum { background: var(--bg-subtle) !important; color: var(--text-muted) !important; box-shadow: none !important; border: 0 !important; font-family: var(--font-sans) !important; font-weight: 600; }
 .viewtab.active .badgenum { background: var(--accent-dim) !important; color: var(--accent) !important; }
 @media (min-width: 1025px) {
-  body:not(.sidebar-collapsed) .viewtabs { display: none !important; }
+  body:not(.sidebar-collapsed) #inventory-screen > .viewtabs { display: none !important; }
 }
 
 /* Panels & toolbars */

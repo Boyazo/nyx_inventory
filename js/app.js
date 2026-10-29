@@ -1,6 +1,6 @@
-import * as gcal from "./gcal.js?v=20261028f";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028f";
-import { initScoutHub } from "./scouting.js?v=20261028f";
+import * as gcal from "./gcal.js?v=20261028g";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028g";
+import { initScoutHub } from "./scouting.js?v=20261028g";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
