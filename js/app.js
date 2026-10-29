@@ -1,12 +1,12 @@
-import * as gcal from "./gcal.js?v=20261028s";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028s";
-import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028s";
-import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028s";
-import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028s";
-import { initActivity, loadShopSession } from "./activity.js?v=20261028s";
-import { initAnalytics } from "./analytics.js?v=20261028s";
-import { initDuties } from "./duties.js?v=20261028s";
-import { initScoutHub } from "./scouting.js?v=20261028s";
+import * as gcal from "./gcal.js?v=20261028t";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028t";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028t";
+import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028t";
+import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028t";
+import { initActivity, loadShopSession } from "./activity.js?v=20261028t";
+import { initAnalytics } from "./analytics.js?v=20261028t";
+import { initDuties } from "./duties.js?v=20261028t";
+import { initScoutHub } from "./scouting.js?v=20261028t";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -110,7 +110,7 @@ function authMode(mode) {
   $("#auth-message").classList.add("hidden");
 }
 
-/* Roles: admins run the site (members, roles, spending, audit log, analytics);
+/* Roles: admins run the site (members, roles, audit log, analytics); spending is admins + moderators;
    moderators share the day-to-day admin work (inventory, parts, shifts, planner, scouting, sign-ups). */
 function isStaff(p = currentProfile) { return !!(p?.is_admin || p?.is_moderator); }
 function roleLabel(p) { return p?.is_admin ? "ADMIN" : p?.is_moderator ? "MODERATOR" : "MEMBER"; }
@@ -240,7 +240,7 @@ function switchView(viewName) {
   $("#view-members").classList.toggle("hidden", viewName !== "members");
   $("#view-logs").classList.toggle("hidden", viewName !== "logs");
 
-  if (viewName === "spending" && currentProfile?.is_admin) loadSpending();
+  if (viewName === "spending" && isStaff()) loadSpending();
   if (viewName === "logs" && currentProfile?.is_admin) loadLogs();
 }
 
@@ -323,7 +323,7 @@ async function checkUser(user) {
   const elAddPn = $("#add-part-needed-btn"); if (elAddPn) elAddPn.classList.toggle("hidden", !isStaff(data));
   const elAddTsk = $("#add-task-btn"); if (elAddTsk) elAddTsk.classList.toggle("hidden", !isStaff(data));
   const elAddShift = $("#add-shift-btn"); if (elAddShift) elAddShift.classList.toggle("hidden", !isStaff(data));
-  const elTabSpend = $("#tab-spending"); if (elTabSpend) elTabSpend.classList.toggle("hidden", !data.is_admin);
+  const elTabSpend = $("#tab-spending"); if (elTabSpend) elTabSpend.classList.toggle("hidden", !isStaff(data));
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
   const elSecretSideBtn = $("#sidebar-btn-secrets"); if (elSecretSideBtn) elSecretSideBtn.classList.toggle("hidden", !data.is_secret);
@@ -353,7 +353,7 @@ async function checkUser(user) {
       .on("postgres_changes", { event: "*", schema: "public", table: "parts_needed" }, () => loadPartsNeeded(true))
       .on("postgres_changes", { event: "*", schema: "public", table: "team_shifts" }, () => loadShifts(true))
       .on("postgres_changes", { event: "*", schema: "public", table: "spending_records" }, () => {
-        if (currentProfile?.is_admin) loadSpending(true);
+        if (isStaff()) loadSpending(true);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
         if (currentView === "logs" && currentProfile?.is_admin) loadLogs();
@@ -537,9 +537,9 @@ async function loadTasks(quiet) {
   }
 }
 
-/* Load Spending (Admin only) */
+/* Load Spending (admins and moderators) */
 async function loadSpending(quiet) {
-  if (!supabase || !currentProfile?.is_admin) return;
+  if (!supabase || !isStaff()) return;
   const list = $("#spending-list");
   if (!quiet && list) list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">Loading spending ledger…</div>';
 
@@ -1165,9 +1165,9 @@ function getSeasonPeriod(orderDate, chosenPeriod) {
   return orderDate < SEASON_KICKOFF ? "offseason" : "inseason";
 }
 
-/* Render Spending (Admin only) */
+/* Render Spending (admins and moderators) */
 function renderSpending() {
-  if (!currentProfile?.is_admin) return;
+  if (!isStaff()) return;
 
   // Filter based on period tab
   const filtered = allSpending.filter(s => {
@@ -2011,7 +2011,7 @@ function closeTaskModal() {
 }
 
 function openSpendingModal(recordToEdit) {
-  if (!currentProfile?.is_admin) return;
+  if (!isStaff()) return;
   $("#spending-form").reset();
   $("#spend-receipt-data").value = "";
   $("#spend-receipt-file").value = "";
@@ -2415,10 +2415,10 @@ async function saveTask(e) {
   toast(editingTaskId ? "Task updated." : "Task added to team planner.");
 }
 
-/* Spending Save (Admin only) - supports Editing + Receipt Screenshot + Auto Season Period + Version History */
+/* Spending Save (admins and moderators) - supports Editing + Receipt Screenshot + Auto Season Period + Version History */
 async function saveSpending(e) {
   e.preventDefault();
-  if (!currentProfile?.is_admin) return;
+  if (!isStaff()) return;
 
   const title = $("#spend-title").value.trim();
   const vendor = $("#spend-vendor").value.trim();
@@ -3145,7 +3145,7 @@ $("#spending-list").addEventListener("click", async e => {
   const receiptBtn = e.target.closest("button[data-action='view-receipt']");
   const historyBtn = e.target.closest("button[data-action='view-history']");
 
-  if (editBtn && currentProfile?.is_admin) {
+  if (editBtn && isStaff()) {
     const id = editBtn.dataset.id;
     const item = allSpending.find(s => s.id === id);
     if (item) openSpendingModal(item);
@@ -3170,7 +3170,7 @@ $("#spending-list").addEventListener("click", async e => {
     return;
   }
 
-  if (deleteBtn && currentProfile?.is_admin) {
+  if (deleteBtn && isStaff()) {
     const id = deleteBtn.dataset.id;
     if (confirm("Delete this purchase order record?")) {
       const targetSpend = allSpending.find(s => s.id === id);

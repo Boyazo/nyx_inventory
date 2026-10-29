@@ -16,7 +16,7 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists departments text[] not null default array['Mechanical']::text[];
 alter table public.profiles add column if not exists is_secret boolean not null default false;
 alter table public.profiles add column if not exists is_strategy boolean not null default false;
--- Moderators share day-to-day admin work; admins alone run members, roles, spending, logs and analytics
+-- Moderators share day-to-day admin work and spending; admins alone run members, roles, logs and analytics
 alter table public.profiles add column if not exists is_moderator boolean not null default false;
 -- Numeric Discord user id so the shift bot can @mention the member
 alter table public.profiles add column if not exists discord_id text not null default '';
@@ -121,7 +121,7 @@ create table if not exists public.parts_needed (
 create index if not exists parts_needed_status_idx on public.parts_needed(status);
 create index if not exists parts_needed_priority_idx on public.parts_needed(priority);
 
--- 7. Spending & Budget Tracking Table (Admin Only)
+-- 7. Spending & Budget Tracking Table (admins and moderators only)
 create table if not exists public.spending_records (
   id uuid primary key default gen_random_uuid(),
   title text not null check (length(trim(title)) > 0),
@@ -412,23 +412,27 @@ drop policy if exists "Staff can delete parts needed" on public.parts_needed;
 create policy "Staff can delete parts needed" on public.parts_needed
 for delete to authenticated using((select public.is_team_staff()));
 
--- Spending Records (ONLY ADMINS can read, insert, update, delete)
+-- Spending Records (admins and moderators only; regular members can't see purchases)
 drop policy if exists "Only admins can read spending" on public.spending_records;
-create policy "Only admins can read spending" on public.spending_records
-for select to authenticated using((select public.is_team_admin()));
-
 drop policy if exists "Only admins can insert spending" on public.spending_records;
-create policy "Only admins can insert spending" on public.spending_records
-for insert to authenticated with check((select public.is_team_admin()));
-
 drop policy if exists "Only admins can update spending" on public.spending_records;
-create policy "Only admins can update spending" on public.spending_records
-for update to authenticated using((select public.is_team_admin()))
-with check((select public.is_team_admin()));
-
 drop policy if exists "Only admins can delete spending" on public.spending_records;
-create policy "Only admins can delete spending" on public.spending_records
-for delete to authenticated using((select public.is_team_admin()));
+drop policy if exists "Staff can read spending" on public.spending_records;
+create policy "Staff can read spending" on public.spending_records
+for select to authenticated using((select public.is_team_staff()));
+
+drop policy if exists "Staff can insert spending" on public.spending_records;
+create policy "Staff can insert spending" on public.spending_records
+for insert to authenticated with check((select public.is_team_staff()));
+
+drop policy if exists "Staff can update spending" on public.spending_records;
+create policy "Staff can update spending" on public.spending_records
+for update to authenticated using((select public.is_team_staff()))
+with check((select public.is_team_staff()));
+
+drop policy if exists "Staff can delete spending" on public.spending_records;
+create policy "Staff can delete spending" on public.spending_records
+for delete to authenticated using((select public.is_team_staff()));
 
 -- Team Shifts (Admins schedule and delete; Approved members view & RSVP / update roster)
 drop policy if exists "Approved members can read team shifts" on public.team_shifts;

@@ -51,6 +51,9 @@ export function initPinLogin(context) {
   $("#pin-form")?.addEventListener("submit", e => { e.preventDefault(); submit(); });
   $("#pin-reveal-done")?.addEventListener("click", () => $("#pin-reveal-modal").classList.add("hidden"));
   $("#pin-profile-new")?.addEventListener("click", () => setPin());
+  $("#pin-profile-input")?.addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6); });
+  $("#pin-profile-input")?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveChosenPin(); } });
+  $("#pin-profile-save")?.addEventListener("click", saveChosenPin);
   $("#pin-profile-remove")?.addEventListener("click", removeOwnPin);
 
   // Idle sign-out, only for sessions that started with a PIN
@@ -122,15 +125,30 @@ function pinError(msg) {
 export async function loadPinStatus() {
   const box = $("#pin-profile");
   if (!box) return;
-  const st = $("#pin-profile-status"), add = $("#pin-profile-new"), rm = $("#pin-profile-remove");
+  const st = $("#pin-profile-status"), add = $("#pin-profile-new"), rm = $("#pin-profile-remove"), choose = $(".pin-profile-choose");
   const res = await call("status", {}, true);
-  if (res.error) { st.textContent = res.error; add.classList.add("hidden"); rm.classList.add("hidden"); return; }
+  if (res.error) { st.textContent = res.error; [add, rm, choose].forEach(el => el?.classList.add("hidden")); return; }
   add.classList.remove("hidden");
-  add.textContent = res.has_code ? "New PIN" : "Create PIN";
+  choose?.classList.remove("hidden");
+  add.textContent = res.has_code ? "New random PIN" : "Random PIN";
   rm.classList.toggle("hidden", !res.has_code);
   st.textContent = res.has_code
     ? `You have a PIN${res.last_used_at ? `, last used ${new Date(res.last_used_at).toLocaleDateString()}` : ", not used yet"}. Lost it? Make a new one.`
-    : "Sign in on any computer with a 6-digit PIN instead of your password.";
+    : "Sign in on any computer with a 6-digit PIN instead of your password. Choose one, or let us pick a random one.";
+}
+
+async function saveChosenPin() {
+  const input = $("#pin-profile-input");
+  const chosen = input.value.replace(/\D/g, "");
+  if (chosen.length !== 6) return ctx.toast("Your PIN needs exactly 6 digits.", true);
+  const btn = $("#pin-profile-save");
+  btn.disabled = true;
+  const res = await call("set_code", { pin: chosen }, true);
+  btn.disabled = false;
+  if (res.error) return ctx.toast(res.error, true);
+  input.value = "";
+  ctx.toast("PIN saved. Use it on the sign-in screen.");
+  loadPinStatus();
 }
 
 export async function setPin(userId = null, name = "") {

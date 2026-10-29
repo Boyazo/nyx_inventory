@@ -545,8 +545,7 @@ const TOOLS: Tool[] = [
     name: "list_purchases",
     description: "List recorded purchases (admin) with totals. Purchases before the season kickoff are offseason.",
     inputSchema: obj({ period: str("Filter", { enum: ["all", "offseason", "inseason"] }), missing_receipt_only: bool("Only purchases still missing a receipt screenshot") }),
-    admin: true,
-    adminOnly: true,   // spending stays with admins
+    admin: true,   // spending: admins and moderators
     readOnly: true,
     run: async (_m, a) => {
       let q = db.from("spending_records").select("id, title, vendor, amount, category, order_date, order_number, notes, season_period, receipt_data, edit_history").order("order_date", { ascending: false });
@@ -568,8 +567,7 @@ const TOOLS: Tool[] = [
       notes: str("Items, card used, grant, etc."), season_period: str("Override the automatic period", { enum: ["offseason", "inseason"] }),
       receipt_image_base64: str("Receipt screenshot as base64 (JPEG/PNG), without the data: prefix"), receipt_mime_type: str("e.g. image/jpeg"),
     }, ["title", "vendor", "amount", "category"]),
-    admin: true,
-    adminOnly: true,   // spending stays with admins
+    admin: true,   // spending: admins and moderators
     run: async (m, a) => {
       const order_date = a.order_date || today();
       const receipt_data = a.receipt_image_base64 ? `data:${a.receipt_mime_type || "image/jpeg"};base64,${a.receipt_image_base64}` : "";
@@ -592,8 +590,7 @@ const TOOLS: Tool[] = [
       category: str("Category", { enum: SPEND_CATS }), order_date: str("YYYY-MM-DD"), order_number: str("Order #"), notes: str("Notes"),
       season_period: str("Period", { enum: ["offseason", "inseason"] }), receipt_image_base64: str("Replacement receipt screenshot, base64"), receipt_mime_type: str("e.g. image/png"),
     }, ["id", "reason"]),
-    admin: true,
-    adminOnly: true,   // spending stays with admins
+    admin: true,   // spending: admins and moderators
     run: async (m, a) => {
       const cur = must(await db.from("spending_records").select("*").eq("id", a.id).single()) as any;
       const patch: Record<string, any> = pick(a, ["title", "vendor", "amount", "category", "order_date", "order_number", "notes", "season_period"]);

@@ -3529,6 +3529,9 @@ body.is-auth { padding-bottom: 0 !important; }
 .pin-help { margin: 16px 0 0; }
 .pin-reveal { font-size: 40px; font-weight: 700; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; color: var(--text); margin: 14px 0 10px; }
 .pin-profile-actions { display: flex; gap: 8px; }
+.pin-profile-choose { display: flex; gap: 8px; margin-bottom: 8px; }
+.pin-profile-choose input { flex: 1; min-width: 0; letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+.pin-profile-choose.hidden { display: none; }
 .pin-profile-actions .hidden { display: none; }
 @media (prefers-reduced-motion: reduce) { .pin-pane.is-error .pin-dots, .pin-pane.is-busy .pin-dots i.on { animation: none; } }
 

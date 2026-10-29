@@ -1,8 +1,12 @@
 // Nyx Dashboard — "sign in with PIN": a personal, randomly assigned 6-digit code.
 //
 // Security model (PINs work from any computer, so guessing is what we defend against):
-//  • PINs are random and unique; only an HMAC keyed with the service-role key is stored, so the
-//    database never holds a readable PIN and a PIN is found without scanning everyone.
+//  • PINs are unique; only an HMAC keyed with the service-role key is stored, so the database
+//    never holds a readable PIN and a PIN is found without scanning everyone.
+//  • Members may choose their own PIN. Obvious ones (000000, 123456, 121212…) are refused, and a
+//    member can try at most 5 chosen PINs an hour. If a chosen PIN is already someone else's, the
+//    request is refused AND that other PIN is cleared, so "that PIN is taken" never reveals a PIN
+//    that still works.
 //  • Per connection: 5 wrong PINs within 15 minutes locks that connection out for 15 minutes.
 //  • Site-wide: more than 40 wrong PINs in an hour pauses PIN sign-in for 30 minutes (email and
 //    password keep working), so spreading guesses across many connections doesn't pay off.
@@ -13,7 +17,8 @@
 //
 // Actions (POST JSON { action, ... }):
 //   login       { pin }                                        → { token_hash, email, name }
-//   set_code    { user_id? }  (self, or admin/moderator for others) → { code }   shown once
+//   set_code    { user_id?, pin? }  (self, or admin/moderator for others) → { code }   shown once
+//               pin = the member's own choice (self only); without it a random PIN is made
 //   clear_code  { user_id? }  (self, or admin/moderator)       → { ok }
 //   status      {}            (signed-in member)               → { has_code, is_admin }
 //
@@ -28,6 +33,7 @@ const db = createClient(URL_, SERVICE, { auth: { persistSession: false } });
 
 const IP_MAX_FAILS = 5, IP_WINDOW_MS = 15 * 60_000, IP_LOCK_MS = 15 * 60_000;
 const ALL_MAX_FAILS = 40, ALL_WINDOW_MS = 60 * 60_000, ALL_LOCK_MS = 30 * 60_000;
+const CHOOSE_MAX = 5, CHOOSE_WINDOW_MS = 60 * 60_000;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -46,6 +52,16 @@ async function codeHmac(code: string) {
 function randomCode() {
   const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
   return String(n).padStart(6, "0");
+}
+
+/* Easy-to-guess PINs: one digit repeated, a run up or down, or a repeated 2- or 3-digit pattern */
+function isWeakPin(p: string) {
+  if (/^(\d)\1{5}$/.test(p)) return true;
+  const d = [...p].map(Number);
+  const step = d[1] - d[0];
+  if (Math.abs(step) === 1 && d.every((x, i) => i === 0 || x - d[i - 1] === step)) return true;
+  if (p === p.slice(0, 2).repeat(3) || p === p.slice(0, 3).repeat(2)) return true;
+  return false;
 }
 
 /* The signed-in caller, from their Supabase session (Authorization header) */
@@ -129,6 +145,33 @@ async function setCode(req: Request, body: any) {
   const { data: tp } = await db.from("profiles").select("*").eq("id", target).maybeSingle();
   if (!tp?.is_approved) return json({ error: "That member isn't approved yet." }, 400);
   if (tp.is_admin && target !== me.id && !me.is_admin) return json({ error: "Only admins can set a PIN for an admin." }, 403);
+
+  if (body.pin !== undefined && body.pin !== null && body.pin !== "") {
+    if (target !== me.id) return json({ error: "Members choose their own PIN. For someone else, make a random one." }, 403);
+    const pin = String(body.pin).replace(/\D/g, "");
+    if (pin.length !== 6) return json({ error: "A PIN is exactly 6 digits." }, 400);
+    if (isWeakPin(pin)) return json({ error: "That PIN is too easy to guess. Avoid repeats and runs like 123456." }, 400);
+
+    const now = Date.now();
+    const b = await bucket("set:" + me.id);
+    const wait = lockedFor(b, now);
+    if (wait) return json({ error: `Too many PIN changes. Try again in ${mins(wait)}.` }, 429);
+    await recordFail(b, now, CHOOSE_MAX, CHOOSE_WINDOW_MS, CHOOSE_WINDOW_MS);   // counts every chosen PIN, kept or not
+
+    const h = await codeHmac(pin);
+    const { data: clash } = await db.from("quick_login_codes").select("user_id").eq("code_hmac", h).maybeSingle();
+    if (clash && clash.user_id !== target) {
+      await db.from("quick_login_codes").delete().eq("user_id", clash.user_id);
+      await log(me.id, me.name, "PIN_CLASH_CLEARED", { reason: "a chosen PIN matched another member's, so theirs was cleared" });
+      return json({ error: "That PIN can't be used. Pick a different one." }, 409);
+    }
+    const { error } = await db.from("quick_login_codes").upsert({
+      user_id: target, code_hmac: h, created_at: new Date().toISOString(), last_used_at: null, created_by_name: me.name,
+    });
+    if (error) return json({ error: /duplicate|unique/i.test(error.message) ? "That PIN can't be used. Pick a different one." : error.message }, 409);
+    await log(me.id, me.name, "PIN_SET", { member_name: tp.full_name, by_self: true, chosen: true });
+    return json({ code: pin, name: tp.full_name, chosen: true });
+  }
 
   for (let attempt = 0; attempt < 8; attempt++) {
     const code = randomCode();
