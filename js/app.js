@@ -645,9 +645,9 @@ function itemRowHtml(x) {
           ${itemCheckouts.length ? `
             <div class="checkout-banner">
               <span><i class=fa-triangle-exclamation aria-hidden=true></i> ${checkedOutQty} in use (${itemCheckouts.map(c => esc(c.user_name)).join(", ")})</span>
-              ${itemCheckouts.some(c => c.user_id === currentUser.id || isAdmin) ? `
-                <button class="actionbtn" style="padding:2px 6px; font-size:10px;" data-action="return-direct" data-id="${itemCheckouts[0].id}">Return</button>
-              ` : ''}
+              ${itemCheckouts.filter(c => c.user_id === currentUser?.id || isAdmin).map(c => `
+                <button class="actionbtn" style="padding:2px 6px; font-size:10px;" data-action="return-direct" data-id="${c.id}" title="Return ${esc(c.user_name)}'s checkout">Return (${esc(c.user_name)})</button>
+              `).join('')}
             </div>
           ` : ''}
         </div>
@@ -2850,12 +2850,17 @@ $("#items-list").addEventListener("click", async e => {
       }
     }
   } else if (action === "return-direct") {
+    const co = allCheckouts.find(c => c.id === id);
+    if (co && co.user_id !== currentUser?.id && !isStaff()) {
+      toast("You can only return tools that you checked out.", true);
+      return;
+    }
+
     const { error } = await supabase.from("tool_checkouts").update({
       status: "returned",
       returned_at: new Date().toISOString()
     }).eq("id", id);
 
-    const co = allCheckouts.find(c => c.id === id);
     if (error) {
       toast("Return failed: " + error.message, true);
     } else {
@@ -3055,7 +3060,7 @@ $("#parts-needed-list").addEventListener("click", async e => {
   }
 });
 
-/* Checkouts View Action: Check In (Anyone can return) */
+/* Checkouts View Action: Check In (Borrower or Staff) */
 $("#checkouts-list").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action='checkin']");
   if (!b) return;
@@ -3063,6 +3068,11 @@ $("#checkouts-list").addEventListener("click", async e => {
   const itemName = b.dataset.name;
 
   const coRecord = allCheckouts.find(c => c.id === checkoutId);
+  if (coRecord && coRecord.user_id !== currentUser?.id && !isStaff()) {
+    toast("You can only return tools that you checked out.", true);
+    return;
+  }
+
   const { error } = await supabase.from("tool_checkouts").update({
     status: "returned",
     returned_at: new Date().toISOString()
@@ -4652,6 +4662,7 @@ async function savePlaybookPlay() {
     name,
     history: playHistory,
     thumbnail: thumb,
+    created_by: currentUser?.id || null,
     created_by_name: myName,
     created_at: new Date().toISOString()
   };
@@ -4699,7 +4710,7 @@ async function loadSavedPlays() {
   if (supabase) {
     try {
       const { data, error } = await supabase.from("strategy_plays")
-        .select("id, name, drawing_data, notes, created_by_name, created_at")
+        .select("id, name, drawing_data, notes, created_by, created_by_name, created_at")
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -4713,6 +4724,7 @@ async function loadSavedPlays() {
               name: item.name,
               history: hist,
               notes: item.notes || "",
+              created_by: item.created_by || null,
               created_by_name: item.created_by_name || "Team Member",
               created_at: item.created_at
             });
@@ -4754,7 +4766,9 @@ function renderSavedPlays() {
         ` : ''}
         <div class="play-card-actions">
           <button class="btn btn--sm btn--primary" data-action="load-play" data-id="${play.id}">Load <i class=fa-palette aria-hidden=true></i></button>
-          <button class="actionbtn delete" data-action="delete-play" data-id="${play.id}" title="Delete play"><i class=fa-trash-can aria-hidden=true></i></button>
+          ${(!play.created_by || play.created_by === currentUser?.id || currentProfile?.is_admin || play.created_by_name === (currentProfile?.full_name || currentUser?.email)) ? `
+            <button class="actionbtn delete" data-action="delete-play" data-id="${play.id}" title="Delete play"><i class=fa-trash-can aria-hidden=true></i></button>
+          ` : ''}
         </div>
       </div>
     </article>
@@ -4776,6 +4790,11 @@ $("#saved-plays-grid")?.addEventListener("click", async e => {
     window.scrollTo({ top: $("#field-canvas").offsetTop - 80, behavior: 'smooth' });
     toast(`Loaded play "${play.name}"`);
   } else if (action === "delete-play" && play) {
+    const isOwner = play.created_by ? play.created_by === currentUser?.id : play.created_by_name === (currentProfile?.full_name || currentUser?.email);
+    if (!isOwner && !currentProfile?.is_admin) {
+      toast("Only the author or an admin can delete this strategy play.", true);
+      return;
+    }
     const playName = play.name;
     // Instant optimistic removal from memory & UI
     strategyPlays = strategyPlays.filter(p => p.id !== id);
