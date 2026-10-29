@@ -46,7 +46,7 @@ const esc = v => ctx.esc(v);
 const db = () => ctx.getClient();
 const me = () => ctx.getUser();
 const profile = () => ctx.getProfile();
-const isAdmin = () => !!profile()?.is_admin;
+const isAdmin = () => !!(profile()?.is_admin || profile()?.is_moderator);   // admins and moderators
 const myName = () => profile()?.full_name || me()?.email || "Scout";
 const lsGet = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
 const lsSet = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch { /* storage unavailable */ } };
@@ -921,7 +921,7 @@ function renderAssign() {
 
   host.innerHTML = `
     <div class="scout-pane-head">
-      <div><h3>Assign scouts</h3><span class="muted small">Admins only · ${matches.length} matches · ${unassigned} robot slots unassigned. Assigned scouts see the robot as theirs on the Match tab.</span></div>
+      <div><h3>Assign scouts</h3><span class="muted small">Admins and moderators · ${matches.length} matches · ${unassigned} robot slots unassigned. Assigned scouts see the robot as theirs on the Match tab.</span></div>
     </div>
 
     <div class="assign-tools">

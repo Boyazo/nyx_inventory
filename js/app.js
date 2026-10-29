@@ -1,8 +1,10 @@
-import * as gcal from "./gcal.js?v=20261028o";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028o";
-import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028o";
-import { initDuties } from "./duties.js?v=20261028o";
-import { initScoutHub } from "./scouting.js?v=20261028o";
+import * as gcal from "./gcal.js?v=20261028p";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028p";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028p";
+import { initActivity, loadShopSession } from "./activity.js?v=20261028p";
+import { initAnalytics } from "./analytics.js?v=20261028p";
+import { initDuties } from "./duties.js?v=20261028p";
+import { initScoutHub } from "./scouting.js?v=20261028p";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -102,6 +104,11 @@ function authMode(mode) {
   $("#auth-message").classList.add("hidden");
 }
 
+/* Roles: admins run the site (members, roles, spending, audit log, analytics);
+   moderators share the day-to-day admin work (inventory, parts, shifts, planner, scouting, sign-ups). */
+function isStaff(p = currentProfile) { return !!(p?.is_admin || p?.is_moderator); }
+function roleLabel(p) { return p?.is_admin ? "ADMIN" : p?.is_moderator ? "MODERATOR" : "MEMBER"; }
+
 let currentAppPage = "dashboard"; // "dashboard", "strategy", or "secrets"
 let currentStratTab = "playbook"; // "playbook", "rankings", "scouting", "simulator", "lookup"
 
@@ -122,6 +129,7 @@ function screens(which) {
     $("#strategy-screen")?.classList.add("hidden");
     $("#secrets-screen")?.classList.add("hidden");
     $("#duties-screen")?.classList.add("hidden");
+    $("#analytics-screen")?.classList.add("hidden");
   }
 }
 
@@ -137,6 +145,8 @@ function switchPage(pageName) {
   $("#sidebar-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#sidebar-btn-strategy")?.classList.toggle("active", pageName === "strategy");
   $("#sidebar-btn-duties")?.classList.toggle("active", pageName === "duties");
+  $("#sidebar-btn-analytics")?.classList.toggle("active", pageName === "analytics");
+  $("#analytics-screen")?.classList.toggle("hidden", pageName !== "analytics");
   $("#mob-btn-duties")?.classList.toggle("active", pageName === "duties");
   $("#duties-screen")?.classList.toggle("hidden", pageName !== "duties");
   $("#sidebar-btn-secrets")?.classList.toggle("active", pageName === "secrets");
@@ -151,7 +161,10 @@ function switchPage(pageName) {
   $("#app-sidebar")?.classList.remove("open");
   $("#sidebar-backdrop")?.classList.remove("active");
 
-  if (pageName === "duties") {
+  if (pageName === "analytics") {
+    if (!currentProfile?.is_admin) return switchPage("dashboard");
+    initAnalytics({ getClient: () => supabase, getProfile: () => currentProfile, toast, esc, logAction, myName: () => myShiftName() });
+  } else if (pageName === "duties") {
     initDuties({ getClient: () => supabase, getUser: () => currentUser, getProfile: () => currentProfile, toast, esc, logAction });
   } else if (pageName === "strategy") {
     initStrategyCenter();
@@ -264,7 +277,7 @@ async function checkUser(user) {
   currentUser = user;
   try {
     const { data, error } = await supabase.from("profiles")
-      .select("id, full_name, departments, is_approved, is_admin, is_secret, is_strategy")
+      .select("*")
       .eq("id", user.id)
       .single();
 
@@ -286,6 +299,7 @@ async function checkUser(user) {
   const depts = (data.departments && data.departments.length) ? data.departments.join(" · ").toUpperCase() : "GENERAL";
   const roleParts = [];
   if (data.is_admin) roleParts.push("ADMIN");
+  else if (data.is_moderator) roleParts.push("MODERATOR");
   if (data.is_strategy) roleParts.push("STRATEGY");
   if (data.is_secret) roleParts.push("SECRET");
   const roleLabel = roleParts.length > 0 ? roleParts.join(" & ") : "MEMBER";
@@ -298,14 +312,16 @@ async function checkUser(user) {
   const elSideDept = $("#sidebar-userdept"); if (elSideDept) elSideDept.textContent = `${depts} · ${roleLabel}`;
 
   // Admin & Secret visibility controls
-  const elAddItm = $("#add-item-button"); if (elAddItm) elAddItm.classList.toggle("hidden", !data.is_admin);
-  const elAddPn = $("#add-part-needed-btn"); if (elAddPn) elAddPn.classList.toggle("hidden", !data.is_admin);
-  const elAddTsk = $("#add-task-btn"); if (elAddTsk) elAddTsk.classList.toggle("hidden", !data.is_admin);
-  const elAddShift = $("#add-shift-btn"); if (elAddShift) elAddShift.classList.toggle("hidden", !data.is_admin);
+  const elAddItm = $("#add-item-button"); if (elAddItm) elAddItm.classList.toggle("hidden", !isStaff(data));
+  const elAddPn = $("#add-part-needed-btn"); if (elAddPn) elAddPn.classList.toggle("hidden", !isStaff(data));
+  const elAddTsk = $("#add-task-btn"); if (elAddTsk) elAddTsk.classList.toggle("hidden", !isStaff(data));
+  const elAddShift = $("#add-shift-btn"); if (elAddShift) elAddShift.classList.toggle("hidden", !isStaff(data));
   const elTabSpend = $("#tab-spending"); if (elTabSpend) elTabSpend.classList.toggle("hidden", !data.is_admin);
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
   const elSecretSideBtn = $("#sidebar-btn-secrets"); if (elSecretSideBtn) elSecretSideBtn.classList.toggle("hidden", !data.is_secret);
+  const elAnalyticsBtn = $("#sidebar-btn-analytics"); if (elAnalyticsBtn) elAnalyticsBtn.classList.toggle("hidden", !data.is_admin);
+  loadShopSession();
   const elSecretMobBtn = $("#mob-btn-secrets"); if (elSecretMobBtn) elSecretMobBtn.classList.toggle("hidden", !data.is_secret);
 
   await Promise.all([loadItems(), loadCheckouts(), loadTasks(), loadPartsNeeded(), loadShifts()]);
@@ -400,7 +416,7 @@ async function loadShifts(quiet) {
 /* Google-Calendar-style shift calendar */
 initShiftCalendar({
   getShifts: () => allShifts,
-  isAdmin: () => !!currentProfile?.is_admin,
+  isAdmin: () => isStaff(),
   myName: () => myShiftName(),
   esc,
   cardHtml: s => shiftCardHtml(s),
@@ -408,7 +424,7 @@ initShiftCalendar({
   onFilterChange: () => renderShifts(),
   onCreate: prefill => openShiftModal(null, prefill),
   onMove: async (shift, patch) => {
-    if (!currentProfile?.is_admin) return renderShifts();
+    if (!isStaff()) return renderShifts();
     const before = { shift_date: shift.shift_date, start_time: shift.start_time, end_time: shift.end_time };
     Object.assign(shift, patch);   // optimistic
     renderShifts();
@@ -590,7 +606,7 @@ function renderItems() {
     return;
   }
 
-  const isAdmin = !!currentProfile?.is_admin;
+  const isAdmin = isStaff();
 
   list.innerHTML = shown.map(x => {
     const isLow = Number(x.quantity) <= Number(x.min_quantity || 1);
@@ -675,7 +691,7 @@ function renderShifts() {
 /* One shift as a card (Schedule view and the calendar's details popover) */
 function shiftCardHtml(s) {
   const myName = currentProfile?.full_name || currentUser?.email || "Team Member";
-  const isAdmin = !!currentProfile?.is_admin;
+  const isAdmin = isStaff();
   {
     const attendees = Array.isArray(s.attendees) ? s.attendees : [];
     const isAttending = attendees.includes(myName);
@@ -706,8 +722,8 @@ function shiftCardHtml(s) {
           </div>
           ${isAdmin ? `
             <div style="display:flex; gap:4px;">
-              <button class="actionbtn" data-action="edit-shift" data-id="${s.id}" title="Edit shift (Admin)"><i class=fa-pen aria-hidden=true></i></button>
-              <button class="actionbtn delete" data-action="delete-shift" data-id="${s.id}" title="Remove shift (Admin)"><i class=fa-trash-can aria-hidden=true></i></button>
+              <button class="actionbtn" data-action="edit-shift" data-id="${s.id}" title="Edit shift"><i class=fa-pen aria-hidden=true></i></button>
+              <button class="actionbtn delete" data-action="delete-shift" data-id="${s.id}" title="Remove shift"><i class=fa-trash-can aria-hidden=true></i></button>
             </div>
           ` : ''}
         </div>
@@ -726,7 +742,7 @@ function shiftCardHtml(s) {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <b class="mono small" style="color:var(--text-muted)">ROSTER (${attendees.length})</b>
             <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-            ${isAdmin ? `<button class="btn btn--sm btn--ghost" data-action="assign-shift" data-id="${s.id}" title="Assign members (Admin)"><i class=fa-users aria-hidden=true></i> Assign</button>` : ''}
+            ${isAdmin ? `<button class="btn btn--sm btn--ghost" data-action="assign-shift" data-id="${s.id}" title="Assign members"><i class=fa-users aria-hidden=true></i> Assign</button>` : ''}
             ${isAttending ? `
               <button class="btn btn--sm btn--ghost" data-action="toggle-attend-shift" data-id="${s.id}" style="color:var(--red); border-color:rgba(248,113,113,.3);" title="Remove yourself from this shift">
                 ✕ Leave Shift
@@ -748,7 +764,7 @@ function shiftCardHtml(s) {
                 <span class="attendee-pill ${a === myName ? 'is-me' : ''}">
                   ${esc(a)}${a === myName ? ' (You)' : ''}
                   ${canRemove ? `
-                    <button class="attendee-remove-btn" type="button" data-action="remove-attendee" data-id="${s.id}" data-attendee="${esc(a)}" title="${a === myName ? 'Leave shift' : `Remove ${esc(a)} (Admin)`}">×</button>
+                    <button class="attendee-remove-btn" type="button" data-action="remove-attendee" data-id="${s.id}" data-attendee="${esc(a)}" title="${a === myName ? 'Leave shift' : `Remove ${esc(a)}`}">×</button>
                   ` : ''}
                 </span>
               `;
@@ -781,7 +797,7 @@ function renderPartsNeeded() {
     return;
   }
 
-  const isAdmin = !!currentProfile?.is_admin;
+  const isAdmin = isStaff();
 
   list.innerHTML = filtered.map(p => {
     const subsysClass = p.subsystem.replace(/[\s\/]/g, "");
@@ -846,7 +862,7 @@ function renderCheckouts() {
   list.innerHTML = allCheckouts.map(c => {
     const itemName = c.inventory_items?.name || "Tool";
     const location = c.inventory_items?.location || "Shop";
-    const canReturn = c.user_id === currentUser.id || currentProfile?.is_admin;
+    const canReturn = c.user_id === currentUser.id || isStaff();
 
     return `
       <article class="itemrow" style="grid-template-columns: minmax(180px, 2fr) minmax(130px, 1.2fr) minmax(130px, 1.2fr) minmax(100px, 1fr) 110px;">
@@ -892,7 +908,7 @@ function renderTasks() {
   const elCip = $("#count-in-progress"); if (elCip) elCip.textContent = inProgTasks.length;
   const elCd = $("#count-done"); if (elCd) elCd.textContent = doneTasks.length;
 
-  const isAdmin = !!currentProfile?.is_admin;
+  const isAdmin = isStaff();
 
   function renderCard(t) {
     const subsysClass = t.subsystem.replace(/[\s\/]/g, "");
@@ -1214,7 +1230,7 @@ function renderSpending() {
 async function loadMembers() {
   if (!supabase || !currentProfile?.is_admin) return;
   const list = $("#admin-members-list");
-  const { data, error } = await supabase.from("profiles").select("id, full_name, departments, is_approved, is_admin, is_secret, is_strategy, created_at").order("created_at");
+  const { data, error } = await supabase.from("profiles").select("*").order("created_at");
   if (error) {
     if (list) list.innerHTML = `<div style="padding:20px;" class="muted">Could not load members: ${esc(error.message)}</div>`;
     return;
@@ -1256,7 +1272,7 @@ async function loadMembers() {
           <div class="muted small mono">${depts} ${p.id === currentUser.id ? '(You)' : ''}</div>
         </div>
         <div class="role-toggles">
-          ${[["is_admin", "Admin"], ["is_strategy", "Strategy"], ["is_secret", "Secret"]].map(([flag, label]) => `
+          ${[["is_admin", "Admin"], ["is_moderator", "Moderator"], ["is_strategy", "Strategy"], ["is_secret", "Secret"]].map(([flag, label]) => `
             <label class="role-toggle ${p[flag] ? "is-on" : ""}" title="${p.id === currentUser.id && flag === "is_admin" ? "You can't remove your own admin role" : `Toggle ${label} for ${esc(p.full_name)}`}">
               <input type="checkbox" data-role-flag="${flag}" data-id="${p.id}" data-name="${esc(p.full_name)}" ${p[flag] ? "checked" : ""} ${p.id === currentUser.id && flag === "is_admin" ? "disabled" : ""}>
               <span>${label}</span>
@@ -1653,7 +1669,7 @@ async function sha256Hex(text) {
 
 async function openClaudeConnect() {
   if (!currentProfile) return;
-  $("#claude-connect-who").textContent = `${currentProfile.full_name} (${currentProfile.is_admin ? "admin" : "member"})`;
+  $("#claude-connect-who").textContent = `${currentProfile.full_name} (${roleLabel(currentProfile).toLowerCase()})`;
   $("#claude-connect-new").classList.add("hidden");
   $("#claude-connect-url").value = "";
   lastConnectorUrl = "";
@@ -1738,14 +1754,14 @@ function closeProfileModal() {
 }
 
 function openShiftModal(shift, prefill) {
-  if (!currentProfile?.is_admin) {
-    toast("Only admins can schedule or edit shifts.", true);
+  if (!isStaff()) {
+    toast("Only admins and moderators can schedule or edit shifts.", true);
     return;
   }
   editingShiftId = shift ? shift.id : null;
   $("#shift-form").reset();
-  $("#shift-modal-title").textContent = shift ? "Edit Lab Shift (Admin)" : "Schedule Lab Shift (Admin)";
-  $("#save-shift-btn").textContent = shift ? "Save Changes ↗" : "Schedule Shift (Admin) ↗";
+  $("#shift-modal-title").textContent = shift ? "Edit Shift" : "Schedule Shift";
+  $("#save-shift-btn").textContent = shift ? "Save Changes ↗" : "Schedule Shift";
   $("#shift-title").value = shift ? shift.title : "";
   $("#shift-dept").value = shift ? shift.department : (activeShiftDept !== "All" ? activeShiftDept : "Mechanical");
   $("#shift-date").value = shift ? shift.shift_date : new Date().toISOString().slice(0, 10);
@@ -1822,8 +1838,8 @@ function closeShiftModal() {
 }
 
 function openItemModal(item) {
-  if (!currentProfile?.is_admin) {
-    toast("Only admins can add or edit inventory items.", true);
+  if (!isStaff()) {
+    toast("Only admins and moderators can add or edit inventory items.", true);
     return;
   }
   editingItemId = item ? item.id : null;
@@ -1920,7 +1936,7 @@ function closeCheckoutModal() {
 }
 
 function openPartNeededModal() {
-  if (!currentProfile?.is_admin) return;
+  if (!isStaff()) return;
   $("#part-needed-form").reset();
   $("#pn-quantity").value = 1;
   $("#pn-cost").value = "0.00";
@@ -1933,8 +1949,8 @@ function closePartNeededModal() {
 }
 
 function openTaskModal(task) {
-  if (!currentProfile?.is_admin) {
-    toast("Only admins can create or edit planner tasks.", true);
+  if (!isStaff()) {
+    toast("Only admins and moderators can create or edit planner tasks.", true);
     return;
   }
   editingTaskId = task ? task.id : null;
@@ -2063,11 +2079,11 @@ $("#profile-form").addEventListener("submit", async e => {
 
   const elName = $("#profile-name"); if (elName) elName.textContent = full_name;
   const elAvatar = $("#profile-avatar"); if (elAvatar) elAvatar.textContent = full_name.trim().charAt(0).toUpperCase();
-  const elRole = $("#profile-role"); if (elRole) elRole.textContent = `${deptsToSave.join(" · ").toUpperCase()} · ${currentProfile.is_admin ? "ADMIN" : "MEMBER"}`;
+  const elRole = $("#profile-role"); if (elRole) elRole.textContent = `${deptsToSave.join(" · ").toUpperCase()} · ${roleLabel(currentProfile)}`;
 
   const elSideName = $("#sidebar-username"); if (elSideName) elSideName.textContent = full_name;
   const elSideAvatar = $("#sidebar-avatar"); if (elSideAvatar) elSideAvatar.textContent = full_name.trim().charAt(0).toUpperCase();
-  const elSideDept = $("#sidebar-userdept"); if (elSideDept) elSideDept.textContent = `${deptsToSave.join(" · ").toUpperCase()} · ${currentProfile.is_admin ? "ADMIN" : "MEMBER"}`;
+  const elSideDept = $("#sidebar-userdept"); if (elSideDept) elSideDept.textContent = `${deptsToSave.join(" · ").toUpperCase()} · ${roleLabel(currentProfile)}`;
 
   closeProfileModal();
   toast("Profile & departments updated!");
@@ -2080,11 +2096,11 @@ function addDaysToDateString(dateStr, days) {
   return dt.toISOString().slice(0, 10);
 }
 
-/* Save Shift (Admins only) */
+/* Save Shift (admins and moderators) */
 $("#shift-form").addEventListener("submit", async e => {
   e.preventDefault();
-  if (!currentProfile?.is_admin) {
-    toast("Only admins can schedule or edit shifts.", true);
+  if (!isStaff()) {
+    toast("Only admins and moderators can schedule or edit shifts.", true);
     return;
   }
   const title = $("#shift-title").value.trim();
@@ -2169,8 +2185,8 @@ $("#shift-form").addEventListener("submit", async e => {
 /* Item Save (Admin only) */
 async function saveItem(e) {
   e.preventDefault();
-  if (!currentProfile?.is_admin) {
-    toast("Only admins can save inventory items.", true);
+  if (!isStaff()) {
+    toast("Only admins and moderators can save inventory items.", true);
     return;
   }
 
@@ -2241,7 +2257,7 @@ async function saveItem(e) {
 /* Part Needed Save (Admin only) */
 async function savePartNeeded(e) {
   e.preventDefault();
-  if (!currentProfile?.is_admin) return;
+  if (!isStaff()) return;
 
   const part_name = $("#pn-part-name").value.trim();
   const subsystem = $("#pn-subsystem").value;
@@ -2296,8 +2312,8 @@ async function savePartNeeded(e) {
 /* Task Save (Admin only) */
 async function saveTask(e) {
   e.preventDefault();
-  if (!currentProfile?.is_admin) {
-    toast("Only admins can create or edit tasks.", true);
+  if (!isStaff()) {
+    toast("Only admins and moderators can create or edit tasks.", true);
     return;
   }
 
@@ -2507,8 +2523,8 @@ async function saveSpending(e) {
 
 /* Update Quantity Quick Buttons (Admin only) */
 async function updateQty(id, delta) {
-  if (!currentProfile?.is_admin) {
-    toast("Only admins can adjust inventory quantities directly.", true);
+  if (!isStaff()) {
+    toast("Only admins and moderators can adjust inventory quantities directly.", true);
     return;
   }
   const item = allItems.find(x => x.id === id);
@@ -2739,7 +2755,7 @@ $("#items-list").addEventListener("click", async e => {
   if (!b) return;
   const action = b.dataset.action;
   const id = b.dataset.id;
-  const isAdmin = !!currentProfile?.is_admin;
+  const isAdmin = isStaff();
 
   if (action === "label-qr") {
     const item = allItems.find(x => x.id === id);
@@ -2852,9 +2868,9 @@ $("#view-shifts").addEventListener("click", async e => {
     }
   } else if (action === "remove-attendee" && shift) {
     const target = b.dataset.attendee;
-    const isAdmin = !!currentProfile?.is_admin;
+    const isAdmin = isStaff();
     if (!isAdmin && target !== myName) {
-      toast("Only admins can remove other members from the shift roster.", true);
+      toast("Only admins and moderators can remove other members from the shift roster.", true);
       return;
     }
     const attendees = (Array.isArray(shift.attendees) ? shift.attendees : []).filter(a => a !== target);
@@ -2871,21 +2887,21 @@ $("#view-shifts").addEventListener("click", async e => {
       toast(target === myName ? "Removed yourself from shift roster." : `Removed ${target} from shift roster.`);
     }
   } else if (action === "assign-shift" && shift) {
-    if (!currentProfile?.is_admin) return;
+    if (!isStaff()) return;
     openShiftModal(shift);
     setTimeout(() => {
       $(".assign-box")?.scrollIntoView({ block: "center" });
       $("#shift-assign-search")?.focus();
     }, 50);
   } else if (action === "edit-shift" && shift) {
-    if (!currentProfile?.is_admin) {
-      toast("Only admins can edit shifts.", true);
+    if (!isStaff()) {
+      toast("Only admins and moderators can edit shifts.", true);
       return;
     }
     openShiftModal(shift);
   } else if (action === "delete-shift" && shift) {
-    if (!currentProfile?.is_admin) {
-      toast("Only admins can remove shifts from the schedule.", true);
+    if (!isStaff()) {
+      toast("Only admins and moderators can remove shifts from the schedule.", true);
       return;
     }
     const isWeekly = shift.notes && shift.notes.includes("[🔁 Weekly Shift]");
@@ -2964,7 +2980,7 @@ $("#parts-needed-list").addEventListener("click", async e => {
   const action = b.dataset.action;
   const id = b.dataset.id;
 
-  if (action === "delete-pn" && currentProfile?.is_admin) {
+  if (action === "delete-pn" && isStaff()) {
     if (confirm("Remove this needed part from the list?")) {
       // Optimistic instant UI update
       allPartsNeeded = allPartsNeeded.filter(p => p.id !== id);
@@ -3021,7 +3037,7 @@ $("#view-planner").addEventListener("click", async e => {
   const action = b.dataset.action;
   const id = b.dataset.id;
   const task = allTasks.find(t => t.id === id);
-  const isAdmin = !!currentProfile?.is_admin;
+  const isAdmin = isStaff();
 
   if (action === "move-status") {
     const newStatus = b.dataset.newstatus;
@@ -3304,8 +3320,9 @@ $("#admin-members-list").addEventListener("change", async e => {
   const cb = e.target.closest("input[data-role-flag]");
   if (!cb || !currentProfile?.is_admin) return;
   const { roleFlag: flag, id, name } = cb.dataset;
-  const label = { is_admin: "Admin", is_strategy: "Strategy", is_secret: "Secret" }[flag];
+  const label = { is_admin: "Admin", is_moderator: "Moderator", is_strategy: "Strategy", is_secret: "Secret" }[flag];
   if (id === currentUser.id && flag === "is_admin" && !cb.checked) { cb.checked = true; return; }
+  if (flag === "is_moderator" && cb.checked && !confirm(`Make ${name} a moderator? Moderators can manage inventory, parts, shifts, the planner, scouting and sign-ups, but not members, roles, spending, the audit log or analytics.`)) { cb.checked = false; return; }
   if (flag === "is_admin" && cb.checked && !confirm(`Make ${name} an admin? Admins can manage everything, including other members' roles.`)) { cb.checked = false; return; }
   cb.disabled = true;
   const { error } = await supabase.from("profiles").update({ [flag]: cb.checked }).eq("id", id);
@@ -5546,7 +5563,7 @@ function renderScoutingRecords() {
   }
 
   list.innerHTML = scoutingRecords.map(r => {
-    const isAdmin = !!currentProfile?.is_admin;
+    const isAdmin = isStaff();
     return `
     <article class="itemrow" style="grid-template-columns: 70px 70px 80px 80px 85px 80px 70px 80px 1fr 60px;">
       <div class="mono" style="font-weight:700;">${r.match_type?.toUpperCase() || 'Q'}${r.match_num}</div>
@@ -5582,7 +5599,7 @@ function renderScoutingRecords() {
 $("#scout-records-list")?.addEventListener("click", async e => {
   const btn = e.target.closest("button[data-action='delete-scout-log']");
   if (!btn) return;
-  if (!currentProfile?.is_admin) {
+  if (!isStaff()) {
     toast("Permission Denied: Only team admins can delete scouting logs.", true);
     return;
   }
@@ -5956,6 +5973,17 @@ $("#mob-btn-dashboard")?.addEventListener("click", () => switchPage("dashboard")
 $("#mob-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
 $("#mob-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-duties")?.addEventListener("click", () => switchPage("duties"));
+$("#sidebar-btn-analytics")?.addEventListener("click", () => switchPage("analytics"));
+
+/* Activity: active-time tracking per feature + shop check-in */
+initActivity({
+  getClient: () => supabase,
+  getUser: () => (currentProfile?.is_approved ? currentUser : null),
+  getFeature: () => currentAppPage === "dashboard" ? currentView : currentAppPage === "strategy" ? `strategy:${currentStratTab}` : currentAppPage,
+  myName: () => myShiftName(),
+  toast,
+  logAction,
+});
 $("#mob-btn-secrets")?.addEventListener("click", () => switchPage("secrets"));
 $("#mob-btn-menu")?.addEventListener("click", () => {
   const sb = $("#app-sidebar");
@@ -6307,9 +6335,10 @@ function renderCommandPaletteResults(query) {
 
   // Search built-in commands
   let matchedCmds = commandList.filter(cmd => {
-    if (cmd.id === "goto-spending" || cmd.id === "goto-members" || cmd.id === "goto-logs" || cmd.id === "action-add-item" || cmd.id === "action-add-shift") {
+    if (cmd.id === "goto-spending" || cmd.id === "goto-members" || cmd.id === "goto-logs") {
       if (!currentProfile?.is_admin) return false;
     }
+    if ((cmd.id === "action-add-item" || cmd.id === "action-add-shift") && !isStaff()) return false;
     return !q || cmd.label.toLowerCase().includes(q) || cmd.category.toLowerCase().includes(q);
   });
 

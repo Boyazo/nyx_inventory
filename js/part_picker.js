@@ -1,7 +1,7 @@
 /* Searchable part picker attached to a text input.
  * Lists, in order: items already in our inventory, the team's quick-fill presets, and every COTS part
  * from the FRCDesign library. The input stays free text; picking a row calls onPick(entry). */
-import { COTS_PARTS, COTS_CATEGORIES, ELECTRICAL_CATEGORIES, VENDORS, TEAM_PRESETS } from "./parts_catalog.js?v=20261028o";
+import { COTS_PARTS, COTS_CATEGORIES, ELECTRICAL_CATEGORIES, VENDORS, TEAM_PRESETS } from "./parts_catalog.js?v=20261028p";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9#./]+/g, " ").trim();

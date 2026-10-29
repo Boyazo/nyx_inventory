@@ -16,6 +16,8 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists departments text[] not null default array['Mechanical']::text[];
 alter table public.profiles add column if not exists is_secret boolean not null default false;
 alter table public.profiles add column if not exists is_strategy boolean not null default false;
+-- Moderators share day-to-day admin work; admins alone run members, roles, spending, logs and analytics
+alter table public.profiles add column if not exists is_moderator boolean not null default false;
 -- Numeric Discord user id so the shift bot can @mention the member
 alter table public.profiles add column if not exists discord_id text not null default '';
 
@@ -229,6 +231,13 @@ as $$
     where id=(select auth.uid()) and is_approved=true and is_admin=true);
 $$;
 
+create or replace function public.is_team_staff()
+returns boolean language sql stable security definer set search_path = public
+as $$
+  select exists(select 1 from public.profiles
+    where id=(select auth.uid()) and is_approved=true and (is_admin=true or is_moderator=true));
+$$;
+
 create or replace function public.is_approved_member()
 returns boolean language sql stable security definer set search_path = public
 as $$
@@ -259,7 +268,7 @@ alter table public.parts_needed enable row level security;
 alter table public.spending_records enable row level security;
 alter table public.team_shifts enable row level security;
 
--- Trigger to prevent non-admins from modifying privilege flags (is_admin, is_secret, is_strategy, is_approved)
+-- Trigger to prevent non-admins from modifying privilege flags (is_admin, is_moderator, is_secret, is_strategy, is_approved)
 create or replace function public.check_profile_update()
 returns trigger language plpgsql security definer set search_path = public
 as $$
@@ -270,6 +279,7 @@ begin
   if (old.is_admin is not distinct from new.is_admin)
      and (old.is_secret is not distinct from new.is_secret)
      and (old.is_strategy is not distinct from new.is_strategy)
+     and (old.is_moderator is not distinct from new.is_moderator)
      and (old.is_approved is not distinct from new.is_approved) then
     return new;
   end if;
@@ -319,19 +329,22 @@ for select to authenticated using((select public.is_approved_member()));
 
 drop policy if exists "Approved team can add inventory" on public.inventory_items;
 drop policy if exists "Only admins can add inventory" on public.inventory_items;
-create policy "Only admins can add inventory" on public.inventory_items
-for insert to authenticated with check((select public.is_team_admin()));
+drop policy if exists "Staff can add inventory" on public.inventory_items;
+create policy "Staff can add inventory" on public.inventory_items
+for insert to authenticated with check((select public.is_team_staff()));
 
 drop policy if exists "Approved team can edit inventory" on public.inventory_items;
 drop policy if exists "Only admins can edit inventory" on public.inventory_items;
-create policy "Only admins can edit inventory" on public.inventory_items
-for update to authenticated using((select public.is_team_admin()))
-with check((select public.is_team_admin()));
+drop policy if exists "Staff can edit inventory" on public.inventory_items;
+create policy "Staff can edit inventory" on public.inventory_items
+for update to authenticated using((select public.is_team_staff()))
+with check((select public.is_team_staff()));
 
 drop policy if exists "Approved team can delete inventory" on public.inventory_items;
 drop policy if exists "Only admins can delete inventory" on public.inventory_items;
-create policy "Only admins can delete inventory" on public.inventory_items
-for delete to authenticated using((select public.is_team_admin()));
+drop policy if exists "Staff can delete inventory" on public.inventory_items;
+create policy "Staff can delete inventory" on public.inventory_items
+for delete to authenticated using((select public.is_team_staff()));
 
 -- Tool checkouts policies (Anyone approved can borrow and check in)
 drop policy if exists "Approved members can read tool checkouts" on public.tool_checkouts;
@@ -344,7 +357,7 @@ for insert to authenticated with check((select public.is_approved_member()) and 
 
 drop policy if exists "Approved members can update tool checkouts" on public.tool_checkouts;
 create policy "Approved members can update tool checkouts" on public.tool_checkouts
-for update to authenticated using((select public.is_approved_member()) and (user_id=(select auth.uid()) or (select public.is_team_admin())))
+for update to authenticated using((select public.is_approved_member()) and (user_id=(select auth.uid()) or (select public.is_team_staff())))
 with check((select public.is_approved_member()));
 
 -- Activity logs policies (Only admins read)
@@ -363,8 +376,9 @@ for select to authenticated using((select public.is_approved_member()));
 
 drop policy if exists "Approved members can create planner tasks" on public.planner_tasks;
 drop policy if exists "Only admins can create planner tasks" on public.planner_tasks;
-create policy "Only admins can create planner tasks" on public.planner_tasks
-for insert to authenticated with check((select public.is_team_admin()));
+drop policy if exists "Staff can create planner tasks" on public.planner_tasks;
+create policy "Staff can create planner tasks" on public.planner_tasks
+for insert to authenticated with check((select public.is_team_staff()));
 
 drop policy if exists "Approved members can update planner tasks" on public.planner_tasks;
 create policy "Approved members can update planner tasks" on public.planner_tasks
@@ -373,8 +387,9 @@ with check((select public.is_approved_member()));
 
 drop policy if exists "Approved members can delete planner tasks" on public.planner_tasks;
 drop policy if exists "Only admins can delete planner tasks" on public.planner_tasks;
-create policy "Only admins can delete planner tasks" on public.planner_tasks
-for delete to authenticated using((select public.is_team_admin()));
+drop policy if exists "Staff can delete planner tasks" on public.planner_tasks;
+create policy "Staff can delete planner tasks" on public.planner_tasks
+for delete to authenticated using((select public.is_team_staff()));
 
 -- Parts Needed for Robot (Everyone approved can view, only admins add/edit/delete)
 drop policy if exists "Approved members can read parts needed" on public.parts_needed;
@@ -382,17 +397,20 @@ create policy "Approved members can read parts needed" on public.parts_needed
 for select to authenticated using((select public.is_approved_member()));
 
 drop policy if exists "Only admins can insert parts needed" on public.parts_needed;
-create policy "Only admins can insert parts needed" on public.parts_needed
-for insert to authenticated with check((select public.is_team_admin()));
+drop policy if exists "Staff can insert parts needed" on public.parts_needed;
+create policy "Staff can insert parts needed" on public.parts_needed
+for insert to authenticated with check((select public.is_team_staff()));
 
 drop policy if exists "Only admins can update parts needed" on public.parts_needed;
-create policy "Only admins can update parts needed" on public.parts_needed
-for update to authenticated using((select public.is_team_admin()))
-with check((select public.is_team_admin()));
+drop policy if exists "Staff can update parts needed" on public.parts_needed;
+create policy "Staff can update parts needed" on public.parts_needed
+for update to authenticated using((select public.is_team_staff()))
+with check((select public.is_team_staff()));
 
 drop policy if exists "Only admins can delete parts needed" on public.parts_needed;
-create policy "Only admins can delete parts needed" on public.parts_needed
-for delete to authenticated using((select public.is_team_admin()));
+drop policy if exists "Staff can delete parts needed" on public.parts_needed;
+create policy "Staff can delete parts needed" on public.parts_needed
+for delete to authenticated using((select public.is_team_staff()));
 
 -- Spending Records (ONLY ADMINS can read, insert, update, delete)
 drop policy if exists "Only admins can read spending" on public.spending_records;
@@ -419,8 +437,9 @@ for select to authenticated using((select public.is_approved_member()));
 
 drop policy if exists "Approved members can insert team shifts" on public.team_shifts;
 drop policy if exists "Only admins can insert team shifts" on public.team_shifts;
-create policy "Only admins can insert team shifts" on public.team_shifts
-for insert to authenticated with check((select public.is_team_admin()));
+drop policy if exists "Staff can insert team shifts" on public.team_shifts;
+create policy "Staff can insert team shifts" on public.team_shifts
+for insert to authenticated with check((select public.is_team_staff()));
 
 drop policy if exists "Approved members can update team shifts" on public.team_shifts;
 create policy "Approved members can update team shifts" on public.team_shifts
@@ -429,8 +448,9 @@ with check((select public.is_approved_member()));
 
 drop policy if exists "Approved members can delete team shifts" on public.team_shifts;
 drop policy if exists "Only admins can delete team shifts" on public.team_shifts;
-create policy "Only admins can delete team shifts" on public.team_shifts
-for delete to authenticated using((select public.is_team_admin()));
+drop policy if exists "Staff can delete team shifts" on public.team_shifts;
+create policy "Staff can delete team shifts" on public.team_shifts
+for delete to authenticated using((select public.is_team_staff()));
 
 -- Strategy Plays Policies
 alter table public.strategy_plays enable row level security;
@@ -462,8 +482,9 @@ create policy "Approved members can insert scouting records" on public.match_sco
 for insert to authenticated with check((select public.is_approved_member()));
 
 drop policy if exists "Admins or authors can delete scouting records" on public.match_scouting_logs;
-create policy "Admins or authors can delete scouting records" on public.match_scouting_logs
-for delete to authenticated using((select public.is_team_admin()));
+drop policy if exists "Staff or authors can delete scouting records" on public.match_scouting_logs;
+create policy "Staff or authors can delete scouting records" on public.match_scouting_logs
+for delete to authenticated using((select public.is_team_staff()));
 
 -- 11. Secret Personnel Intel (All approved team members can collaborate, log & read intel)
 create table if not exists public.secret_personnel_intel (
@@ -653,22 +674,26 @@ alter table public.pick_lists enable row level security;
 drop policy if exists "Members read scout events" on public.scout_events;
 create policy "Members read scout events" on public.scout_events for select to authenticated using((select public.is_approved_member()));
 drop policy if exists "Admins manage scout events" on public.scout_events;
-create policy "Admins manage scout events" on public.scout_events for all to authenticated
-using((select public.is_team_admin())) with check((select public.is_team_admin()));
+drop policy if exists "Staff manage scout events" on public.scout_events;
+create policy "Staff manage scout events" on public.scout_events for all to authenticated
+using((select public.is_team_staff())) with check((select public.is_team_staff()));
 
 drop policy if exists "Members read claims" on public.scout_claims;
 create policy "Members read claims" on public.scout_claims for select to authenticated using((select public.is_approved_member()));
 -- Scouts claim robots for themselves; admins can also assign any scout to any robot
 alter table public.scout_claims add column if not exists assigned_by_name text not null default '';
 drop policy if exists "Members claim robots for themselves" on public.scout_claims;
-create policy "Members claim robots for themselves" on public.scout_claims for insert to authenticated
-with check((scout_id = (select auth.uid()) and (select public.is_approved_member())) or (select public.is_team_admin()));
+drop policy if exists "Members claim robots; staff assign anyone" on public.scout_claims;
+create policy "Members claim robots; staff assign anyone" on public.scout_claims for insert to authenticated
+with check((scout_id = (select auth.uid()) and (select public.is_approved_member())) or (select public.is_team_staff()));
 drop policy if exists "Admins reassign claims" on public.scout_claims;
-create policy "Admins reassign claims" on public.scout_claims for update to authenticated
-using((select public.is_team_admin())) with check((select public.is_team_admin()));
+drop policy if exists "Staff reassign claims" on public.scout_claims;
+create policy "Staff reassign claims" on public.scout_claims for update to authenticated
+using((select public.is_team_staff())) with check((select public.is_team_staff()));
 drop policy if exists "Members release own claims; admins any" on public.scout_claims;
-create policy "Members release own claims; admins any" on public.scout_claims for delete to authenticated
-using(scout_id = (select auth.uid()) or (select public.is_team_admin()));
+drop policy if exists "Members release own claims; staff any" on public.scout_claims;
+create policy "Members release own claims; staff any" on public.scout_claims for delete to authenticated
+using(scout_id = (select auth.uid()) or (select public.is_team_staff()));
 
 drop policy if exists "Members read pit scouting" on public.pit_scouting;
 create policy "Members read pit scouting" on public.pit_scouting for select to authenticated using((select public.is_approved_member()));
@@ -681,15 +706,18 @@ using((select public.is_approved_member())) with check((select public.is_approve
 drop policy if exists "Members read pick lists" on public.pick_lists;
 create policy "Members read pick lists" on public.pick_lists for select to authenticated using((select public.is_approved_member()));
 drop policy if exists "Create own lists; primary is admin-only" on public.pick_lists;
-create policy "Create own lists; primary is admin-only" on public.pick_lists for insert to authenticated
-with check(owner_id = (select auth.uid()) and (select public.is_approved_member()) and (not is_primary or (select public.is_team_admin())));
+drop policy if exists "Create own lists; primary is staff-only" on public.pick_lists;
+create policy "Create own lists; primary is staff-only" on public.pick_lists for insert to authenticated
+with check(owner_id = (select auth.uid()) and (select public.is_approved_member()) and (not is_primary or (select public.is_team_staff())));
 drop policy if exists "Edit own lists; admins edit primary" on public.pick_lists;
-create policy "Edit own lists; admins edit primary" on public.pick_lists for update to authenticated
-using((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_admin())))
-with check((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_admin())));
+drop policy if exists "Edit own lists; staff edit primary" on public.pick_lists;
+create policy "Edit own lists; staff edit primary" on public.pick_lists for update to authenticated
+using((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_staff())))
+with check((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_staff())));
 drop policy if exists "Delete own lists; admins delete primary" on public.pick_lists;
-create policy "Delete own lists; admins delete primary" on public.pick_lists for delete to authenticated
-using((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_admin())));
+drop policy if exists "Delete own lists; staff delete primary" on public.pick_lists;
+create policy "Delete own lists; staff delete primary" on public.pick_lists for delete to authenticated
+using((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_staff())));
 
 do $$
 declare t text;
@@ -758,12 +786,14 @@ alter table public.duty_assignments enable row level security;
 drop policy if exists "Members read duty roles" on public.duty_roles;
 create policy "Members read duty roles" on public.duty_roles for select to authenticated using((select public.is_approved_member()));
 drop policy if exists "Admins manage duty roles" on public.duty_roles;
-create policy "Admins manage duty roles" on public.duty_roles for all to authenticated using((select public.is_team_admin())) with check((select public.is_team_admin()));
+drop policy if exists "Staff manage duty roles" on public.duty_roles;
+create policy "Staff manage duty roles" on public.duty_roles for all to authenticated using((select public.is_team_staff())) with check((select public.is_team_staff()));
 
 drop policy if exists "Members read duty blocks" on public.duty_blocks;
 create policy "Members read duty blocks" on public.duty_blocks for select to authenticated using((select public.is_approved_member()));
 drop policy if exists "Admins manage duty blocks" on public.duty_blocks;
-create policy "Admins manage duty blocks" on public.duty_blocks for all to authenticated using((select public.is_team_admin())) with check((select public.is_team_admin()));
+drop policy if exists "Staff manage duty blocks" on public.duty_blocks;
+create policy "Staff manage duty blocks" on public.duty_blocks for all to authenticated using((select public.is_team_staff())) with check((select public.is_team_staff()));
 
 drop policy if exists "Members read duty prefs" on public.duty_prefs;
 create policy "Members read duty prefs" on public.duty_prefs for select to authenticated using((select public.is_approved_member()));
@@ -777,7 +807,8 @@ create policy "Members clear own duty prefs" on public.duty_prefs for delete to 
 drop policy if exists "Members read duty assignments" on public.duty_assignments;
 create policy "Members read duty assignments" on public.duty_assignments for select to authenticated using((select public.is_approved_member()));
 drop policy if exists "Admins manage duty assignments" on public.duty_assignments;
-create policy "Admins manage duty assignments" on public.duty_assignments for all to authenticated using((select public.is_team_admin())) with check((select public.is_team_admin()));
+drop policy if exists "Staff manage duty assignments" on public.duty_assignments;
+create policy "Staff manage duty assignments" on public.duty_assignments for all to authenticated using((select public.is_team_staff())) with check((select public.is_team_staff()));
 
 do $$
 declare t text;
@@ -790,3 +821,67 @@ begin
     end loop;
   end if;
 end $$;
+
+-- 16. Analytics: active time per feature, and shop check-ins
+create table if not exists public.usage_stats (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  day date not null,
+  feature text not null,
+  seconds integer not null default 0,
+  views integer not null default 0,
+  primary key (user_id, day, feature)
+);
+create index if not exists usage_stats_day_idx on public.usage_stats(day);
+alter table public.usage_stats enable row level security;
+drop policy if exists "Members read own usage; admins read all" on public.usage_stats;
+create policy "Members read own usage; admins read all" on public.usage_stats for select to authenticated
+using(user_id = (select auth.uid()) or (select public.is_team_admin()));
+-- No insert/update policies: rows are written only through track_usage(), which caps each call.
+
+create or replace function public.track_usage(p_rows jsonb)
+returns void language plpgsql security definer set search_path = public
+as $$
+declare r jsonb;
+begin
+  if auth.uid() is null or not public.is_approved_member() then return; end if;
+  for r in select * from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) limit 40 loop
+    insert into public.usage_stats (user_id, day, feature, seconds, views)
+    values (
+      auth.uid(),
+      (now() at time zone 'America/Los_Angeles')::date,
+      left(coalesce(r->>'feature', 'other'), 40),
+      least(greatest(coalesce((r->>'seconds')::int, 0), 0), 300),
+      least(greatest(coalesce((r->>'views')::int, 0), 0), 50)
+    )
+    on conflict (user_id, day, feature) do update
+      set seconds = least(public.usage_stats.seconds + excluded.seconds, 86400),
+          views = public.usage_stats.views + excluded.views;
+  end loop;
+end $$;
+revoke all on function public.track_usage(jsonb) from public;
+grant execute on function public.track_usage(jsonb) to authenticated;
+
+create table if not exists public.shop_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  user_name text not null default '',
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  ended_by_name text not null default '',
+  check (ended_at is null or ended_at >= started_at)
+);
+create unique index if not exists shop_sessions_one_open on public.shop_sessions(user_id) where ended_at is null;
+create index if not exists shop_sessions_started_idx on public.shop_sessions(started_at);
+alter table public.shop_sessions enable row level security;
+drop policy if exists "Members read own shop sessions; admins all" on public.shop_sessions;
+create policy "Members read own shop sessions; admins all" on public.shop_sessions for select to authenticated
+using(user_id = (select auth.uid()) or (select public.is_team_admin()));
+drop policy if exists "Members check themselves in" on public.shop_sessions;
+create policy "Members check themselves in" on public.shop_sessions for insert to authenticated
+with check((user_id = (select auth.uid()) and (select public.is_approved_member())) or (select public.is_team_admin()));
+drop policy if exists "Members check themselves out; admins any" on public.shop_sessions;
+create policy "Members check themselves out; admins any" on public.shop_sessions for update to authenticated
+using(user_id = (select auth.uid()) or (select public.is_team_admin()))
+with check(user_id = (select auth.uid()) or (select public.is_team_admin()));
+drop policy if exists "Admins delete shop sessions" on public.shop_sessions;
+create policy "Admins delete shop sessions" on public.shop_sessions for delete to authenticated using((select public.is_team_admin()));

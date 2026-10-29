@@ -9,7 +9,7 @@ const $ = s => document.querySelector(s);
 const esc = v => ctx.esc(v);
 const db = () => ctx.getClient();
 const me = () => ctx.getUser();
-const isAdmin = () => !!ctx.getProfile()?.is_admin;
+const isAdmin = () => !!(ctx.getProfile()?.is_admin || ctx.getProfile()?.is_moderator);   // admins and moderators
 const myName = () => ctx.getProfile()?.full_name || me()?.email || "Member";
 
 const pref = (uid, roleId, blockId) => state.prefs.find(p => p.user_id === uid && p.role_id === roleId && p.block_id === blockId)?.level || "";

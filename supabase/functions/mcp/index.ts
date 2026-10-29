@@ -25,7 +25,7 @@ const db: SupabaseClient = createClient(
   { auth: { persistSession: false } },
 );
 
-type Member = { id: string; full_name: string; is_admin: boolean };
+type Member = { id: string; full_name: string; is_admin: boolean; is_staff: boolean };
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -51,17 +51,21 @@ async function authenticate(req: Request): Promise<Member | null> {
   if (!token) return null;
 
   const { data: profile } = await db.from("profiles")
-    .select("id, full_name, is_approved, is_admin").eq("id", token.user_id).maybeSingle();
+    .select("*").eq("id", token.user_id).maybeSingle();
   if (!profile?.is_approved) return null;
 
   await db.from("mcp_tokens").update({ last_used_at: new Date().toISOString() }).eq("id", token.id);
-  return { id: profile.id, full_name: profile.full_name, is_admin: profile.is_admin };
+  return { id: profile.id, full_name: profile.full_name, is_admin: !!profile.is_admin, is_staff: !!(profile.is_admin || profile.is_moderator) };
 }
 
 class ToolError extends Error {}
 
+const roleOf = (m: Member) => (m.is_admin ? "admin" : m.is_staff ? "moderator" : "member");
 function requireAdmin(m: Member) {
   if (!m.is_admin) throw new ToolError("This action is admin-only in Nyx Dashboard.");
+}
+function requireStaff(m: Member) {
+  if (!m.is_staff) throw new ToolError("This action needs an admin or moderator in Nyx Dashboard.");
 }
 
 function must<T>(res: { data: T; error: { message: string } | null }): T {
@@ -177,7 +181,8 @@ type Tool = {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  admin?: boolean;
+  admin?: boolean;      // admins and moderators
+  adminOnly?: boolean;  // admins only
   readOnly?: boolean;
   run: (m: Member, a: Record<string, any>) => Promise<unknown>;
 };
@@ -188,7 +193,7 @@ const TOOLS: Tool[] = [
     description: "Show which NYX team member this connector acts as, their role, today's date and the season kickoff.",
     inputSchema: obj({}),
     readOnly: true,
-    run: async m => ({ member: m.full_name, role: m.is_admin ? "admin" : "member", today: today(), season_kickoff: SEASON_KICKOFF, current_period: seasonPeriod(today()) }),
+    run: async m => ({ member: m.full_name, role: roleOf(m), today: today(), season_kickoff: SEASON_KICKOFF, current_period: seasonPeriod(today()) }),
   },
 
   /* Inventory */
@@ -292,7 +297,7 @@ const TOOLS: Tool[] = [
     }, ["id"]),
     run: async (m, a) => {
       const patch = pick(a, ["status", "title", "description", "subsystem", "priority", "due_date", "assigned_to"]);
-      if (Object.keys(patch).some(k => k !== "status")) requireAdmin(m);
+      if (Object.keys(patch).some(k => k !== "status")) requireStaff(m);
       const prev = must(await db.from("planner_tasks").select("status, title, subsystem, assigned_to").eq("id", a.id).single()) as any;
       const row = must(await db.from("planner_tasks").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", a.id).select().single()) as any;
       await log(m, row.status === "done" && prev.status !== "done" ? "PLANNER_TASK_COMPLETED" : "PLANNER_TASK_UPDATED", "planner_tasks", a.id,
@@ -341,7 +346,7 @@ const TOOLS: Tool[] = [
     description: "Sign a member up for, or remove them from, a shift. Members can only change their own attendance; admins can change anyone's.",
     inputSchema: obj({ id: str("Shift id"), attending: bool("true to join, false to leave"), member_name: str("Admin only: another member's full name") }, ["id", "attending"]),
     run: async (m, a) => {
-      const name = a.member_name && a.member_name !== m.full_name ? (requireAdmin(m), a.member_name) : m.full_name;
+      const name = a.member_name && a.member_name !== m.full_name ? (requireStaff(m), a.member_name) : m.full_name;
       const shift = must(await db.from("team_shifts").select("*").eq("id", a.id).single()) as any;
       const set = new Set<string>(shift.attendees || []);
       a.attending ? set.add(name) : set.delete(name);
@@ -532,6 +537,7 @@ const TOOLS: Tool[] = [
     description: "List recorded purchases (admin) with totals. Purchases before the season kickoff are offseason.",
     inputSchema: obj({ period: str("Filter", { enum: ["all", "offseason", "inseason"] }), missing_receipt_only: bool("Only purchases still missing a receipt screenshot") }),
     admin: true,
+    adminOnly: true,   // spending stays with admins
     readOnly: true,
     run: async (_m, a) => {
       let q = db.from("spending_records").select("id, title, vendor, amount, category, order_date, order_number, notes, season_period, receipt_data, edit_history").order("order_date", { ascending: false });
@@ -554,6 +560,7 @@ const TOOLS: Tool[] = [
       receipt_image_base64: str("Receipt screenshot as base64 (JPEG/PNG), without the data: prefix"), receipt_mime_type: str("e.g. image/jpeg"),
     }, ["title", "vendor", "amount", "category"]),
     admin: true,
+    adminOnly: true,   // spending stays with admins
     run: async (m, a) => {
       const order_date = a.order_date || today();
       const receipt_data = a.receipt_image_base64 ? `data:${a.receipt_mime_type || "image/jpeg"};base64,${a.receipt_image_base64}` : "";
@@ -577,6 +584,7 @@ const TOOLS: Tool[] = [
       season_period: str("Period", { enum: ["offseason", "inseason"] }), receipt_image_base64: str("Replacement receipt screenshot, base64"), receipt_mime_type: str("e.g. image/png"),
     }, ["id", "reason"]),
     admin: true,
+    adminOnly: true,   // spending stays with admins
     run: async (m, a) => {
       const cur = must(await db.from("spending_records").select("*").eq("id", a.id).single()) as any;
       const patch: Record<string, any> = pick(a, ["title", "vendor", "amount", "category", "order_date", "order_number", "notes", "season_period"]);
@@ -616,7 +624,7 @@ async function handle(msg: Rpc, member: Member) {
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
         instructions:
-          `You are connected to Nyx Dashboard, FRC Team 11744's workspace, as ${member.full_name} (${member.is_admin ? "admin" : "member"}). ` +
+          `You are connected to Nyx Dashboard, FRC Team 11744's workspace, as ${member.full_name} (${roleOf(member)}). ` +
           "When the user sends a photo, work out every change it implies (purchases from receipts, tasks from whiteboards, shifts from schedules, stock counts from shelves), " +
           "check existing records first to avoid duplicates, make the changes with these tools, then summarize exactly what changed. " +
           "For strategy questions, pull scouting with team_scouting_report / match_strategy_brief / rank_scouted_teams, ground every recommendation in those numbers, " +
@@ -628,7 +636,7 @@ async function handle(msg: Rpc, member: Member) {
       return rpcResult(msg.id, {});
     case "tools/list":
       return rpcResult(msg.id, {
-        tools: TOOLS.filter(t => !t.admin || member.is_admin).map(t => ({
+        tools: TOOLS.filter(t => (!t.admin || member.is_staff) && (!t.adminOnly || member.is_admin)).map(t => ({
           name: t.name, description: t.description, inputSchema: t.inputSchema,
           annotations: { readOnlyHint: !!t.readOnly, destructiveHint: false },
         })),
@@ -637,7 +645,8 @@ async function handle(msg: Rpc, member: Member) {
       const tool = TOOLS.find(t => t.name === msg.params?.name);
       if (!tool) return rpcError(msg.id, -32602, `Unknown tool: ${msg.params?.name}`);
       try {
-        if (tool.admin) requireAdmin(member);
+        if (tool.adminOnly) requireAdmin(member);
+        else if (tool.admin) requireStaff(member);
         const out = await tool.run(member, msg.params?.arguments || {});
         return rpcResult(msg.id, { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] });
       } catch (err) {

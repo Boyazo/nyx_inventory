@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028o">
+<link rel="stylesheet" href="css/style.css?v=20261028p">
 </head>
 <body class="is-auth">
 
@@ -55,6 +55,10 @@
         <button class="sidebar-sublink" data-subview="spending" type="button">Spending</button>
         <button class="sidebar-sublink" data-subview="members" type="button">Members <span data-badge="badge-members"></span></button>
       </div>
+      <button class="sidebar-link hidden" id="sidebar-btn-analytics" data-page="analytics" type="button">
+        <span class="sidebar-icon"><i class=fa-chart-line aria-hidden=true></i></span>
+        <span class="sidebar-label">Analytics</span>
+      </button>
       <button class="sidebar-link" id="sidebar-btn-duties" data-page="duties" type="button">
         <span class="sidebar-icon"><i class=fa-calendar aria-hidden=true></i></span>
         <span class="sidebar-label">Competition Sign-ups</span>
@@ -97,6 +101,8 @@
         </div>
         
         <div class="top-controls">
+          <button type="button" id="shop-checkin-btn" class="shop-checkin" hidden></button>
+
           <!-- Global Command Search Trigger (Cmd+K) -->
           <button type="button" id="global-command-trigger" class="global-search-btn" title="Quick Command Palette (Ctrl+K)">
             <span class="search-icon"><i class=fa-magnifying-glass aria-hidden=true></i></span>
@@ -274,7 +280,7 @@
         </div>
         <div class="toolbar-actions">
           <button class="btn btn--ghost btn--sm" id="export-inventory-csv-btn" type="button" title="Download inventory spreadsheet"><i class=fa-download aria-hidden=true></i> Export CSV</button>
-          <button class="btn btn--primary btn--sm hidden" id="add-item-button" type="button">＋ Add Item (Admin)</button>
+          <button class="btn btn--primary btn--sm hidden" id="add-item-button" type="button">＋ Add Item</button>
         </div>
       </div>
 
@@ -323,7 +329,7 @@
         </div>
         <div class="toolbar-actions">
           <button class="btn btn--ghost btn--sm hidden" id="gcal-connect-btn" type="button" title="Shifts you join are added to your Google Calendar automatically"><i class=fa-calendar-days aria-hidden=true></i> Sync to Google Calendar</button>
-          <button class="btn btn--primary btn--sm hidden" id="add-shift-btn" type="button">＋ Schedule Shift (Admin)</button>
+          <button class="btn btn--primary btn--sm hidden" id="add-shift-btn" type="button">＋ Schedule Shift</button>
         </div>
       </div>
 
@@ -343,7 +349,7 @@
         </div>
         <div class="toolbar-actions">
           <button class="btn btn--ghost btn--sm" id="export-parts-needed-csv-btn" type="button" title="Download ordering queue spreadsheet"><i class=fa-download aria-hidden=true></i> Export CSV</button>
-          <button class="btn btn--primary btn--sm hidden" id="add-part-needed-btn" type="button">＋ Request Robot Part (Admin)</button>
+          <button class="btn btn--primary btn--sm hidden" id="add-part-needed-btn" type="button">＋ Request Robot Part</button>
         </div>
       </div>
 
@@ -390,7 +396,7 @@
           <h2>Planner</h2>
           <p class="muted small">Roadmap for build season milestones and pit prep. Anyone can advance task progress; admins manage tasks.</p>
         </div>
-        <button class="btn btn--primary btn--sm hidden" id="add-task-btn" type="button">＋ Add Task (Admin)</button>
+        <button class="btn btn--primary btn--sm hidden" id="add-task-btn" type="button">＋ Add Task</button>
       </div>
 
       <div class="filters">
@@ -544,6 +550,16 @@
   </main>
 
   <!-- STRATEGY & SCOUTING SCREEN -->
+  <main id="analytics-screen" class="dashboard hidden">
+    <section class="welcome">
+      <div>
+        <h1>Analytics</h1>
+        <p class="muted">How the team uses Nyx Dashboard, time at the shop, and who's doing what. Admins only.</p>
+      </div>
+    </section>
+    <div id="analytics-body"></div>
+  </main>
+
   <main id="duties-screen" class="dashboard hidden">
     <section class="welcome">
       <div>
@@ -555,8 +571,8 @@
       <div class="scout-hubbar" style="padding-top:14px;">
         <nav class="scout-subnav" id="duties-tabs" aria-label="Sign-up sections">
           <button type="button" class="active" data-duty-tab="mine">My sign-ups</button>
-          <button type="button" data-duty-tab="assign" data-admin hidden>Assign (admin)</button>
-          <button type="button" data-duty-tab="setup" data-admin hidden>Setup (admin)</button>
+          <button type="button" data-duty-tab="assign" data-admin hidden>Assign</button>
+          <button type="button" data-duty-tab="setup" data-admin hidden>Setup</button>
         </nav>
       </div>
       <div id="duties-body" style="padding:16px 20px 20px;"><div class="muted">Loading…</div></div>
@@ -1326,7 +1342,7 @@
       <div class="modalhead">
         <div>
           <span class="eyebrow">BUILD SEASON SCHEDULE</span>
-          <h2 id="shift-modal-title">Schedule Lab Shift (Admin)</h2>
+          <h2 id="shift-modal-title">Schedule Shift</h2>
         </div>
         <button class="close" id="close-shift-modal" type="button" aria-label="Close">×</button>
       </div>
@@ -2038,6 +2054,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028o"></script>
+  <script type="module" src="js/app.js?v=20261028p"></script>
 </body>
 </html>
