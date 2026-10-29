@@ -3371,3 +3371,46 @@ input:focus, select:focus, textarea:focus, .search:focus { border-color: var(--a
   :root, [data-theme="light"] { --line: #a1a1aa; --line-strong: #71717a; --text-muted: #3f3f46; }
   [data-theme="dark"] { --line: #52525b; --line-strong: #71717a; --text-muted: #d4d4d8; }
 }
+
+/* Sign-in: one plain card, nothing else */
+body.is-auth .topbar, body.is-auth .shell > footer, body.is-auth #setup-notice:not(.hidden) ~ footer { display: none !important; }
+body.is-auth .app-sidebar, body.is-auth .mobile-bottom-nav { display: none !important; }
+body.is-auth { padding-bottom: 0 !important; }
+.auth-only {
+  min-height: 100vh; min-height: 100dvh;
+  display: grid; place-items: center;
+  padding: 24px 16px;
+}
+.auth-only.hidden { display: none !important; }
+.auth-card {
+  width: 100%; max-width: 380px;
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 28px 28px 24px;
+}
+.auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.auth-brand img { width: 40px; height: 40px; border-radius: 9px; object-fit: contain; }
+.auth-brand span { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.auth-title { font-size: 22px !important; margin: 0 0 4px !important; letter-spacing: -0.02em !important; }
+.auth-subtitle { margin: 0 0 4px; }
+.auth-switch {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; margin: 16px 0 6px;
+  background: var(--bg-subtle); border-radius: 8px;
+}
+.auth-switch .tab {
+  border: 0; border-radius: 6px; padding: 7px 10px; background: transparent;
+  font-size: 13px; font-weight: 500; color: var(--text-muted);
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.auth-switch .tab.active { background: var(--bg-card); color: var(--text); box-shadow: 0 1px 2px rgba(24, 24, 27, 0.08) !important; }
+[data-theme="dark"] .auth-switch .tab.active { background: var(--bg-raised); box-shadow: none !important; }
+.auth-card form label { margin-top: 14px; }
+.auth-card .btn--full { width: 100%; margin-top: 20px; height: 40px; }
+.auth-forgot { display: block; margin: 14px auto 0; font-size: 13px; }
+.auth-card .authmessage { margin-top: 14px; }
+@media (max-width: 480px) {
+  .auth-only { place-items: start center; padding-top: 12vh; }
+  .auth-card { border: 0; padding: 8px 4px; background: transparent !important; }
+}
+.auth-switch .tab { background: transparent !important; color: var(--text-muted) !important; border: 0 !important; }
+.auth-switch .tab.active { background: var(--bg-card) !important; color: var(--text) !important; font-weight: 600 !important; }
+[data-theme="dark"] .auth-switch .tab.active { background: var(--line-strong) !important; }

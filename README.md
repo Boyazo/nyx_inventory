@@ -1,4 +1,4 @@
-# FRC NYX 11744 — Shared Inventory & Team Workspace
+# Nyx Dashboard — FRC Team 11744
 
 A modern, responsive shared tools/parts inventory, robot parts ordering tracker, team planner, and budget management system for **Team NYX 11744** (San Diego, CA). Styled with the official [nyx11744.org](https://nyx11744.org/) visual identity and logo.
 

@@ -83,11 +83,11 @@ function eventBody(shift) {
   return {
     summary: `NYX Build Shift: ${shift.title}`,
     location: shift.location || "Main Shop",
-    description: [`${shift.department} shift`, notes, "Synced from the NYX 11744 team workspace."].filter(Boolean).join("\n\n"),
+    description: [`${shift.department} shift`, notes, "Synced from Nyx Dashboard."].filter(Boolean).join("\n\n"),
     start: { dateTime: `${shift.shift_date}T${shift.start_time.slice(0, 5)}:00`, timeZone: TEAM_TIMEZONE },
     end: { dateTime: `${shift.shift_date}T${shift.end_time.slice(0, 5)}:00`, timeZone: TEAM_TIMEZONE },
     reminders: { useDefault: true },
-    source: { title: "NYX 11744 Workspace", url: location.origin + location.pathname }
+    source: { title: "Nyx Dashboard", url: location.origin + location.pathname }
   };
 }
 

@@ -9,17 +9,17 @@
 <meta name="theme-color" content="#ffffff">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="description" content="Shared inventory, tool tracking, robot parts needed, calendar shifts, and team workspace for FRC Team 11744 Nyx (San Diego, CA)">
-<title>Nyx 11744 | Team Workspace & Inventory</title>
+<meta name="description" content="Shared inventory, tool tracking, robot parts needed, calendar shifts, and team dashboard for FRC Team 11744 Nyx (San Diego, CA)">
+<title>Nyx Dashboard</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028m">
+<link rel="stylesheet" href="css/style.css?v=20261028o">
 </head>
-<body>
+<body class="is-auth">
 
 <div class="app-layout">
   <!-- Mobile Sidebar Backdrop -->
@@ -32,8 +32,8 @@
         <div class="sidebar-brand">
           <img src="logo.png" alt="Nyx Logo" class="sidebar-logo" width="36" height="36">
           <div>
-            <strong>NYX 11744</strong>
-            <small>Team Workspace</small>
+            <strong>Nyx Dashboard</strong>
+            <small>FRC Team 11744</small>
           </div>
         </div>
         <button class="btn btn--ghost btn--sm" id="sidebar-close-btn" type="button" style="padding:4px 8px; font-size:14px; border:none; color:var(--text-muted);" title="Collapse Sidebar">✕</button>
@@ -88,10 +88,10 @@
       <header class="topbar">
         <div style="display:flex; align-items:center; gap:12px;">
           <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" type="button" aria-label="Toggle navigation sidebar" title="Toggle Sidebar"><i class=fa-bars aria-hidden=true></i></button>
-          <a class="brand" href="#" aria-label="NYX 11744 Workspace">
+          <a class="brand" href="#" aria-label="Nyx Dashboard">
             <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
             <span class="brandtext">
-              <strong>NYX 11744</strong>
+              <strong>Nyx Dashboard</strong>
             </span>
           </a>
         </div>
@@ -122,56 +122,37 @@
   </div>
 
   <!-- AUTH SCREEN -->
-  <main id="auth-screen" class="authlayout">
-    <section>
-      <span class="eyebrow">FRC TEAM 11744 / SAN DIEGO, CA</span>
-      <h1>Built for the build season.<br><em>Ready for the next match.</em></h1>
-      <p class="slogan-motto">“Born in the dark, built to dominate.”</p>
-      <p style="font-size: 16px; max-width: 520px;">
-        Shared inventory, robot parts tracking, shop shifts calendar, tool checkouts, and team planner for the engineers of Nyx.
-      </p>
-      <div class="metrics">
-        <div class="metric"><strong>04</strong><small>SUBSYSTEMS</small></div>
-        <div class="metric"><strong>SHIFTS</strong><small>CALENDAR</small></div>
-        <div class="metric"><strong>LIVE</strong><small>TOOL TRACKING</small></div>
+  <main id="auth-screen" class="auth-only">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <div class="auth-brand">
+        <img src="logo.png" alt="" width="44" height="44">
+        <span>Nyx Dashboard</span>
       </div>
-      <div class="stamp">
-        <img src="logo.png" alt="Nyx Logo" width="44" height="44" style="border-radius:8px; object-fit:contain;">
-        <span class="mono" style="font-size:11px; letter-spacing:.15em; color:var(--text-muted);">NYX ROBOTICS 11744<br>BORN IN THE DARK, BUILT TO DOMINATE</span>
-      </div>
-    </section>
+      <h1 id="auth-title" class="auth-title">Sign in</h1>
+      <p id="auth-subtitle" class="auth-subtitle muted small" hidden></p>
 
-    <section class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <span class="eyebrow" style="margin-bottom:0">MEMBER ACCESS</span>
-        <span class="mono small muted">SAN DIEGO</span>
-      </div>
-      <h2 id="auth-title">Sign in to the shop.</h2>
-      <p id="auth-subtitle" class="muted small">Check stock, borrow tools, view lab shifts, and coordinate build milestones.</p>
-      
-      <div class="tabs">
-        <button type="button" class="tab active" id="show-signin">Sign in</button>
-        <button type="button" class="tab" id="show-signup">Create account</button>
+      <div class="auth-switch" role="tablist" aria-label="Account">
+        <button type="button" class="tab active" id="show-signin" role="tab">Sign in</button>
+        <button type="button" class="tab" id="show-signup" role="tab">Create account</button>
       </div>
 
       <form id="signin-form">
-        <label for="signin-email">Team email</label>
-        <input id="signin-email" type="email" autocomplete="username" placeholder="name@nyx11744.org" required>
+        <label for="signin-email">Email</label>
+        <input id="signin-email" type="email" autocomplete="username" required>
         <label for="signin-password">Password</label>
-        <input id="signin-password" type="password" autocomplete="current-password" placeholder="••••••••" required>
-        <button class="btn btn--primary btn--full" type="submit">Sign in ↗</button>
-        <button class="textbtn" type="button" id="forgot-password">Forgot password?</button>
+        <input id="signin-password" type="password" autocomplete="current-password" required>
+        <button class="btn btn--primary btn--full" type="submit">Sign in</button>
+        <button class="textbtn auth-forgot" type="button" id="forgot-password">Forgot password?</button>
       </form>
 
       <form id="signup-form" class="hidden">
-        <label for="signup-name">First and last name</label>
-        <input id="signup-name" type="text" autocomplete="name" maxlength="100" placeholder="e.g. Maya Patel" required>
-        <label for="signup-email">Team email</label>
-        <input id="signup-email" type="email" autocomplete="email" placeholder="name@nyx11744.org" required>
-        <label for="signup-password">Create password</label>
+        <label for="signup-name">Full name</label>
+        <input id="signup-name" type="text" autocomplete="name" maxlength="100" required>
+        <label for="signup-email">Email</label>
+        <input id="signup-email" type="email" autocomplete="email" required>
+        <label for="signup-password">Password</label>
         <input id="signup-password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
-        <button class="btn btn--primary btn--full" type="submit">Register for access ↗</button>
-        <p class="small muted" style="margin-top:12px">All new accounts require approval by a team lead or coach before inventory access is granted.</p>
+        <button class="btn btn--primary btn--full" type="submit">Create account</button>
       </form>
 
       <div id="auth-message" class="authmessage hidden" role="status" aria-live="polite"></div>
@@ -183,7 +164,7 @@
     <div class="card" style="text-align: center; padding: 40px 30px;">
       <span class="eyebrow">REGISTRATION CONFIRMED</span>
       <h2>Waiting for team approval.</h2>
-      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can access the team workspace.</p>
+      <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can access Nyx Dashboard.</p>
       <div style="margin-top: 24px;">
         <button class="btn btn--ghost" id="pending-signout" type="button">Sign out</button>
       </div>
@@ -213,7 +194,7 @@
   <main id="inventory-screen" class="dashboard hidden">
     <section class="welcome">
       <div>
-        <h1>Team Workspace</h1>
+        <h1>Dashboard</h1>
         <p class="muted">Inventory, parts, shifts and planning for FRC 11744.</p>
       </div>
 
@@ -2042,7 +2023,7 @@
           <button class="btn btn--primary btn--sm" id="copy-claude-url-btn" type="button">Copy</button>
         </div>
         <ol class="small" style="margin:12px 0 0 18px; padding:0; line-height:1.6;">
-          <li><b>Claude (web, desktop, mobile):</b> <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">Settings → Connectors</a> → <i>Add custom connector</i> → name it "NYX Workspace" and paste the URL.</li>
+          <li><b>Claude (web, desktop, mobile):</b> <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">Settings → Connectors</a> → <i>Add custom connector</i> → name it "Nyx Dashboard" and paste the URL.</li>
           <li><b>Claude Code:</b> <button class="textbtn" id="copy-claude-code-cmd-btn" type="button" style="font-size:12px;">copy the setup command</button> and run it in a terminal.</li>
           <li>Start a chat, enable the NYX connector, and send a photo: <i>"Log this receipt"</i>, <i>"Turn this whiteboard into tasks"</i>.</li>
         </ol>
@@ -2057,6 +2038,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028m"></script>
+  <script type="module" src="js/app.js?v=20261028o"></script>
 </body>
 </html>

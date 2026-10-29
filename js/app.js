@@ -1,8 +1,8 @@
-import * as gcal from "./gcal.js?v=20261028m";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028m";
-import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028m";
-import { initDuties } from "./duties.js?v=20261028m";
-import { initScoutHub } from "./scouting.js?v=20261028m";
+import * as gcal from "./gcal.js?v=20261028o";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028o";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028o";
+import { initDuties } from "./duties.js?v=20261028o";
+import { initScoutHub } from "./scouting.js?v=20261028o";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -96,8 +96,9 @@ function authMode(mode) {
   $("#signup-form").classList.toggle("hidden", signIn);
   $("#show-signin").classList.toggle("active", signIn);
   $("#show-signup").classList.toggle("active", !signIn);
-  $("#auth-title").textContent = signIn ? "Sign in to the shop." : "Join the team workspace.";
-  $("#auth-subtitle").textContent = signIn ? "Check stock, borrow tools, view lab shifts, and coordinate build milestones." : "Register with your real name and team email.";
+  $("#auth-title").textContent = signIn ? "Sign in" : "Create account";
+  $("#auth-subtitle").textContent = signIn ? "" : "New accounts need approval from a team lead.";
+  $("#auth-subtitle").hidden = signIn;
   $("#auth-message").classList.add("hidden");
 }
 
@@ -106,6 +107,7 @@ let currentStratTab = "playbook"; // "playbook", "rankings", "scouting", "simula
 
 function screens(which) {
   const isWorkspace = which === "inventory";
+  document.body.classList.toggle("is-auth", which === "auth");
   $("#auth-screen").classList.toggle("hidden", which !== "auth");
   $("#pending-screen").classList.toggle("hidden", which !== "pending");
   const elSidebar = $("#app-sidebar");
@@ -1717,7 +1719,7 @@ $("#open-claude-connect-btn")?.addEventListener("click", openClaudeConnect);
 $("#close-claude-connect-modal")?.addEventListener("click", () => $("#claude-connect-modal").classList.add("hidden"));
 $("#generate-claude-key-btn")?.addEventListener("click", generateClaudeKey);
 $("#copy-claude-url-btn")?.addEventListener("click", () => copyText(lastConnectorUrl, "Connector URL"));
-$("#copy-claude-code-cmd-btn")?.addEventListener("click", () => copyText(`claude mcp add --transport http nyx-workspace "${lastConnectorUrl}"`, "Claude Code command"));
+$("#copy-claude-code-cmd-btn")?.addEventListener("click", () => copyText(`claude mcp add --transport http nyx-dashboard "${lastConnectorUrl}"`, "Claude Code command"));
 $("#claude-key-list")?.addEventListener("click", async e => {
   const id = e.target.closest("[data-revoke-key]")?.dataset.revokeKey;
   if (!id || !confirm("Revoke this connector? Claude will lose access immediately.")) return;
@@ -3604,7 +3606,7 @@ async function syncStatboticsData(silent = false) {
    TACTICAL FIELD PLAYBOOK (CANVAS)
    -------------------------------------------------------------------------- */
 function drawField(ctx, width, height) {
-  // Field carpet mat - sleek dark theme to match NYX workspace
+  // Field carpet mat - sleek dark theme to match Nyx Dashboard
   ctx.fillStyle = "#0c0d12";
   ctx.fillRect(0, 0, width, height);
 

@@ -1,4 +1,4 @@
-// NYX 11744 Workspace — remote MCP server for Claude.
+// Nyx Dashboard (FRC Team 11744) — remote MCP server for Claude.
 //
 // Lets a team member add the workspace to Claude as a custom connector, then send Claude a photo
 // (receipt, whiteboard, parts shelf, shift schedule…) and have it update inventory, tasks, shifts,
@@ -16,7 +16,7 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 const SEASON_KICKOFF = "2027-01-09";
-const SERVER_INFO = { name: "nyx-workspace", version: "1.0.0" };
+const SERVER_INFO = { name: "nyx-dashboard", version: "1.0.0" };
 const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
 const db: SupabaseClient = createClient(
@@ -61,7 +61,7 @@ async function authenticate(req: Request): Promise<Member | null> {
 class ToolError extends Error {}
 
 function requireAdmin(m: Member) {
-  if (!m.is_admin) throw new ToolError("This action is admin-only in the NYX workspace.");
+  if (!m.is_admin) throw new ToolError("This action is admin-only in Nyx Dashboard.");
 }
 
 function must<T>(res: { data: T; error: { message: string } | null }): T {
@@ -616,7 +616,7 @@ async function handle(msg: Rpc, member: Member) {
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
         instructions:
-          `You are connected to the FRC Team NYX 11744 workspace as ${member.full_name} (${member.is_admin ? "admin" : "member"}). ` +
+          `You are connected to Nyx Dashboard, FRC Team 11744's workspace, as ${member.full_name} (${member.is_admin ? "admin" : "member"}). ` +
           "When the user sends a photo, work out every change it implies (purchases from receipts, tasks from whiteboards, shifts from schedules, stock counts from shelves), " +
           "check existing records first to avoid duplicates, make the changes with these tools, then summarize exactly what changed. " +
           "For strategy questions, pull scouting with team_scouting_report / match_strategy_brief / rank_scouted_teams, ground every recommendation in those numbers, " +
