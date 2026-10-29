@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028q">
+<link rel="stylesheet" href="css/style.css?v=20261028r">
 </head>
 <body class="is-auth">
 
@@ -296,6 +296,7 @@
           <p class="muted small">All members can browse tools & check stock. Admins manage catalog items.</p>
         </div>
         <div class="toolbar-actions">
+          <button class="btn btn--ghost btn--sm hidden" id="manage-categories-btn" type="button"><i class=fa-tags aria-hidden=true></i> Categories</button>
           <button class="btn btn--ghost btn--sm" id="export-inventory-csv-btn" type="button" title="Download inventory spreadsheet"><i class=fa-download aria-hidden=true></i> Export CSV</button>
           <button class="btn btn--primary btn--sm hidden" id="add-item-button" type="button">＋ Add Item</button>
         </div>
@@ -308,14 +309,7 @@
             <span>▾</span>
           </button>
         </div>
-        <div class="tabslist" aria-label="Subsystem Filters">
-          <button class="catbtn active" data-category="All">All <span id="count-all">0</span></button>
-          <button class="catbtn" data-category="Mechanical">Mechanical <span id="count-mechanical">0</span></button>
-          <button class="catbtn" data-category="Electrical">Electrical <span id="count-electrical">0</span></button>
-          <button class="catbtn" data-category="Software">Software <span id="count-software">0</span></button>
-          <button class="catbtn" data-category="Miscellaneous">Misc <span id="count-miscellaneous">0</span></button>
-          <button class="catbtn" data-category="ToolsOnly"><i class=fa-screwdriver-wrench aria-hidden=true></i> Tools Only <span id="count-tools">0</span></button>
-        </div>
+        <div class="tabslist" id="inv-filter-tabs" aria-label="Inventory categories"></div>
         <input class="search" id="search-items" type="search" placeholder="Search name, location, part #" aria-label="Search inventory">
       </div>
 
@@ -1411,11 +1405,17 @@
         <label for="shift-notes">Shift Goals & Notes</label>
         <textarea id="shift-notes" maxlength="600" rows="2" placeholder="e.g. Bring safety glasses, finish intake gearbox assembly before scrim"></textarea>
 
+        <label class="ftm-toggle">
+          <input type="checkbox" id="shift-full-team">
+          <span><b>Full team meeting</b><small>Whole team — everyone is marked as attending</small></span>
+        </label>
+
         <!-- Assign Members (Admin) -->
         <div class="assign-box">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
             <label style="margin:0;"><i class=fa-users aria-hidden=true></i> Assigned Members <span class="muted small" id="shift-assign-count">(0)</span></label>
             <div class="assign-quick" id="shift-assign-quick">
+              <button type="button" class="textbtn" data-assign-dept="__all">+ Everyone</button>
               <button type="button" class="textbtn" data-assign-dept="__dept">+ Shift's department</button>
               <button type="button" class="textbtn" data-assign-dept="__clear">Clear</button>
             </div>
@@ -1887,35 +1887,11 @@
       <div class="bottom-sheet-head">
         <div>
           <span class="eyebrow" style="font-size:10px;">INVENTORY FILTER</span>
-          <h3 style="margin:2px 0 0 0; font-size:16px;">Filter by Subsystem</h3>
+          <h3 style="margin:2px 0 0 0; font-size:16px;">Filter by category</h3>
         </div>
         <button class="sheet-close" id="close-filter-inv-sheet" type="button">✕</button>
       </div>
       <div class="bottom-sheet-options" id="mobile-filter-inv-options">
-        <button type="button" class="sheet-option active" data-category="All">
-          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-globe aria-hidden=true></i></span> All Subsystems</div>
-          <span class="sheet-badge" id="m-filter-all">0</span>
-        </button>
-        <button type="button" class="sheet-option" data-category="Mechanical">
-          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-gear aria-hidden=true></i></span> Mechanical</div>
-          <span class="sheet-badge" id="m-filter-mech">0</span>
-        </button>
-        <button type="button" class="sheet-option" data-category="Electrical">
-          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-bolt aria-hidden=true></i></span> Electrical</div>
-          <span class="sheet-badge" id="m-filter-elec">0</span>
-        </button>
-        <button type="button" class="sheet-option" data-category="Software">
-          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-laptop-code aria-hidden=true></i></span> Software</div>
-          <span class="sheet-badge" id="m-filter-soft">0</span>
-        </button>
-        <button type="button" class="sheet-option" data-category="Miscellaneous">
-          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-box aria-hidden=true></i></span> Miscellaneous</div>
-          <span class="sheet-badge" id="m-filter-misc">0</span>
-        </button>
-        <button type="button" class="sheet-option" data-category="ToolsOnly">
-          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-wrench aria-hidden=true></i></span> Tools Only</div>
-          <span class="sheet-badge" id="m-filter-tools">0</span>
-        </button>
       </div>
     </div>
   </div>
@@ -2080,6 +2056,16 @@
     </div>
   </div>
 
+  <div id="categories-modal" class="modalback hidden" role="dialog" aria-modal="true" aria-labelledby="categories-title">
+    <div class="modal" style="max-width:520px;">
+      <div class="modalhead">
+        <div><h2 id="categories-title">Inventory categories</h2><p class="muted small">Admins only. Tool categories keep tools separate from parts.</p></div>
+        <button class="close" id="close-categories-modal" type="button" aria-label="Close">×</button>
+      </div>
+      <div id="categories-body"></div>
+    </div>
+  </div>
+
   <div id="pin-reveal-modal" class="modalback hidden" role="dialog" aria-modal="true" aria-labelledby="pin-reveal-title">
     <div class="modal" style="max-width:380px; text-align:center;">
       <h2 id="pin-reveal-title" style="margin:0 0 4px;">Sign-in PIN</h2>
@@ -2090,6 +2076,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028q"></script>
+  <script type="module" src="js/app.js?v=20261028r"></script>
 </body>
 </html>

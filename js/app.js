@@ -1,16 +1,16 @@
-import * as gcal from "./gcal.js?v=20261028q";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028q";
-import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028q";
-import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028q";
-import { initActivity, loadShopSession } from "./activity.js?v=20261028q";
-import { initAnalytics } from "./analytics.js?v=20261028q";
-import { initDuties } from "./duties.js?v=20261028q";
-import { initScoutHub } from "./scouting.js?v=20261028q";
+import * as gcal from "./gcal.js?v=20261028r";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028r";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028r";
+import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028r";
+import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028r";
+import { initActivity, loadShopSession } from "./activity.js?v=20261028r";
+import { initAnalytics } from "./analytics.js?v=20261028r";
+import { initDuties } from "./duties.js?v=20261028r";
+import { initScoutHub } from "./scouting.js?v=20261028r";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
 const SUPABASE_PUBLIC_KEY = "sb_publishable_5jyFdRU5d501M8YWZT2Fsg_7mwovAkD";
-const CATEGORIES = ["Mechanical", "Electrical", "Software", "Miscellaneous"];
 
 const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_PROJECT_REF") && SUPABASE_PUBLIC_KEY && !SUPABASE_PUBLIC_KEY.includes("YOUR_SUPABASE");
 const $ = (s) => document.querySelector(s);
@@ -327,6 +327,7 @@ async function checkUser(user) {
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
   const elSecretSideBtn = $("#sidebar-btn-secrets"); if (elSecretSideBtn) elSecretSideBtn.classList.toggle("hidden", !data.is_secret);
+  const elCatBtn = $("#manage-categories-btn"); if (elCatBtn) elCatBtn.classList.toggle("hidden", !data.is_admin);
   const elAnalyticsBtn = $("#sidebar-btn-analytics"); if (elAnalyticsBtn) elAnalyticsBtn.classList.toggle("hidden", !data.is_admin);
   loadShopSession();
   const elSecretMobBtn = $("#mob-btn-secrets"); if (elSecretMobBtn) elSecretMobBtn.classList.toggle("hidden", !data.is_secret);
@@ -382,6 +383,7 @@ async function loadItems(quiet) {
   const list = $("#items-list");
   if (!quiet && list) list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">Loading inventory…</div>';
 
+  await loadInventoryCategories();
   const { data, error } = await supabase
     .from("inventory_items")
     .select("id, name, category, quantity, unit, location, notes, is_tool, part_number, min_quantity, updated_at")
@@ -583,25 +585,17 @@ function renderItems() {
   const elStatItems = $("#stat-items"); if (elStatItems) elStatItems.textContent = allItems.length;
   const elBadgeAll = $("#badge-all"); if (elBadgeAll) elBadgeAll.textContent = allItems.length;
 
-  const elCountAll = $("#count-all"); if (elCountAll) elCountAll.textContent = allItems.length;
-  const elCountTools = $("#count-tools"); if (elCountTools) elCountTools.textContent = toolsCount;
-  CATEGORIES.forEach(c => {
-    const el = $("#count-" + c.toLowerCase());
-    if (el) el.textContent = allItems.filter(x => x.category === c).length;
-  });
+  const tabs = $("#inv-filter-tabs");
+  if (tabs) renderFilterTabs(tabs, allItems, activeCategory);
 
   const searchInput = $("#search-items");
   const q = searchInput ? searchInput.value.trim().toLowerCase() : "";
   const shown = allItems.filter(x => {
-    if (activeCategory === "ToolsOnly" && !x.is_tool) return false;
-    if (activeCategory !== "All" && activeCategory !== "ToolsOnly" && x.category !== activeCategory) return false;
+    if (!matchesFilter(x, activeCategory)) return false;
     if (!q) return true;
     return [x.name, x.category, x.location, x.notes, x.part_number].join(" ").toLowerCase().includes(q);
   });
 
-  $$(".catbtn").forEach(b => {
-    if (b.dataset.category) b.classList.toggle("active", b.dataset.category === activeCategory);
-  });
 
   const list = $("#items-list");
   if (!list) return;
@@ -613,9 +607,28 @@ function renderItems() {
     return;
   }
 
-  const isAdmin = isStaff();
+  // Parts first, then tools, each grouped by category (in the admins' category order)
+  const grouped = shown.map(x => ({ x, g: groupOf(x) })).sort((a, b) => a.g.key.localeCompare(b.g.key) || a.x.name.localeCompare(b.x.name));
+  const groupSize = new Map();
+  grouped.forEach(({ g }) => groupSize.set(g.key, (groupSize.get(g.key) || 0) + 1));
+  let lastSection = null, lastGroup = null;
+  list.innerHTML = grouped.map(({ x, g }) => {
+    let head = "";
+    if (g.section !== lastSection) {
+      lastSection = g.section;
+      head += `<div class="inv-section"><i class=${g.section === "Tools" ? "fa-screwdriver-wrench" : "fa-box"} aria-hidden=true></i> ${g.section}</div>`;
+    }
+    if (g.key !== lastGroup) {
+      lastGroup = g.key;
+      head += `<div class="inv-group">${esc(g.name)} <span>${groupSize.get(g.key)}</span></div>`;
+    }
+    return head + itemRowHtml(x);
+  }).join("");
+}
 
-  list.innerHTML = shown.map(x => {
+function itemRowHtml(x) {
+  const isAdmin = isStaff();
+  {
     const isLow = Number(x.quantity) <= Number(x.min_quantity || 1);
     const itemCheckouts = allCheckouts.filter(c => c.item_id === x.id);
     const checkedOutQty = itemCheckouts.reduce((sum, c) => sum + c.quantity, 0);
@@ -671,7 +684,7 @@ function renderItems() {
         </div>
       </article>
     `;
-  }).join("");
+  }
 }
 
 /* Render Shifts & Calendar */
@@ -1785,6 +1798,8 @@ function openShiftModal(shift, prefill) {
     $("#shift-end").value = prefill.end_time;
   }
   shiftAssignSelected = new Set(shift ? (shift.attendees || []) : [myShiftName()]);
+  const ftm = $("#shift-full-team");
+  if (ftm) ftm.checked = !!shift && shift.department === "All Departments" && teamMembers.length > 0 && teamMembers.every(m => (shift.attendees || []).includes(m.full_name));
   $("#shift-assign-search").value = "";
   renderShiftAssignList();
 
@@ -1827,11 +1842,22 @@ $("#shift-assign-list")?.addEventListener("change", e => {
   $("#shift-assign-count").textContent = `(${shiftAssignSelected.size})`;
 });
 $("#shift-assign-search")?.addEventListener("input", renderShiftAssignList);
+/* Full team meeting: whole team, everyone marked as attending */
+$("#shift-full-team")?.addEventListener("change", e => {
+  if (e.target.checked) {
+    $("#shift-dept").value = "All Departments";
+    teamMembers.forEach(m => shiftAssignSelected.add(m.full_name));
+  }
+  renderShiftAssignList();
+});
 $("#shift-assign-quick")?.addEventListener("click", e => {
   const mode = e.target.closest("[data-assign-dept]")?.dataset.assignDept;
   if (!mode) return;
   if (mode === "__clear") {
     shiftAssignSelected.clear();
+    $("#shift-full-team").checked = false;
+  } else if (mode === "__all") {
+    teamMembers.forEach(m => shiftAssignSelected.add(m.full_name));
   } else {
     const dept = $("#shift-dept").value;
     teamMembers
@@ -1856,8 +1882,10 @@ function openItemModal(item) {
   $("#modal-title").textContent = item ? "Edit Inventory Item" : "Add Inventory Item";
   $("#save-item-button").textContent = item ? "Save Changes ↗" : "Save Item ↗";
   $("#item-name").value = item ? item.name : "";
-  $("#item-category").value = item ? item.category : (activeCategory !== "All" && activeCategory !== "ToolsOnly" ? activeCategory : "Mechanical");
-  $("#item-is-tool").value = item ? (item.is_tool ? "true" : "false") : (activeCategory === "ToolsOnly" ? "true" : "false");
+  const defaultCat = isValidCategory(activeCategory) ? activeCategory
+    : activeCategory === "ToolsOnly" || activeCategory === OTHER_TOOLS ? (toolCategories()[0]?.name || "Miscellaneous") : "Mechanical";
+  fillCategorySelect($("#item-category"), item ? item.category : defaultCat);
+  $("#item-is-tool").value = item ? (item.is_tool ? "true" : "false") : (kindOf(defaultCat) === "tool" || activeCategory === "ToolsOnly" ? "true" : "false");
   $("#item-quantity").value = item ? item.quantity : 1;
   $("#item-min-quantity").value = item ? (item.min_quantity ?? 1) : 1;
   $("#item-unit").value = item ? (item.unit || "pcs") : "pcs";
@@ -1895,7 +1923,7 @@ attachPartPicker($("#item-name"), {
     if (entry.type === "preset") {
       const p = entry.preset;
       $("#item-name").value = p.name || "";
-      $("#item-category").value = p.cat || "Mechanical";
+      $("#item-category").value = p.tool ? (toolCategories()[0]?.name || p.cat || "Mechanical") : (p.cat || "Mechanical");
       $("#item-is-tool").value = p.tool ? "true" : "false";
       $("#item-unit").value = p.unit || "pcs";
       $("#item-part-number").value = p.pn || "";
@@ -2209,7 +2237,8 @@ async function saveItem(e) {
   const location = $("#item-location").value.trim();
   const notes = $("#item-notes").value.trim();
 
-  if (!name || !CATEGORIES.includes(category) || !Number.isInteger(quantity) || quantity < 0) {
+  const keepsOldCategory = editingItemId && allItems.find(i => i.id === editingItemId)?.category === category;
+  if (!name || !(isValidCategory(category) || keepsOldCategory) || !Number.isInteger(quantity) || quantity < 0) {
     toast("Please enter a valid item name and whole quantity.", true);
     return;
   }
@@ -2738,6 +2767,19 @@ $("#checkout-form").addEventListener("submit", async e => {
 
 const elSearchItems = $("#search-items");
 if (elSearchItems) elSearchItems.addEventListener("input", renderItems);
+
+/* Inventory category tabs are rendered from the categories list, so listen on the container */
+$("#inv-filter-tabs")?.addEventListener("click", e => {
+  const b = e.target.closest("[data-category]");
+  if (!b) return;
+  activeCategory = b.dataset.category;
+  renderItems();
+});
+/* Picking a tool category marks the item as a tool, and the reverse */
+$("#item-category")?.addEventListener("change", e => {
+  const kind = kindOf(e.target.value);
+  if (kind) $("#item-is-tool").value = kind === "tool" ? "true" : "false";
+});
 
 $$(".catbtn").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.category) {
@@ -5986,6 +6028,9 @@ $("#mob-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-analytics")?.addEventListener("click", () => switchPage("analytics"));
 
+/* Inventory categories (admins create; parts vs tools) */
+initInventoryCategories({ getClient: () => supabase, getProfile: () => currentProfile, getItems: () => allItems, reloadItems: () => loadItems(true), toast, esc, logAction });
+
 /* Sign in with PIN */
 initPinLogin({ url: SUPABASE_URL, publicKey: SUPABASE_PUBLIC_KEY, getClient: () => supabase, getUser: () => currentUser, getProfile: () => currentProfile, toast, message, signOut });
 
@@ -6142,39 +6187,26 @@ function initMobilePopupSheets() {
 
   // 3. Inventory Subsystem Category Filter Picker
   $("#mobile-filter-inv-trigger")?.addEventListener("click", () => {
-    const cAll = $("#count-all")?.textContent || "0";
-    const cMech = $("#count-mechanical")?.textContent || "0";
-    const cElec = $("#count-electrical")?.textContent || "0";
-    const cSoft = $("#count-software")?.textContent || "0";
-    const cMisc = $("#count-miscellaneous")?.textContent || "0";
-    const cTools = $("#count-tools")?.textContent || "0";
-
-    const elMAll = $("#m-filter-all"); if (elMAll) elMAll.textContent = cAll;
-    const elMMech = $("#m-filter-mech"); if (elMMech) elMMech.textContent = cMech;
-    const elMElec = $("#m-filter-elec"); if (elMElec) elMElec.textContent = cElec;
-    const elMSoft = $("#m-filter-soft"); if (elMSoft) elMSoft.textContent = cSoft;
-    const elMMisc = $("#m-filter-misc"); if (elMMisc) elMMisc.textContent = cMisc;
-    const elMTools = $("#m-filter-tools"); if (elMTools) elMTools.textContent = cTools;
-
-    $$("#mobile-filter-inv-options .sheet-option").forEach(opt => {
-      opt.classList.toggle("active", opt.dataset.category === activeCategory);
-    });
-
+    // Same options as the desktop tabs, rebuilt so admin-created categories appear
+    const tabs = [...document.querySelectorAll("#inv-filter-tabs [data-category]")];
+    $("#mobile-filter-inv-options").innerHTML = tabs.map(t => {
+      const n = t.querySelector("span")?.textContent || "0";
+      const label = t.textContent.replace(/\s*\d+\s*$/, "").trim();
+      return `<button type="button" class="sheet-option ${t.dataset.category === activeCategory ? "active" : ""}" data-category="${esc(t.dataset.category)}">
+        <div class="sheet-option-title">${esc(label)}</div><span class="sheet-badge">${esc(n)}</span></button>`;
+    }).join("");
     openSheet("#mobile-filter-inv-modal");
   });
   $("#close-filter-inv-sheet")?.addEventListener("click", () => closeSheet("#mobile-filter-inv-modal"));
 
-  $$("#mobile-filter-inv-options .sheet-option").forEach(opt => {
-    opt.addEventListener("click", () => {
-      const cat = opt.dataset.category;
-      if (cat) {
-        activeCategory = cat;
-        renderItems();
-        const elLbl = $("#mobile-current-filter-inv-label");
-        if (elLbl) elLbl.textContent = cat === "ToolsOnly" ? "Tools Only" : cat;
-      }
-      closeSheet("#mobile-filter-inv-modal");
-    });
+  $("#mobile-filter-inv-options")?.addEventListener("click", e => {
+    const opt = e.target.closest(".sheet-option");
+    if (!opt) return;
+    activeCategory = opt.dataset.category;
+    renderItems();
+    const elLbl = $("#mobile-current-filter-inv-label");
+    if (elLbl) elLbl.textContent = activeCategory === "ToolsOnly" ? "All tools" : activeCategory;
+    closeSheet("#mobile-filter-inv-modal");
   });
 
   // 4. Strategy Statbotics Sort Picker

@@ -25,7 +25,7 @@ alter table public.profiles add column if not exists discord_id text not null de
 create table if not exists public.inventory_items (
   id uuid primary key default gen_random_uuid(),
   name text not null check (length(trim(name)) > 0),
-  category text not null check (category in ('Mechanical','Electrical','Software','Miscellaneous')),
+  category text not null,   -- any name from inventory_categories (section 18)
   quantity integer not null default 0 check (quantity >= 0),
   unit text not null default 'pcs',
   location text not null default '',
@@ -903,3 +903,25 @@ create table if not exists public.pin_attempts (
   locked_until timestamptz
 );
 alter table public.pin_attempts enable row level security;
+
+-- 18. Inventory categories (admins create them; each is a part type or a tool type)
+alter table public.inventory_items drop constraint if exists inventory_items_category_check;
+alter table public.inventory_items drop constraint if exists inventory_items_category_present;
+alter table public.inventory_items add constraint inventory_items_category_present check (length(trim(category)) > 0) not valid;
+create table if not exists public.inventory_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique check (length(trim(name)) > 0),
+  kind text not null default 'part' check (kind in ('part', 'tool')),
+  sort integer not null default 0
+);
+insert into public.inventory_categories (name, kind, sort) values
+  ('Mechanical', 'part', 10), ('Electrical', 'part', 20), ('Software', 'part', 30), ('Miscellaneous', 'part', 40),
+  ('Hand Tools', 'tool', 110), ('Power Tools', 'tool', 120), ('Measuring & Layout', 'tool', 130),
+  ('Electrical Tools', 'tool', 140), ('Pit & Safety', 'tool', 150)
+on conflict (name) do nothing;
+alter table public.inventory_categories enable row level security;
+drop policy if exists "Members read inventory categories" on public.inventory_categories;
+create policy "Members read inventory categories" on public.inventory_categories for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Admins manage inventory categories" on public.inventory_categories;
+create policy "Admins manage inventory categories" on public.inventory_categories for all to authenticated
+using((select public.is_team_admin())) with check((select public.is_team_admin()));

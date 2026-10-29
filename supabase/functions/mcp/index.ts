@@ -170,7 +170,7 @@ const int = (description: string) => ({ type: "integer", description });
 const bool = (description: string) => ({ type: "boolean", description });
 const obj = (properties: Record<string, unknown>, required: string[] = []) => ({ type: "object", properties, required, additionalProperties: false });
 
-const INV_CATS = ["Mechanical", "Electrical", "Software", "Miscellaneous"];
+// Inventory categories are admin-defined (inventory_categories), so they're free text here
 const SUBSYSTEMS = ["General", "Mechanical", "Electrical", "Software", "Design / CAD", "Business"];
 const DEPTS = ["Mechanical", "Electrical", "Software", "Business", "All Departments"];
 const SPEND_CATS = ["Robot Hardware", "Electronics & Control", "Tools & Equipment", "Raw Materials", "Pit & Safety", "Other"];
@@ -200,7 +200,7 @@ const TOOLS: Tool[] = [
   {
     name: "search_inventory",
     description: "Search shop inventory (parts and tools) by name, part number, location or notes. Use before adding items to avoid duplicates.",
-    inputSchema: obj({ query: str("Text to match; empty lists everything"), category: str("Filter by category", { enum: INV_CATS }), low_stock_only: bool("Only items at or below their minimum quantity") }),
+    inputSchema: obj({ query: str("Text to match; empty lists everything"), category: str("Filter by category name"), low_stock_only: bool("Only items at or below their minimum quantity") }),
     readOnly: true,
     run: async (_m, a) => {
       let q = db.from("inventory_items").select("id, name, category, quantity, unit, location, part_number, is_tool, min_quantity, notes").order("name").limit(200);
@@ -217,7 +217,7 @@ const TOOLS: Tool[] = [
     name: "add_inventory_item",
     description: "Add a new part or tool to inventory (admin).",
     inputSchema: obj({
-      name: str("Item name"), category: str("Category", { enum: INV_CATS }), quantity: int("Quantity on hand"),
+      name: str("Item name"), category: str("Category name, e.g. Mechanical, Electrical, Hand Tools, Power Tools"), quantity: int("Quantity on hand"),
       unit: str("Unit, e.g. pcs, ft, box"), location: str("Bin / shelf location"), part_number: str("Vendor part number"),
       is_tool: bool("True for tools that get checked out"), min_quantity: int("Low-stock threshold"), notes: str("Notes"),
     }, ["name", "category", "quantity"]),
@@ -236,7 +236,7 @@ const TOOLS: Tool[] = [
     description: "Update an inventory item by id (admin). Use adjust_quantity for relative stock changes (e.g. -3 used, +10 restocked) or quantity to set an exact count.",
     inputSchema: obj({
       id: str("Item id from search_inventory"), adjust_quantity: int("Add/subtract from current quantity"), quantity: int("Set exact quantity"),
-      name: str("New name"), category: str("Category", { enum: INV_CATS }), unit: str("Unit"), location: str("Location"),
+      name: str("New name"), category: str("Category name"), unit: str("Unit"), location: str("Location"),
       part_number: str("Part number"), min_quantity: int("Low-stock threshold"), notes: str("Notes"),
     }, ["id"]),
     admin: true,
@@ -330,12 +330,21 @@ const TOOLS: Tool[] = [
           title: str("Shift title"), department: str("Department", { enum: DEPTS }), shift_date: str("YYYY-MM-DD"),
           start_time: str("HH:MM"), end_time: str("HH:MM"), location: str("Location"), notes: str("Notes"),
           attendees: { type: "array", items: { type: "string" }, description: "Full names of members to assign (they get a Discord ping)" },
+          full_team: bool("Full team meeting: department becomes All Departments and every approved member is attending"),
         }, ["title", "department", "shift_date", "start_time", "end_time"]),
       },
     }, ["shifts"]),
     admin: true,
     run: async (m, a) => {
-      const rows = (a.shifts as any[]).map(s => ({ location: "Main Shop", ...s, attendees: s.attendees || [], created_by: m.id, created_by_name: m.full_name }));
+      const everyone = (a.shifts as any[]).some(s => s.full_team)
+        ? ((must(await db.from("profiles").select("full_name").eq("is_approved", true)) as any[]).map(p => p.full_name))
+        : [];
+      const rows = (a.shifts as any[]).map(({ full_team, ...s }) => ({
+        location: "Main Shop", ...s,
+        department: full_team ? "All Departments" : s.department,
+        attendees: full_team ? everyone : (s.attendees || []),
+        created_by: m.id, created_by_name: m.full_name,
+      }));
       const created = must(await db.from("team_shifts").insert(rows).select("id, title, shift_date, department")) as any[];
       for (const s of created) await log(m, "SHIFT_CREATED", "team_shifts", s.id, { title: s.title, department: s.department, shift_date: s.shift_date });
       return created;
