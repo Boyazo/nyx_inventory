@@ -2851,3 +2851,143 @@ label { color: var(--text) !important; font-weight: 500; font-size: 13px; }
   #items-list .itemrow .actions, #parts-needed-list .itemrow .actions { align-self: stretch; justify-content: flex-end !important; }
   .stockcell { flex-direction: row; align-items: center; gap: 10px; }
 }
+
+/* ==========================================================================
+   Scouting hub (event · match claims · pit · teams · pick lists)
+   ========================================================================== */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.scout-hubbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 20px 12px; border-bottom: 1px solid var(--line); }
+.scout-subnav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.scout-subnav button { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 14px; font-size: 13.5px; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+.scout-subnav button:hover { color: var(--text); background: var(--bg-subtle); }
+.scout-subnav button.active { background: var(--bg-subtle); border-color: var(--line); color: var(--text); font-weight: 600; }
+.scout-event-chip { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.scout-event-chip select { width: auto; max-width: 260px; padding: 6px 10px; font-size: 13px; }
+.scout-warn { color: var(--amber); font-weight: 600; }
+.scout-warn-box { margin: 16px 20px; border-color: var(--amber) !important; background: var(--amber-dim) !important; }
+.scout-pane[hidden] { display: none !important; }
+.scout-pane-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px 12px; }
+.scout-pane-head h3 { margin: 0; font-size: 16px; }
+.scout-picker-empty { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+/* Robot picker */
+.scout-picker-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.scout-stepper { display: flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; }
+.scout-stepper button { width: 44px; height: 44px; border: 0; background: var(--bg-card); font-size: 20px; color: var(--text); }
+.scout-stepper button:active { background: var(--bg-subtle); }
+.scout-stepper span { min-width: 64px; text-align: center; font-weight: 700; font-size: 16px; }
+.robot-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.robot-slot {
+  min-width: 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--bg-card); min-height: 86px;
+}
+.robot-slot strong { font-size: 18px; }
+.robot-slot.red { border-left: 4px solid #e04848; }
+.robot-slot.blue { border-left: 4px solid #3b6fe0; }
+.robot-station { font-size: 11px; font-weight: 700; color: var(--text-faint); }
+.robot-name { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.robot-status { font-size: 11.5px; color: var(--green); font-weight: 600; margin-top: auto; line-height: 1.25; }
+.robot-slot.is-mine { background: var(--accent-dim); border-color: var(--accent); }
+.robot-slot.is-mine .robot-status { color: var(--accent); }
+.robot-slot.is-taken { opacity: .6; cursor: not-allowed; }
+.robot-slot.is-taken .robot-status { color: var(--text-faint); }
+.robot-slot.is-done .robot-status { color: var(--text-muted); }
+
+/* 1–10 scales & tags */
+.scout-scale { display: grid; grid-template-columns: repeat(auto-fit, minmax(34px, 1fr)); gap: 4px; margin-top: 6px; }
+.scout-scale label, .scout-tags label { margin: 0; cursor: pointer; }
+.scout-scale input, .scout-tags input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.scout-scale span { display: grid; place-items: center; height: 38px; border: 1px solid var(--line-strong); border-radius: 8px; font-weight: 600; font-size: 14px; color: var(--text-muted); background: var(--bg-card); }
+.scout-scale input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; }
+.scout-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+.scout-tags span { display: inline-block; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--text-muted); background: var(--bg-card); }
+.scout-tags input:checked + span { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.scout-scale input:focus-visible + span, .scout-tags input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Pit grid */
+.scout-progress { width: 200px; height: 6px; background: var(--bg-subtle); border-radius: 999px; overflow: hidden; }
+.scout-progress i { display: block; height: 100%; background: #22a35a; }
+.pit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 0 20px 20px; }
+.pit-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-card); min-height: 84px; }
+.pit-tile:hover { border-color: var(--line-strong); }
+.pit-tile strong { font-size: 17px; }
+.pit-name { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.pit-status { margin-top: auto; font-size: 11.5px; font-weight: 600; color: var(--red); }
+.pit-tile.is-done { background: var(--green-dim); border-color: transparent; }
+.pit-tile.is-done .pit-status { color: var(--green); }
+
+/* Teams */
+.scout-team-row { display: grid !important; grid-template-columns: minmax(180px, 2fr) 120px 80px 80px 80px 120px; align-items: center; gap: 10px; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.tier-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--bg-subtle); color: var(--text-muted); }
+.tier-tier1 { background: var(--green-dim); color: var(--green); }
+.tier-tier2 { background: var(--blue-dim); color: var(--blue); }
+.tier-tier3 { background: var(--amber-dim); color: var(--amber); }
+.tier-dnp { background: var(--red-dim); color: var(--red); }
+.team-detail-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+.team-detail-stats div { background: var(--bg-subtle); border-radius: 8px; padding: 8px 10px; }
+.team-detail-stats small { display: block; font-size: 11.5px; color: var(--text-muted); }
+.team-detail-stats strong { font-size: 18px; }
+.detail-reports { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+.detail-report { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+#scout-hub-modal h4 { margin: 14px 0 6px; font-size: 14px; }
+
+/* Pick lists */
+.picks-layout { display: grid; grid-template-columns: 230px 1fr; min-height: 420px; }
+.picks-side { border-right: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 16px; }
+.picks-side-title { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); margin-bottom: 6px; }
+.picks-side-title .textbtn { font-size: 12px; text-transform: none; letter-spacing: 0; }
+.picklist-item { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: 8px; font-size: 13.5px; color: var(--text); }
+.picklist-item small { color: var(--text-faint); font-size: 11.5px; }
+.picklist-item:hover { background: var(--bg-subtle); }
+.picklist-item.active { background: var(--accent-dim); }
+.picks-main { min-width: 0; }
+.picks-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 16px; }
+.picks-toolbar h3 { margin: 0; font-size: 16px; }
+.picks-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.pick-board { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; padding: 0 16px 16px; overflow-x: auto; }
+.pick-col { background: var(--bg-subtle); border-radius: 10px; display: flex; flex-direction: column; min-width: 150px; }
+.pick-col-head { display: flex; justify-content: space-between; padding: 10px 12px 6px; font-size: 13px; font-weight: 600; }
+.pick-col-head span { color: var(--text-faint); font-weight: 500; }
+.pick-col-tier1 .pick-col-head { color: var(--green); }
+.pick-col-tier2 .pick-col-head { color: var(--blue); }
+.pick-col-tier3 .pick-col-head { color: var(--amber); }
+.pick-col-dnp .pick-col-head { color: var(--red); }
+.pick-col-body { display: flex; flex-direction: column; gap: 6px; padding: 4px 8px 10px; min-height: 80px; flex: 1; }
+.pick-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.pick-card.is-draggable { cursor: grab; }
+.pick-card-top { display: flex; align-items: baseline; gap: 6px; }
+.pick-card-top strong { font-size: 15px; }
+.pick-name { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.pick-consensus { font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-dim); border-radius: 6px; padding: 0 6px; }
+.pick-card-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; font-size: 11px; color: var(--text-faint); }
+.pick-move { display: none; margin-top: 6px; padding: 4px 8px !important; font-size: 12px !important; }
+.pick-ghost { position: fixed; z-index: 9999; pointer-events: none; box-shadow: var(--shadow-md); transform: rotate(1.5deg); cursor: grabbing; }
+.pick-placeholder { border: 2px dashed var(--accent-line); border-radius: 8px; background: var(--accent-dim); }
+.scout-event-row { display: grid !important; grid-template-columns: minmax(200px, 2fr) 1fr auto auto; align-items: center; gap: 10px; }
+@media (hover: none) { .pick-move { display: block; } }
+
+@media (max-width: 900px) {
+  .scout-hubbar { padding: 0 12px 10px; }
+  .robot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .robot-slot { padding: 8px; min-height: 92px; }
+  .robot-slot strong { font-size: 16px; }
+  .scout-scale { grid-template-columns: repeat(6, 1fr); }
+  .scout-scale span { height: 44px; }
+  .pit-grid { grid-template-columns: repeat(2, 1fr); padding: 0 12px 16px; }
+  .scout-team-row { grid-template-columns: 1fr auto auto !important; }
+  .scout-team-row > :nth-child(3), .scout-team-row > :nth-child(4), .scout-team-row > :nth-child(5) { display: none; }
+  .team-detail-stats { grid-template-columns: repeat(2, 1fr); }
+  .picks-layout { grid-template-columns: 1fr; }
+  .picks-side { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; overflow-x: auto; gap: 14px; }
+  .picks-side-group { min-width: 170px; }
+  .pick-board { grid-template-columns: 1fr; overflow: visible; }
+  .scout-event-row { grid-template-columns: 1fr !important; }
+  .scout-progress { width: 100%; }
+}
+
+@media (max-width: 900px) {
+  #scout-pane-match { padding: 12px 8px !important; }
+  #scout-pane-match .scout-card { padding: 12px !important; }
+  .scout-picker-head .scout-phase-title span { white-space: nowrap; }
+}

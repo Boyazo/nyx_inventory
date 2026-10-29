@@ -134,8 +134,9 @@ function summarizeTeam(team: number, rows: ScoutRow[]) {
     navigation: { bump_rate: rate(mine.map(r => !!r.nav_bump)), trench_rate: rate(mine.map(r => !!r.nav_trench)) },
     endgame_climbs: climbs,
     reliability: { died_rate: rate(mine.map(r => !!r.died)), tipped_rate: rate(mine.map(r => !!r.tipped)) },
-    driver_rating_avg: avg(nums(mine, "driver_rating")),
-    defense_rating_avg: avg(nums(mine, "defense_rating")),
+    driver_rating_avg_of_10: avg(mine.map(r => (r.rating_scale === 10 ? 1 : 2) * Number(r.driver_rating)).filter(Number.isFinite)),
+    defense_rating_avg_of_10: avg(mine.map(r => (r.rating_scale === 10 ? 1 : 2) * Number(r.defense_rating)).filter(n => Number.isFinite(n) && n > 0)),
+    tags: Object.entries(mine.flatMap(r => r.tags || []).reduce((m: Record<string, number>, t: string) => ({ ...m, [t]: (m[t] || 0) + 1 }), {})).map(([t, n]) => `${t} ×${n}`),
     stations_played: [...new Set(mine.map(r => r.station))],
     scout_notes: mine.filter(r => r.notes).slice(-8).map(r => `M${r.match_num}: ${r.notes}`),
   };
@@ -474,7 +475,8 @@ const TOOLS: Tool[] = [
           auto_fuel: int("Auto fuel scored"), auto_miss: int("Auto misses"), auto_moved: bool("Left starting zone"), auto_climb: bool("Climbed in auto"),
           tele_fuel: int("Teleop fuel scored"), tele_miss: int("Teleop misses"), intake_floor: bool("Floor intake"), hp_feed: bool("Human player feed"),
           nav_bump: bool("Crossed bump"), nav_trench: bool("Used trench"), climb: str("Endgame climb", { enum: ["none", "L1", "L2", "L3"] }),
-          driver_rating: int("1-5"), defense_rating: int("0-5"), died: bool("Robot died"), tipped: bool("Tipped over"),
+          driver_rating: int("1-10"), defense_rating: int("0-10 (0 = no defense)"), died: bool("Robot died"), tipped: bool("Tipped over"),
+          event_key: str("TBA event key, e.g. 2027casd"), tags: { type: "array", items: { type: "string" }, description: "Quick tags: Fast, Accurate, Good driver, Plays defense, Shoots on the move, Tippy, Broke down, Inconsistent" },
           alliance_score: int("Final alliance score"), notes: str("Notes"),
         }, ["team_num", "match_num"]),
       },
@@ -484,13 +486,14 @@ const TOOLS: Tool[] = [
       const rows = (a.entries as any[]).map(e => {
         const rec = {
           match_type: "qm", event_name: `${GAME_YEAR} Event`, scout_name: m.full_name, station: "R1", climb: "none",
-          auto_fuel: 0, tele_fuel: 0, auto_miss: 0, tele_miss: 0, driver_rating: 3, defense_rating: 0, notes: "", ...e,
+          auto_fuel: 0, tele_fuel: 0, auto_miss: 0, tele_miss: 0, driver_rating: 5, defense_rating: 0, notes: "", tags: [], event_key: "", ...e,
+          rating_scale: 10,
         };
         rec.est_points = (rec.auto_fuel || 0) + (rec.tele_fuel || 0) + (rec.auto_climb ? 15 : 0) + (climbPts[rec.climb] || 0);
         rec.id = `scout_${Date.now()}_${crypto.randomUUID().slice(0, 4)}`;
         rec.created_at = new Date().toISOString();
         return {
-          ...pick(rec, ["id", "team_num", "match_num", "match_type", "event_name", "scout_name", "station", "auto_fuel", "tele_fuel", "climb", "est_points", "notes"]),
+          ...pick(rec, ["id", "team_num", "match_num", "match_type", "event_name", "event_key", "tags", "scout_name", "station", "auto_fuel", "tele_fuel", "climb", "est_points", "notes"]),
           raw_data: JSON.stringify(rec), created_by: m.id,
         };
       });

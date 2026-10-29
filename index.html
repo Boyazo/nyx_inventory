@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028d">
+<link rel="stylesheet" href="css/style.css?v=20261028f">
 </head>
 <body>
 
@@ -601,7 +601,7 @@
     <nav class="viewtabs" id="strategy-tabs">
       <button class="viewtab active" data-strat-view="playbook" type="button">🎨 Tactical Field Playbook</button>
       <button class="viewtab" data-strat-view="rankings" type="button">🏆 FRC Rankings & Statbotics <span class="badgenum" id="badge-strat-count">50</span></button>
-      <button class="viewtab" data-strat-view="scouting" type="button">📋 Match Scouting Form <span class="badgenum" id="badge-scout-count">0</span></button>
+      <button class="viewtab" data-strat-view="scouting" type="button">Scouting <span class="badgenum" id="badge-scout-count">0</span></button>
       <button class="viewtab" data-strat-view="simulator" type="button">⚔️ Match Simulator</button>
       <button class="viewtab" data-strat-view="lookup" type="button">🔍 Team Deep Dive</button>
     </nav>
@@ -735,16 +735,34 @@
     <section id="view-strat-scouting" class="panel hidden">
       <div class="toolbar">
         <div>
-          <h2>2026 REBUILT Match Scouting Form</h2>
-          <p class="muted small">Quick, phone-friendly scouting logger for qualification and playoff matches. Automatically syncs with team rankings and the simulator.</p>
+          <h2>Scouting</h2>
+          <p class="muted small">Claim a robot, scout the match, pit-scout teams, and build pick lists that merge into the team's primary list.</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--ghost btn--sm" id="scout-export-csv-btn" type="button">📥 Export Scouting CSV</button>
+          <button class="btn btn--ghost btn--sm" id="scout-export-csv-btn" type="button">Export CSV</button>
         </div>
       </div>
 
-      <div style="padding: 16px 20px; max-width: 820px; margin: 0 auto;">
+      <div class="scout-hubbar">
+        <nav class="scout-subnav" id="scout-subnav" aria-label="Scouting sections">
+          <button type="button" class="active" data-scout-pane="match">Match</button>
+          <button type="button" data-scout-pane="pit">Pit</button>
+          <button type="button" data-scout-pane="teams">Teams</button>
+          <button type="button" data-scout-pane="picks">Pick Lists</button>
+          <button type="button" data-scout-pane="event">Event</button>
+        </nav>
+        <div class="scout-event-chip" id="scout-event-chip">No event selected</div>
+      </div>
+
+      <div class="scout-pane" id="scout-pane-pit" hidden></div>
+      <div class="scout-pane" id="scout-pane-teams" hidden></div>
+      <div class="scout-pane" id="scout-pane-picks" hidden></div>
+      <div class="scout-pane" id="scout-pane-event" hidden></div>
+
+      <div class="scout-pane" id="scout-pane-match" style="padding: 16px 20px; max-width: 820px; margin: 0 auto;">
         <form id="scout-entry-form">
+          <input type="hidden" id="scout-event-key">
+          <div id="scout-robot-picker"></div>
           <!-- Match & Team Info Card -->
           <div class="scout-card">
             <div class="scout-phase-title">
@@ -931,24 +949,15 @@
 
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 12px;">
               <div>
-                <label>Driver Performance (1-5)</label>
-                <div class="scout-radio-group">
-                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="1">1</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="2">2</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="3" checked>3</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="4">4</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-driver" value="5">5</label>
+                <label>Driver rating (1–10)</label>
+                <div class="scout-scale" data-scale-name="scout-driver">
+                  <label><input type="radio" name="scout-driver" value="1"><span>1</span></label><label><input type="radio" name="scout-driver" value="2"><span>2</span></label><label><input type="radio" name="scout-driver" value="3"><span>3</span></label><label><input type="radio" name="scout-driver" value="4"><span>4</span></label><label><input type="radio" name="scout-driver" value="5" checked><span>5</span></label><label><input type="radio" name="scout-driver" value="6"><span>6</span></label><label><input type="radio" name="scout-driver" value="7"><span>7</span></label><label><input type="radio" name="scout-driver" value="8"><span>8</span></label><label><input type="radio" name="scout-driver" value="9"><span>9</span></label><label><input type="radio" name="scout-driver" value="10"><span>10</span></label>
                 </div>
               </div>
               <div>
-                <label>Defense Played (0-5)</label>
-                <div class="scout-radio-group">
-                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="0" checked>0</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="1">1</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="2">2</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="3">3</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="4">4</label>
-                  <label class="scout-radio-btn"><input type="radio" name="scout-defense" value="5">5</label>
+                <label>Defense rating (0 = didn't play defense)</label>
+                <div class="scout-scale" data-scale-name="scout-defense">
+                  <label><input type="radio" name="scout-defense" value="0" checked><span>0</span></label><label><input type="radio" name="scout-defense" value="1"><span>1</span></label><label><input type="radio" name="scout-defense" value="2"><span>2</span></label><label><input type="radio" name="scout-defense" value="3"><span>3</span></label><label><input type="radio" name="scout-defense" value="4"><span>4</span></label><label><input type="radio" name="scout-defense" value="5"><span>5</span></label><label><input type="radio" name="scout-defense" value="6"><span>6</span></label><label><input type="radio" name="scout-defense" value="7"><span>7</span></label><label><input type="radio" name="scout-defense" value="8"><span>8</span></label><label><input type="radio" name="scout-defense" value="9"><span>9</span></label><label><input type="radio" name="scout-defense" value="10"><span>10</span></label>
                 </div>
               </div>
             </div>
@@ -962,6 +971,11 @@
                 <input type="checkbox" id="scout-tipped">
                 <span>🔄 Tipped Over</span>
               </label>
+            </div>
+
+            <label>Quick tags</label>
+            <div class="scout-tags" id="scout-tags">
+              <label><input type="checkbox" name="scout-tag" value="Fast"><span>Fast</span></label><label><input type="checkbox" name="scout-tag" value="Accurate"><span>Accurate</span></label><label><input type="checkbox" name="scout-tag" value="Good driver"><span>Good driver</span></label><label><input type="checkbox" name="scout-tag" value="Plays defense"><span>Plays defense</span></label><label><input type="checkbox" name="scout-tag" value="Shoots on the move"><span>Shoots on the move</span></label><label><input type="checkbox" name="scout-tag" value="Tippy"><span>Tippy</span></label><label><input type="checkbox" name="scout-tag" value="Broke down"><span>Broke down</span></label><label><input type="checkbox" name="scout-tag" value="Inconsistent"><span>Inconsistent</span></label>
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 140px; gap: 12px; margin-bottom: 12px;">
@@ -982,7 +996,7 @@
               </div>
               <div style="display:flex; gap:10px;">
                 <button type="button" class="btn btn--ghost btn--sm" id="scout-form-reset-btn">Reset Form</button>
-                <button type="submit" class="btn btn--primary" id="scout-form-submit-btn">✅ Save Match Scouting Report</button>
+                <button type="submit" class="btn btn--primary" id="scout-form-submit-btn">Save match report</button>
               </div>
             </div>
           </div>
@@ -1810,7 +1824,7 @@
           <span class="sheet-badge" id="m-badge-strat-count">50</span>
         </button>
         <button type="button" class="sheet-option" data-strat-view="scouting">
-          <div class="sheet-option-title"><span class="opt-icon">📋</span> Match Scouting Form</div>
+          <div class="sheet-option-title"><span class="opt-icon">📋</span> Scouting</div>
           <span class="sheet-badge" id="m-badge-scout-count">0</span>
         </button>
         <button type="button" class="sheet-option" data-strat-view="simulator">
@@ -2021,6 +2035,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028d"></script>
+  <script type="module" src="js/app.js?v=20261028f"></script>
 </body>
 </html>

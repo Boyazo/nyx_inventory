@@ -1,5 +1,6 @@
-import * as gcal from "./gcal.js?v=20261028d";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028d";
+import * as gcal from "./gcal.js?v=20261028f";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028f";
+import { initScoutHub } from "./scouting.js?v=20261028f";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -3414,6 +3415,15 @@ function initStrategyCenter() {
     initPlaybook();
     initSimulator();
     initScoutingSystem();
+    initScoutHub({
+      getClient: () => supabase,
+      getUser: () => currentUser,
+      getProfile: () => currentProfile,
+      getRecords: () => scoutingRecords,
+      toast,
+      esc,
+      logAction,
+    });
     renderRankings();
     loadSavedPlays();
     populateSimulatorSelectors();
@@ -5302,10 +5312,12 @@ function setupScoutingEvents() {
     const matchNum = parseInt($("#scout-match-num")?.value, 10);
     const scoutName = $("#scout-name")?.value.trim() || "Anonymous";
     const eventName = $("#scout-event")?.value.trim() || "2026 Event";
+    const eventKey = $("#scout-event-key")?.value || "";
+    const tags = [...document.querySelectorAll('input[name="scout-tag"]:checked')].map(cb => cb.value);
     const matchType = $("#scout-match-type")?.value || "qm";
     const station = document.querySelector('input[name="scout-station"]:checked')?.value || "R1";
     const climb = document.querySelector('input[name="scout-climb"]:checked')?.value || "none";
-    const driver = parseInt(document.querySelector('input[name="scout-driver"]:checked')?.value || "3", 10);
+    const driver = parseInt(document.querySelector('input[name="scout-driver"]:checked')?.value || "5", 10);
     const defense = parseInt(document.querySelector('input[name="scout-defense"]:checked')?.value || "0", 10);
     const notes = $("#scout-notes")?.value.trim() || "";
     const allianceScore = parseInt($("#scout-final-alliance-score")?.value, 10) || null;
@@ -5325,7 +5337,9 @@ function setupScoutingEvents() {
       match_num: matchNum,
       match_type: matchType,
       event_name: eventName,
+      event_key: eventKey,
       scout_name: scoutName,
+      scout_id: currentUser?.id || null,
       station,
       auto_fuel: scoutingCounters.autoFuel,
       auto_miss: scoutingCounters.autoMiss,
@@ -5341,6 +5355,8 @@ function setupScoutingEvents() {
       climb,
       driver_rating: driver,
       defense_rating: defense,
+      rating_scale: 10,
+      tags,
       died: $("#scout-died")?.checked || false,
       tipped: $("#scout-tipped")?.checked || false,
       notes,
@@ -5357,7 +5373,7 @@ function setupScoutingEvents() {
 
     // 2. Persist to Supabase if available
     if (supabase && currentUser) {
-      supabase.from("match_scouting_logs").insert({
+      const row = {
         id: record.id,
         team_num: record.team_num,
         match_num: record.match_num,
@@ -5372,7 +5388,13 @@ function setupScoutingEvents() {
         notes: record.notes,
         raw_data: JSON.stringify(record),
         created_by: currentUser.id
-      }).then(({ error }) => {
+      };
+      // event_key/tags columns exist once schema.sql section 14 is applied; fall back without them
+      supabase.from("match_scouting_logs").insert({ ...row, event_key: record.event_key, tags: record.tags })
+        .then(res => res.error && /event_key|tags|column/i.test(res.error.message)
+          ? supabase.from("match_scouting_logs").insert(row)
+          : res)
+        .then(({ error }) => {
         if (error) console.warn("Supabase scouting upload notice:", error.message);
         else {
           logAction("SCOUTING_SUBMITTED", "match_scouting_logs", record.id, {
@@ -5402,7 +5424,8 @@ function setupScoutingEvents() {
     const nextMatch = matchNum + 1;
     resetScoutingForm();
     if ($("#scout-match-num")) $("#scout-match-num").value = nextMatch;
-    if ($("#scout-team-num")) $("#scout-team-num").focus();
+    document.dispatchEvent(new CustomEvent("nyx:scout-saved", { detail: record }));
+    if (!eventKey && $("#scout-team-num")) $("#scout-team-num").focus();
   });
 
   // Export CSV
@@ -5430,6 +5453,11 @@ function resetScoutingForm() {
 
   const defaultClimb = document.querySelector('input[name="scout-climb"][value="none"]');
   if (defaultClimb) defaultClimb.checked = true;
+  $$('input[name="scout-tag"]').forEach(cb => { cb.checked = false; });
+  const defaultDriver = document.querySelector('input[name="scout-driver"][value="5"]');
+  if (defaultDriver) defaultDriver.checked = true;
+  const defaultDefense = document.querySelector('input[name="scout-defense"][value="0"]');
+  if (defaultDefense) defaultDefense.checked = true;
 
   updateScoutCalculatedPoints();
 }

@@ -590,3 +590,110 @@ create table if not exists public.shift_notifications (
 );
 alter table public.shift_notifications enable row level security;
 -- No policies: only the service role (edge function) can read or write.
+
+-- 14. Scouting hub (event import, robot claims, pit scouting, pick lists)
+alter table public.match_scouting_logs add column if not exists event_key text not null default '';
+alter table public.match_scouting_logs add column if not exists tags text[] not null default '{}';
+create index if not exists match_scouting_event_idx on public.match_scouting_logs(event_key);
+
+-- Imported from The Blue Alliance by an admin; every scout reads the active event from here
+create table if not exists public.scout_events (
+  event_key text primary key,
+  name text not null default '',
+  teams jsonb not null default '[]'::jsonb,    -- [{team, nickname, city, state, country}]
+  matches jsonb not null default '[]'::jsonb,  -- [{match_num, red:[team..], blue:[team..], time}]
+  is_active boolean not null default false,
+  imported_by_name text not null default '',
+  imported_at timestamptz not null default now()
+);
+create unique index if not exists scout_events_one_active on public.scout_events(is_active) where is_active;
+
+-- One scout per robot per match (primary key), and one robot per scout per match (unique)
+create table if not exists public.scout_claims (
+  event_key text not null,
+  match_num integer not null,
+  team_num integer not null,
+  scout_id uuid not null references auth.users(id) on delete cascade,
+  scout_name text not null default '',
+  claimed_at timestamptz not null default now(),
+  primary key (event_key, match_num, team_num),
+  unique (event_key, match_num, scout_id)
+);
+
+create table if not exists public.pit_scouting (
+  event_key text not null,
+  team_num integer not null,
+  data jsonb not null default '{}'::jsonb,
+  scouted_by uuid references auth.users(id),
+  scouted_by_name text not null default '',
+  updated_at timestamptz not null default now(),
+  primary key (event_key, team_num)
+);
+
+-- Personal pick lists (any number per scout) + one admin-only primary list per event
+create table if not exists public.pick_lists (
+  id uuid primary key default gen_random_uuid(),
+  event_key text not null,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  owner_name text not null default '',
+  name text not null default 'My pick list',
+  is_primary boolean not null default false,
+  tiers jsonb not null default '{}'::jsonb,    -- {tier1:[team..], tier2:[], tier3:[], dnp:[]} (unlisted = uncategorized)
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists pick_lists_one_primary on public.pick_lists(event_key) where is_primary;
+create index if not exists pick_lists_event_idx on public.pick_lists(event_key);
+
+alter table public.scout_events enable row level security;
+alter table public.scout_claims enable row level security;
+alter table public.pit_scouting enable row level security;
+alter table public.pick_lists enable row level security;
+
+drop policy if exists "Members read scout events" on public.scout_events;
+create policy "Members read scout events" on public.scout_events for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Admins manage scout events" on public.scout_events;
+create policy "Admins manage scout events" on public.scout_events for all to authenticated
+using((select public.is_team_admin())) with check((select public.is_team_admin()));
+
+drop policy if exists "Members read claims" on public.scout_claims;
+create policy "Members read claims" on public.scout_claims for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Members claim robots for themselves" on public.scout_claims;
+create policy "Members claim robots for themselves" on public.scout_claims for insert to authenticated
+with check(scout_id = (select auth.uid()) and (select public.is_approved_member()));
+drop policy if exists "Members release own claims; admins any" on public.scout_claims;
+create policy "Members release own claims; admins any" on public.scout_claims for delete to authenticated
+using(scout_id = (select auth.uid()) or (select public.is_team_admin()));
+
+drop policy if exists "Members read pit scouting" on public.pit_scouting;
+create policy "Members read pit scouting" on public.pit_scouting for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Members write pit scouting" on public.pit_scouting;
+create policy "Members write pit scouting" on public.pit_scouting for insert to authenticated with check((select public.is_approved_member()));
+drop policy if exists "Members update pit scouting" on public.pit_scouting;
+create policy "Members update pit scouting" on public.pit_scouting for update to authenticated
+using((select public.is_approved_member())) with check((select public.is_approved_member()));
+
+drop policy if exists "Members read pick lists" on public.pick_lists;
+create policy "Members read pick lists" on public.pick_lists for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Create own lists; primary is admin-only" on public.pick_lists;
+create policy "Create own lists; primary is admin-only" on public.pick_lists for insert to authenticated
+with check(owner_id = (select auth.uid()) and (select public.is_approved_member()) and (not is_primary or (select public.is_team_admin())));
+drop policy if exists "Edit own lists; admins edit primary" on public.pick_lists;
+create policy "Edit own lists; admins edit primary" on public.pick_lists for update to authenticated
+using((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_admin())))
+with check((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_admin())));
+drop policy if exists "Delete own lists; admins delete primary" on public.pick_lists;
+create policy "Delete own lists; admins delete primary" on public.pick_lists for delete to authenticated
+using((owner_id = (select auth.uid()) and not is_primary) or (is_primary and (select public.is_team_admin())));
+
+do $$
+declare t text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach t in array array['scout_events', 'scout_claims', 'pit_scouting', 'pick_lists'] loop
+      if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      end if;
+    end loop;
+  end if;
+end $$;
