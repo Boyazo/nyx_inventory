@@ -10,8 +10,8 @@
 //  • Per connection: 5 wrong PINs within 15 minutes locks that connection out for 15 minutes.
 //  • Site-wide: more than 40 wrong PINs in an hour pauses PIN sign-in for 30 minutes (email and
 //    password keep working), so spreading guesses across many connections doesn't pay off.
-//  • Admins can have a PIN too, but only they or another admin can set it — a moderator
-//    giving an admin a PIN would be a way to sign in as that admin.
+//  • Admins manage their own PINs. No other member, including another admin, may set or
+//    remove an admin's PIN, since assigning one would allow signing in as that admin.
 //  • A successful PIN returns a one-time Supabase magic-link token hash; the browser exchanges it
 //    with verifyOtp() for a normal session. Nothing reusable is returned.
 //
@@ -144,7 +144,7 @@ async function setCode(req: Request, body: any) {
 
   const { data: tp } = await db.from("profiles").select("*").eq("id", target).maybeSingle();
   if (!tp?.is_approved) return json({ error: "That member isn't approved yet." }, 400);
-  if (tp.is_admin && target !== me.id && !me.is_admin) return json({ error: "Only admins can set a PIN for an admin." }, 403);
+  if (tp.is_admin && target !== me.id) return json({ error: "Admins can only manage their own PIN." }, 403);
 
   if (body.pin !== undefined && body.pin !== null && body.pin !== "") {
     if (target !== me.id) return json({ error: "Members choose their own PIN. For someone else, make a random one." }, 403);
@@ -192,9 +192,10 @@ async function clearCode(req: Request, body: any) {
   if (!me) return json({ error: "Sign in first." }, 401);
   const target = body.user_id && body.user_id !== me.id ? String(body.user_id) : me.id;
   if (target !== me.id && !me.is_staff) return json({ error: "Only admins and moderators can remove codes for others." }, 403);
-  if (target !== me.id && !me.is_admin) {
-    const { data: tp } = await db.from("profiles").select("*").eq("id", target).maybeSingle();
-    if (tp?.is_admin) return json({ error: "Only admins can remove an admin's PIN." }, 403);
+  if (target !== me.id) {
+    const { data: tp, error } = await db.from("profiles").select("*").eq("id", target).maybeSingle();
+    if (error || !tp) return json({ error: "Couldn't verify that member." }, 400);
+    if (tp.is_admin) return json({ error: "Admins can only manage their own PIN." }, 403);
   }
   await db.from("quick_login_codes").delete().eq("user_id", target);
   await log(me.id, me.name, "PIN_REMOVED", { target });
