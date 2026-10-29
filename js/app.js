@@ -1,8 +1,8 @@
-import * as gcal from "./gcal.js?v=20261028l";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028l";
-import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028l";
-import { initDuties } from "./duties.js?v=20261028l";
-import { initScoutHub } from "./scouting.js?v=20261028l";
+import * as gcal from "./gcal.js?v=20261028m";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028m";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028m";
+import { initDuties } from "./duties.js?v=20261028m";
+import { initScoutHub } from "./scouting.js?v=20261028m";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -447,7 +447,7 @@ function updateGcalButton() {
   const btn = $("#gcal-connect-btn");
   if (!btn) return;
   btn.classList.toggle("hidden", !gcal.isConfigured());
-  btn.textContent = gcal.isConnected() ? "📅 Google Calendar: Synced ✓" : "📅 Sync to Google Calendar";
+  btn.textContent = gcal.isConnected() ? "Google Calendar: Synced ✓" : "Sync to Google Calendar";
 }
 
 $("#gcal-connect-btn")?.addEventListener("click", async () => {
@@ -606,7 +606,7 @@ function renderItems() {
           <div class="itemnotes">${esc(x.notes || "No details provided")}</div>
           ${itemCheckouts.length ? `
             <div class="checkout-banner">
-              <span>⚠️ ${checkedOutQty} in use (${itemCheckouts.map(c => esc(c.user_name)).join(", ")})</span>
+              <span><i class=fa-triangle-exclamation aria-hidden=true></i> ${checkedOutQty} in use (${itemCheckouts.map(c => esc(c.user_name)).join(", ")})</span>
               ${itemCheckouts.some(c => c.user_id === currentUser.id || isAdmin) ? `
                 <button class="actionbtn" style="padding:2px 6px; font-size:10px;" data-action="return-direct" data-id="${itemCheckouts[0].id}">Return</button>
               ` : ''}
@@ -698,24 +698,24 @@ function shiftCardHtml(s) {
           <div>
             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
               <span class="pill ${esc(s.department.replace(/\s+/g, ''))}">${esc(s.department)}</span>
-              ${isWeekly ? `<span class="pill pill-weekly" title="Repeats weekly series">🔁 Weekly</span>` : ''}
+              ${isWeekly ? `<span class="pill pill-weekly" title="Repeats weekly series"><i class=fa-repeat aria-hidden=true></i> Weekly</span>` : ''}
             </div>
             <div class="shift-title" style="margin-top:8px;">${esc(s.title)}</div>
           </div>
           ${isAdmin ? `
             <div style="display:flex; gap:4px;">
-              <button class="actionbtn" data-action="edit-shift" data-id="${s.id}" title="Edit shift (Admin)">✏️</button>
-              <button class="actionbtn delete" data-action="delete-shift" data-id="${s.id}" title="Remove shift (Admin)">🗑</button>
+              <button class="actionbtn" data-action="edit-shift" data-id="${s.id}" title="Edit shift (Admin)"><i class=fa-pen aria-hidden=true></i></button>
+              <button class="actionbtn delete" data-action="delete-shift" data-id="${s.id}" title="Remove shift (Admin)"><i class=fa-trash-can aria-hidden=true></i></button>
             </div>
           ` : ''}
         </div>
 
         <div class="shift-time">
-          <span>📅 ${dateStr}</span> · <span>⏰ ${timeStr}</span>
+          <span><i class=fa-calendar-days aria-hidden=true></i> ${dateStr}</span> · <span><i class=fa-clock aria-hidden=true></i> ${timeStr}</span>
         </div>
 
         <div class="shift-loc">
-          <span>📍 ${esc(s.location || "Main Shop")}</span>
+          <span><i class=fa-location-dot aria-hidden=true></i> ${esc(s.location || "Main Shop")}</span>
         </div>
 
         ${cleanNotes ? `<div class="muted small">${esc(cleanNotes)}</div>` : ''}
@@ -724,7 +724,7 @@ function shiftCardHtml(s) {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <b class="mono small" style="color:var(--text-muted)">ROSTER (${attendees.length})</b>
             <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-            ${isAdmin ? `<button class="btn btn--sm btn--ghost" data-action="assign-shift" data-id="${s.id}" title="Assign members (Admin)">👥 Assign</button>` : ''}
+            ${isAdmin ? `<button class="btn btn--sm btn--ghost" data-action="assign-shift" data-id="${s.id}" title="Assign members (Admin)"><i class=fa-users aria-hidden=true></i> Assign</button>` : ''}
             ${isAttending ? `
               <button class="btn btn--sm btn--ghost" data-action="toggle-attend-shift" data-id="${s.id}" style="color:var(--red); border-color:rgba(248,113,113,.3);" title="Remove yourself from this shift">
                 ✕ Leave Shift
@@ -737,7 +737,7 @@ function shiftCardHtml(s) {
             </div>
           </div>
           ${isAttending && !gcal.isConnected() ? `
-            <a class="muted small" href="${esc(gcal.templateLink(s))}" target="_blank" rel="noopener" style="display:inline-block; margin-top:4px;">📅 Add to Google Calendar</a>
+            <a class="muted small" href="${esc(gcal.templateLink(s))}" target="_blank" rel="noopener" style="display:inline-block; margin-top:4px;"><i class=fa-calendar-days aria-hidden=true></i> Add to Google Calendar</a>
           ` : ''}
           <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
             ${attendees.length ? attendees.map(a => {
@@ -819,7 +819,7 @@ function renderPartsNeeded() {
               <option value="shipped" ${p.status==='shipped'?'selected':''}>Shipped</option>
               <option value="arrived" ${p.status==='arrived'?'selected':''}>Arrived</option>
             </select>
-            <button class="actionbtn delete" data-action="delete-pn" data-id="${p.id}" title="Delete request">🗑</button>
+            <button class="actionbtn delete" data-action="delete-pn" data-id="${p.id}" title="Delete request"><i class=fa-trash-can aria-hidden=true></i></button>
           ` : `
             <span class="muted small mono">${p.status === 'arrived' ? 'In shop' : 'Pending order'}</span>
           `}
@@ -849,7 +849,7 @@ function renderCheckouts() {
     return `
       <article class="itemrow" style="grid-template-columns: minmax(180px, 2fr) minmax(130px, 1.2fr) minmax(130px, 1.2fr) minmax(100px, 1fr) 110px;">
         <div>
-          <div class="itemname">🛠 ${esc(itemName)}</div>
+          <div class="itemname"><i class=fa-screwdriver-wrench aria-hidden=true></i> ${esc(itemName)}</div>
           <div class="itemnotes">Location: ${esc(location)} · ${esc(c.notes || "No notes")}</div>
         </div>
         <div>
@@ -904,15 +904,15 @@ function renderTasks() {
         ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
         <div class="task-meta">
           <span class="task-assignee">${t.assigned_to ? `@${esc(t.assigned_to)}` : '<em class="muted">Unassigned</em>'}</span>
-          ${t.due_date ? `<span class="task-date">📅 ${esc(t.due_date)}</span>` : ''}
+          ${t.due_date ? `<span class="task-date"><i class=fa-calendar-days aria-hidden=true></i> ${esc(t.due_date)}</span>` : ''}
         </div>
         <div class="task-actions">
           <div style="display:flex; gap:5px;">
             ${t.status === "todo" ? `
-              <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="in_progress">Start ⚡</button>
+              <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="in_progress">Start <i class=fa-bolt aria-hidden=true></i></button>
             ` : ''}
             ${t.status === "in_progress" ? `
-              <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="done">Done ✅</button>
+              <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="done">Done <i class=fa-circle-check aria-hidden=true></i></button>
             ` : ''}
             ${t.status === "done" ? `
               <button class="task-stepbtn" data-action="move-status" data-id="${t.id}" data-newstatus="in_progress">Reopen ↺</button>
@@ -920,8 +920,8 @@ function renderTasks() {
           </div>
           ${isAdmin ? `
             <div style="display:flex; gap:4px;">
-              <button class="actionbtn" data-action="edit-task" data-id="${t.id}" title="Edit task">✏️</button>
-              <button class="actionbtn delete" data-action="delete-task" data-id="${t.id}" title="Delete task">🗑</button>
+              <button class="actionbtn" data-action="edit-task" data-id="${t.id}" title="Edit task"><i class=fa-pen aria-hidden=true></i></button>
+              <button class="actionbtn delete" data-action="delete-task" data-id="${t.id}" title="Delete task"><i class=fa-trash-can aria-hidden=true></i></button>
             </div>
           ` : ''}
         </div>
@@ -1067,7 +1067,7 @@ async function endTaskDrag() {
       assigned_to: task.assigned_to || "",
       via: "drag"
     });
-    toast(newStatus === "done" ? "Task marked complete! 🎉" : `Moved "${task.title}" to ${newStatus === "todo" ? "To Do" : "In Progress"}.`);
+    toast(newStatus === "done" ? "Task marked complete!" : `Moved "${task.title}" to ${newStatus === "todo" ? "To Do" : "In Progress"}.`);
   }
 }
 
@@ -1115,9 +1115,9 @@ const SEASON_YEAR = SEASON_KICKOFF.slice(0, 4);
 const KICKOFF_LABEL = new Date(SEASON_KICKOFF + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
 {
-  const pill = $("#spending-inseason-pill"); if (pill) pill.textContent = `⚡ In-Season ${SEASON_YEAR} (${KICKOFF_LABEL}+)`;
+  const pill = $("#spending-inseason-pill"); if (pill) pill.textContent = `In-Season ${SEASON_YEAR} (${KICKOFF_LABEL}+)`;
   const lbl = $("#spending-kickoff-label"); if (lbl) lbl.textContent = `Kickoff Threshold: ${KICKOFF_LABEL}`;
-  const opt = $("#spend-season-auto-option"); if (opt) opt.textContent = `⚡ Auto (Kickoff is ${KICKOFF_LABEL})`;
+  const opt = $("#spend-season-auto-option"); if (opt) opt.textContent = `Auto (Kickoff is ${KICKOFF_LABEL})`;
 }
 
 /* Helper: determine season period */
@@ -1188,21 +1188,21 @@ function renderSpending() {
       <div class="spend-vendor"><b>${esc(s.vendor)}</b></div>
       <div class="spend-period">
         ${period === 'inseason'
-          ? '<span class="pill" style="background:rgba(16, 185, 129, 0.15); color:#34d399; border:1px solid rgba(16, 185, 129, 0.3);">⚡ In-Season</span>'
-          : '<span class="pill" style="background:rgba(148, 163, 184, 0.15); color:#cbd5e1; border:1px solid rgba(148, 163, 184, 0.3);">🛠️ Offseason</span>'
+          ? '<span class="pill" style="background:rgba(16, 185, 129, 0.15); color:#34d399; border:1px solid rgba(16, 185, 129, 0.3);"><i class=fa-bolt aria-hidden=true></i> In-Season</span>'
+          : '<span class="pill" style="background:rgba(148, 163, 184, 0.15); color:#cbd5e1; border:1px solid rgba(148, 163, 184, 0.3);"><i class=fa-screwdriver-wrench aria-hidden=true></i> Offseason</span>'
         }
       </div>
       <div class="spend-receipt">
         ${hasReceipt ? `
-          <button type="button" class="actionbtn" data-action="view-receipt" data-id="${s.id}" style="color:#60a5fa; border:1px solid rgba(96, 165, 250, 0.3); background:rgba(96, 165, 250, 0.1); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;" title="View attached receipt / card charge">📸 View</button>
+          <button type="button" class="actionbtn" data-action="view-receipt" data-id="${s.id}" style="color:#60a5fa; border:1px solid rgba(96, 165, 250, 0.3); background:rgba(96, 165, 250, 0.1); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;" title="View attached receipt / card charge"><i class=fa-camera aria-hidden=true></i> View</button>
         ` : `
-          <span class="small" style="color:#f87171; font-weight:600;" title="Receipt screenshot required — click ✏️ to attach">⚠️ Needed</span>
+          <span class="small" style="color:#f87171; font-weight:600;" title="Receipt screenshot required — click to attach"><i class=fa-triangle-exclamation aria-hidden=true></i> Needed</span>
         `}
       </div>
       <div class="spend-amount"><strong class="mono" style="color:var(--green); font-size:14px;">$${Number(s.amount).toFixed(2)}</strong></div>
       <div class="actions spend-actions" style="display:flex; gap:4px; justify-content:flex-end;">
-        <button class="actionbtn" data-action="edit-spending" data-id="${s.id}" title="Edit purchase order">✏️</button>
-        <button class="actionbtn delete" data-action="delete-spending" data-id="${s.id}" title="Delete record">🗑</button>
+        <button class="actionbtn" data-action="edit-spending" data-id="${s.id}" title="Edit purchase order"><i class=fa-pen aria-hidden=true></i></button>
+        <button class="actionbtn delete" data-action="delete-spending" data-id="${s.id}" title="Delete record"><i class=fa-trash-can aria-hidden=true></i></button>
       </div>
     </article>
   `}).join("");
@@ -1277,32 +1277,32 @@ let allAuditLogs = [];
 
 function formatActionBadge(action) {
   const icons = {
-    ITEM_CREATED: "📦 ITEM ADDED",
-    ITEM_UPDATED: "🔄 ITEM UPDATED",
-    ITEM_DELETED: "🗑️ ITEM REMOVED",
-    TOOL_CHECKOUT: "🛠️ TOOL BORROWED",
-    TOOL_CHECKIN: "↩️ TOOL RETURNED",
-    PLANNER_TASK_CREATED: "📋 TASK CREATED",
-    PLANNER_TASK_UPDATED: "⚡ TASK UPDATED",
-    PLANNER_TASK_COMPLETED: "✅ TASK FINISHED",
-    PLANNER_TASK_DELETED: "🗑️ TASK REMOVED",
-    PART_NEEDED_CREATED: "🛒 PART REQUESTED",
-    PART_STATUS_UPDATED: "🏷️ PART STATUS",
-    PART_NEEDED_DELETED: "🗑️ PART REMOVED",
-    SPENDING_RECORDED: "💰 SPENDING ADDED",
-    SPENDING_DELETED: "🗑️ SPENDING REMOVED",
-    SHIFT_CREATED: "📅 SHIFT SCHEDULED",
-    SHIFT_ATTENDED: "🙋 SHIFT SIGNUP",
-    SHIFT_LEFT: "🚶 LEFT SHIFT",
-    SHIFT_ATTENDEE_REMOVED: "🚫 ROSTER REMOVAL",
-    SHIFT_DELETED: "🗑️ SHIFT REMOVED",
-    PLAYBOOK_SAVED: "🎯 PLAYBOOK SAVED",
-    PLAYBOOK_DELETED: "🗑️ PLAYBOOK REMOVED",
-    SCOUTING_SUBMITTED: "📊 MATCH SCOUTED",
-    SCOUTING_DELETED: "🗑️ SCOUT RECORD REMOVED",
-    MEMBER_APPROVED: "✅ ACCESS APPROVED",
-    MEMBER_REVOKED: "⛔ ACCESS REVOKED",
-    USER_LOGIN: "🔑 USER SIGNED IN"
+    ITEM_CREATED: "<i class=fa-box aria-hidden=true></i> ITEM ADDED",
+    ITEM_UPDATED: "<i class=fa-arrows-rotate aria-hidden=true></i> ITEM UPDATED",
+    ITEM_DELETED: "<i class=fa-trash-can aria-hidden=true></i> ITEM REMOVED",
+    TOOL_CHECKOUT: "<i class=fa-screwdriver-wrench aria-hidden=true></i> TOOL BORROWED",
+    TOOL_CHECKIN: "<i class=fa-rotate-left aria-hidden=true></i> TOOL RETURNED",
+    PLANNER_TASK_CREATED: "<i class=fa-clipboard-list aria-hidden=true></i> TASK CREATED",
+    PLANNER_TASK_UPDATED: "<i class=fa-bolt aria-hidden=true></i> TASK UPDATED",
+    PLANNER_TASK_COMPLETED: "<i class=fa-circle-check aria-hidden=true></i> TASK FINISHED",
+    PLANNER_TASK_DELETED: "<i class=fa-trash-can aria-hidden=true></i> TASK REMOVED",
+    PART_NEEDED_CREATED: "<i class=fa-cart-shopping aria-hidden=true></i> PART REQUESTED",
+    PART_STATUS_UPDATED: "<i class=fa-tag aria-hidden=true></i> PART STATUS",
+    PART_NEEDED_DELETED: "<i class=fa-trash-can aria-hidden=true></i> PART REMOVED",
+    SPENDING_RECORDED: "<i class=fa-sack-dollar aria-hidden=true></i> SPENDING ADDED",
+    SPENDING_DELETED: "<i class=fa-trash-can aria-hidden=true></i> SPENDING REMOVED",
+    SHIFT_CREATED: "<i class=fa-calendar-days aria-hidden=true></i> SHIFT SCHEDULED",
+    SHIFT_ATTENDED: "<i class=fa-hand aria-hidden=true></i> SHIFT SIGNUP",
+    SHIFT_LEFT: "<i class=fa-person-walking-arrow-right aria-hidden=true></i> LEFT SHIFT",
+    SHIFT_ATTENDEE_REMOVED: "<i class=fa-ban aria-hidden=true></i> ROSTER REMOVAL",
+    SHIFT_DELETED: "<i class=fa-trash-can aria-hidden=true></i> SHIFT REMOVED",
+    PLAYBOOK_SAVED: "<i class=fa-bullseye aria-hidden=true></i> PLAYBOOK SAVED",
+    PLAYBOOK_DELETED: "<i class=fa-trash-can aria-hidden=true></i> PLAYBOOK REMOVED",
+    SCOUTING_SUBMITTED: "<i class=fa-chart-column aria-hidden=true></i> MATCH SCOUTED",
+    SCOUTING_DELETED: "<i class=fa-trash-can aria-hidden=true></i> SCOUT RECORD REMOVED",
+    MEMBER_APPROVED: "<i class=fa-circle-check aria-hidden=true></i> ACCESS APPROVED",
+    MEMBER_REVOKED: "<i class=fa-ban aria-hidden=true></i> ACCESS REVOKED",
+    USER_LOGIN: "<i class=fa-key aria-hidden=true></i> USER SIGNED IN"
   };
   const label = icons[action] || action.replace(/_/g, " ");
   return `<span class="logaction ${esc(action)}">${label}</span>`;
@@ -1970,7 +1970,7 @@ function openSpendingModal(recordToEdit) {
 
   if (recordToEdit && recordToEdit.id) {
     editingSpendingId = recordToEdit.id;
-    if (titleEl) titleEl.textContent = "✏️ Edit Purchase Record";
+    if (titleEl) titleEl.textContent = "Edit Purchase Record";
     if (saveBtn) saveBtn.textContent = "Save Changes & Log History";
     if (reasonWrap) reasonWrap.classList.remove("hidden");
     if (reasonInput) {
@@ -2843,7 +2843,7 @@ $("#view-shifts").addEventListener("click", async e => {
       await loadShifts(true);
       if (gcal.isConnected()) {
         await syncShiftCalendar({ interactive: true });
-        toast(isAttending ? "Left shift and removed it from your Google Calendar." : "Signed up! Shift added to your Google Calendar 📅");
+        toast(isAttending ? "Left shift and removed it from your Google Calendar." : "Signed up! Shift added to your Google Calendar");
       } else {
         toast(isAttending ? "Removed yourself from shift roster." : "Signed up for shift!");
       }
@@ -3041,7 +3041,7 @@ $("#view-planner").addEventListener("click", async e => {
         assigned_to: task?.assigned_to || ""
       });
       await loadTasks(true);
-      toast(newStatus === "done" ? "Task marked complete! 🎉" : "Task moved to in progress.");
+      toast(newStatus === "done" ? "Task marked complete!" : "Task moved to in progress.");
     }
   } else if (action === "edit-task") {
     if (!isAdmin) return;
@@ -3453,11 +3453,11 @@ function switchStratTab(tabName) {
   });
 
   const stratLabels = {
-    "playbook": "🎨 Tactical Field Playbook",
-    "rankings": "🏆 FRC Rankings & Statbotics",
-    "scouting": "📋 Match Scouting Form",
-    "simulator": "⚔️ Match Simulator",
-    "lookup": "🔍 Team Deep Dive"
+    "playbook": "Tactical Field Playbook",
+    "rankings": "FRC Rankings & Statbotics",
+    "scouting": "Match Scouting Form",
+    "simulator": "Match Simulator",
+    "lookup": "Team Deep Dive"
   };
 
   const elMobileStratLbl = $("#mobile-current-strat-label");
@@ -3570,7 +3570,7 @@ async function syncStatboticsData(silent = false) {
   const syncBtn = $("#strat-sync-btn");
   if (syncBtn && !silent) {
     syncBtn.disabled = true;
-    syncBtn.innerHTML = `⏳ Live Syncing Statbotics…`;
+    syncBtn.innerHTML = `<i class=fa-hourglass-half aria-hidden=true></i> Live Syncing Statbotics…`;
   }
   if (!silent) toast("Fetching real-time 2026 metrics from Statbotics...");
 
@@ -3590,7 +3590,7 @@ async function syncStatboticsData(silent = false) {
 
   if (syncBtn) {
     syncBtn.disabled = false;
-    syncBtn.innerHTML = `🔄 Live Sync Connected`;
+    syncBtn.innerHTML = `<i class=fa-arrows-rotate aria-hidden=true></i> Live Sync Connected`;
   }
 
   renderRankings();
@@ -4312,7 +4312,7 @@ function initPlaybook() {
     if (!pbContainer) return;
     const isActive = force !== undefined ? force : !pbContainer.classList.contains("fullscreen-active");
     pbContainer.classList.toggle("fullscreen-active", isActive);
-    if (fsBtn) fsBtn.innerHTML = isActive ? "✕ Exit Fullscreen" : "⛶ Fullscreen";
+    if (fsBtn) fsBtn.innerHTML = isActive ? "✕ Exit Fullscreen" : "<i class=fa-expand aria-hidden=true></i> Fullscreen";
     setTimeout(renderCanvas, 60);
   }
 
@@ -4353,7 +4353,7 @@ function toggleChoreoSimulation() {
   const robotTracks = extractAllChoreoRobotTracks();
 
   if (!robotTracks.length) {
-    toast("Place a robot token (Red Bot / Blue Bot) and draw a line/arrow from it! 🤖✏️", true);
+    toast("Place a robot token (Red Bot / Blue Bot) and draw a line/arrow from it!", true);
     return;
   }
 
@@ -4375,12 +4375,12 @@ function toggleChoreoSimulation() {
 
   isChoreoSimulating = true;
   if (btn) {
-    btn.innerHTML = `⏹ Stop Simulation (${choreoSimRobots.length} bot${choreoSimRobots.length > 1 ? "s" : ""})`;
+    btn.innerHTML = `<i class=fa-stop aria-hidden=true></i> Stop Simulation (${choreoSimRobots.length} bot${choreoSimRobots.length > 1 ? "s" : ""})`;
     btn.classList.remove("btn--primary");
     btn.classList.add("btn--danger");
   }
 
-  toast(`Running Choreo simulation for ${choreoSimRobots.length} robot${choreoSimRobots.length > 1 ? "s" : ""} simultaneously! 🤖⚡`);
+  toast(`Running Choreo simulation for ${choreoSimRobots.length} robot${choreoSimRobots.length > 1 ? "s" : ""} simultaneously!`);
   runMultiChoreoAnimation();
 }
 
@@ -4676,13 +4676,13 @@ function renderSavedPlays() {
         </div>
         ${play.notes ? `
           <details class="small" style="margin:6px 0;">
-            <summary style="cursor:pointer; color:var(--accent-bright);">📋 Strategy notes</summary>
+            <summary style="cursor:pointer; color:var(--accent-bright);"><i class=fa-clipboard-list aria-hidden=true></i> Strategy notes</summary>
             <div style="white-space:pre-wrap; margin-top:6px; color:var(--text-muted); max-height:240px; overflow-y:auto;">${esc(play.notes)}</div>
           </details>
         ` : ''}
         <div class="play-card-actions">
-          <button class="btn btn--sm btn--primary" data-action="load-play" data-id="${play.id}">Load 🎨</button>
-          <button class="actionbtn delete" data-action="delete-play" data-id="${play.id}" title="Delete play">🗑</button>
+          <button class="btn btn--sm btn--primary" data-action="load-play" data-id="${play.id}">Load <i class=fa-palette aria-hidden=true></i></button>
+          <button class="actionbtn delete" data-action="delete-play" data-id="${play.id}" title="Delete play"><i class=fa-trash-can aria-hidden=true></i></button>
         </div>
       </div>
     </article>
@@ -4711,7 +4711,7 @@ $("#saved-plays-grid")?.addEventListener("click", async e => {
       localStorage.setItem("nyx_strategy_plays", JSON.stringify(strategyPlays));
     } catch (err) {}
     renderSavedPlays();
-    toast(`Play "${playName}" deleted 🗑️`);
+    toast(`Play "${playName}" deleted`);
 
     // Background sync to Supabase (match uuid or custom id)
     const targetPlay = strategyPlays.find(p => String(p.id) === String(id));
@@ -4806,7 +4806,7 @@ function renderRankings() {
           <span class="pill" style="color:${t.winrate >= 80 ? 'var(--green)' : 'var(--text)'}; font-size:10px;">${t.winrate.toFixed(1)}%</span>
         </div>
         <div class="actions">
-          <button class="btn btn--sm btn--ghost" data-action="quick-sim" data-team="${t.team}">Simulate ⚡</button>
+          <button class="btn btn--sm btn--ghost" data-action="quick-sim" data-team="${t.team}">Simulate <i class=fa-bolt aria-hidden=true></i></button>
         </div>
       </article>
     `;
@@ -5083,7 +5083,7 @@ async function handleTeamLookup(e) {
 
   const resultContainer = $("#team-lookup-result");
   if (!resultContainer) return;
-  resultContainer.innerHTML = `<div style="padding:40px; text-align:center;" class="muted"><span class="spinner" style="display:inline-block; margin-right:8px;">⏳</span> Fetching metrics for FRC Team ${num}…</div>`;
+  resultContainer.innerHTML = `<div style="padding:40px; text-align:center;" class="muted"><span class="spinner" style="display:inline-block; margin-right:8px;"><i class=fa-hourglass-half aria-hidden=true></i></span> Fetching metrics for FRC Team ${num}…</div>`;
 
   let teamObj = frcTeamsData.find(t => t.team === num);
 
@@ -5192,7 +5192,7 @@ async function handleTeamLookup(e) {
 
       <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
         <span class="muted small">Source: <a href="https://www.statbotics.io/team/${teamObj.team}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-bright); text-decoration:underline;">statbotics.io/team/${teamObj.team}</a></span>
-        <button class="btn btn--primary btn--sm" id="load-team-into-sim-btn" type="button">Load into Match Simulator ⚡</button>
+        <button class="btn btn--primary btn--sm" id="load-team-into-sim-btn" type="button">Load into Match Simulator <i class=fa-bolt aria-hidden=true></i></button>
       </div>
     </div>
   `;
@@ -5838,7 +5838,7 @@ function setupSecretsEvents() {
     } catch (err) {}
 
     renderSecretIntel();
-    toast(`Classified entry for Team ${teamNum} recorded! 🕵️`);
+    toast(`Classified entry for Team ${teamNum} recorded!`);
 
     // Reset form
     $("#secret-scout-form")?.reset();
@@ -6262,23 +6262,23 @@ $("#export-spending-csv-btn")?.addEventListener("click", exportSpendingCSV);
    UNIVERSAL COMMAND PALETTE (CTRL+K / CMD+K) & KEYBOARD SHORTCUTS
    -------------------------------------------------------------------------- */
 const commandList = [
-  { id: "goto-inventory", label: "Go to Shop Inventory", icon: "📦", category: "Navigation", run: () => { screens("inventory"); views("inventory"); } },
-  { id: "goto-checkouts", label: "Go to Active Checkouts", icon: "🛠️", category: "Navigation", run: () => { screens("inventory"); views("checkouts"); } },
-  { id: "goto-parts", label: "Go to Robot Parts Needed", icon: "🤖", category: "Navigation", run: () => { screens("inventory"); views("parts-needed"); } },
-  { id: "goto-shifts", label: "Go to Lab Shifts & Calendar", icon: "📅", category: "Navigation", run: () => { screens("inventory"); views("shifts"); } },
-  { id: "goto-planner", label: "Go to Team Planner", icon: "📋", category: "Navigation", run: () => { screens("inventory"); views("planner"); } },
-  { id: "goto-spending", label: "Go to Spending & Budget Tracker", icon: "💰", category: "Navigation", run: () => { screens("inventory"); views("spending"); } },
-  { id: "goto-members", label: "Go to Member Permissions & Access", icon: "👥", category: "Navigation", run: () => { screens("inventory"); views("members"); } },
-  { id: "goto-logs", label: "Go to Audit & Activity Logs", icon: "🔒", category: "Navigation", run: () => { screens("inventory"); views("logs"); } },
-  { id: "goto-playbook", label: "Go to Strategy Tactical Whiteboard", icon: "🎯", category: "Strategy", run: () => { screens("strategy"); stratViews("playbook"); } },
-  { id: "goto-rankings", label: "Go to Statbotics Team Rankings", icon: "📊", category: "Strategy", run: () => { screens("strategy"); stratViews("rankings"); } },
-  { id: "goto-scouting", label: "Go to Match Scouting Sheet", icon: "📝", category: "Strategy", run: () => { screens("strategy"); stratViews("scouting"); } },
-  { id: "goto-simulator", label: "Go to Match Simulator (Monte Carlo)", icon: "🎲", category: "Strategy", run: () => { screens("strategy"); stratViews("simulator"); } },
-  { id: "action-theme", label: "Toggle Dark / Light Mode", icon: "🌓", category: "Settings", run: () => {
+  { id: "goto-inventory", label: "Go to Shop Inventory", icon: "<i class=fa-box aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("inventory"); } },
+  { id: "goto-checkouts", label: "Go to Active Checkouts", icon: "<i class=fa-screwdriver-wrench aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("checkouts"); } },
+  { id: "goto-parts", label: "Go to Robot Parts Needed", icon: "<i class=fa-robot aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("parts-needed"); } },
+  { id: "goto-shifts", label: "Go to Lab Shifts & Calendar", icon: "<i class=fa-calendar-days aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("shifts"); } },
+  { id: "goto-planner", label: "Go to Team Planner", icon: "<i class=fa-clipboard-list aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("planner"); } },
+  { id: "goto-spending", label: "Go to Spending & Budget Tracker", icon: "<i class=fa-sack-dollar aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("spending"); } },
+  { id: "goto-members", label: "Go to Member Permissions & Access", icon: "<i class=fa-users aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("members"); } },
+  { id: "goto-logs", label: "Go to Audit & Activity Logs", icon: "<i class=fa-lock aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("logs"); } },
+  { id: "goto-playbook", label: "Go to Strategy Tactical Whiteboard", icon: "<i class=fa-bullseye aria-hidden=true></i>", category: "Strategy", run: () => { screens("strategy"); stratViews("playbook"); } },
+  { id: "goto-rankings", label: "Go to Statbotics Team Rankings", icon: "<i class=fa-chart-column aria-hidden=true></i>", category: "Strategy", run: () => { screens("strategy"); stratViews("rankings"); } },
+  { id: "goto-scouting", label: "Go to Match Scouting Sheet", icon: "<i class=fa-pen-to-square aria-hidden=true></i>", category: "Strategy", run: () => { screens("strategy"); stratViews("scouting"); } },
+  { id: "goto-simulator", label: "Go to Match Simulator (Monte Carlo)", icon: "<i class=fa-dice aria-hidden=true></i>", category: "Strategy", run: () => { screens("strategy"); stratViews("simulator"); } },
+  { id: "action-theme", label: "Toggle Dark / Light Mode", icon: "<i class=fa-circle-half-stroke aria-hidden=true></i>", category: "Settings", run: () => {
     const isDark = document.documentElement.getAttribute("data-theme") !== "light";
     setTheme(isDark ? "light" : "dark");
   }},
-  { id: "action-profile", label: "Edit My Name & Departments", icon: "⚙️", category: "Profile", run: () => openProfileModal() },
+  { id: "action-profile", label: "Edit My Name & Departments", icon: "<i class=fa-gear aria-hidden=true></i>", category: "Profile", run: () => openProfileModal() },
   { id: "action-add-item", label: "Add New Inventory Item", icon: "＋", category: "Action", run: () => openItemModal() },
   { id: "action-add-shift", label: "Schedule Lab Shift", icon: "＋", category: "Action", run: () => openShiftModal() },
   { id: "action-add-task", label: "Create Team Task", icon: "＋", category: "Action", run: () => openTaskModal() }
@@ -6335,7 +6335,7 @@ function renderCommandPaletteResults(query) {
     html += matchedItems.map(item => `
       <div class="cmd-item" data-item-id="${item.id}">
         <div class="cmd-item-left">
-          <span class="cmd-item-icon">📦</span>
+          <span class="cmd-item-icon"><i class=fa-box aria-hidden=true></i></span>
           <span><strong>${esc(item.name)}</strong> · ${item.quantity} ${esc(item.unit || 'pcs')}</span>
         </div>
         <span class="cmd-item-badge">${esc(item.location || 'Shop')}</span>

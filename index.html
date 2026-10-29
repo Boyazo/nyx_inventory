@@ -6,17 +6,18 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="theme-color" content="#07070c">
+<meta name="theme-color" content="#ffffff">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Shared inventory, tool tracking, robot parts needed, calendar shifts, and team workspace for FRC Team 11744 Nyx (San Diego, CA)">
 <title>Nyx 11744 | Team Workspace & Inventory</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028l">
+<link rel="stylesheet" href="css/style.css?v=20261028m">
 </head>
 <body>
 
@@ -42,7 +43,7 @@
     <div class="sidebar-section-title">Main menu</div>
     <nav class="sidebar-nav">
       <button class="sidebar-link active" id="sidebar-btn-dashboard" data-page="dashboard" type="button">
-        <span class="sidebar-icon">🛠</span>
+        <span class="sidebar-icon"><i class=fa-screwdriver-wrench aria-hidden=true></i></span>
         <span class="sidebar-label">Dashboard</span>
       </button>
       <div class="sidebar-subnav" id="sidebar-subnav">
@@ -55,15 +56,15 @@
         <button class="sidebar-sublink" data-subview="members" type="button">Members <span data-badge="badge-members"></span></button>
       </div>
       <button class="sidebar-link" id="sidebar-btn-duties" data-page="duties" type="button">
-        <span class="sidebar-icon">🗓</span>
+        <span class="sidebar-icon"><i class=fa-calendar aria-hidden=true></i></span>
         <span class="sidebar-label">Competition Sign-ups</span>
       </button>
       <button class="sidebar-link" id="sidebar-btn-strategy" data-page="strategy" type="button">
-        <span class="sidebar-icon">🎯</span>
+        <span class="sidebar-icon"><i class=fa-bullseye aria-hidden=true></i></span>
         <span class="sidebar-label">Strategy & Scouting</span>
       </button>
       <button class="sidebar-link hidden" id="sidebar-btn-secrets" data-page="secrets" type="button" style="color:#f43f5e; border-color:rgba(244, 63, 94, 0.2);">
-        <span class="sidebar-icon">🕵️</span>
+        <span class="sidebar-icon"><i class=fa-user-secret aria-hidden=true></i></span>
         <span class="sidebar-label">Secret Intel</span>
       </button>
     </nav>
@@ -86,7 +87,7 @@
       <!-- Topbar -->
       <header class="topbar">
         <div style="display:flex; align-items:center; gap:12px;">
-          <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" type="button" aria-label="Toggle navigation sidebar" title="Toggle Sidebar">☰</button>
+          <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" type="button" aria-label="Toggle navigation sidebar" title="Toggle Sidebar"><i class=fa-bars aria-hidden=true></i></button>
           <a class="brand" href="#" aria-label="NYX 11744 Workspace">
             <img src="logo.png" alt="Nyx Logo" class="brand-logo" width="40" height="40">
             <span class="brandtext">
@@ -98,7 +99,7 @@
         <div class="top-controls">
           <!-- Global Command Search Trigger (Cmd+K) -->
           <button type="button" id="global-command-trigger" class="global-search-btn" title="Quick Command Palette (Ctrl+K)">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon"><i class=fa-magnifying-glass aria-hidden=true></i></span>
             <span class="search-label">Quick Jump...</span>
             <kbd class="shortcut-kbd">Ctrl+K</kbd>
           </button>
@@ -229,9 +230,9 @@
 
         <!-- Buttons placed directly below the user picture/chip -->
         <div class="user-quick-actions">
-          <button class="textbtn" id="edit-profile-action" type="button">⚙️ Edit Departments</button>
-          <button class="btn btn--ghost btn--sm" id="open-claude-connect-btn" type="button" title="Control the workspace from Claude — send it a photo and it does the updates">🤖 Connect Claude</button>
-          <button class="btn btn--ghost btn--sm hidden" id="admin-audit-logs-btn" type="button">Audit Logs 🔒</button>
+          <button class="textbtn" id="edit-profile-action" type="button"><i class=fa-gear aria-hidden=true></i> Edit Departments</button>
+          <button class="btn btn--ghost btn--sm" id="open-claude-connect-btn" type="button" title="Control the workspace from Claude — send it a photo and it does the updates"><i class=fa-robot aria-hidden=true></i> Connect Claude</button>
+          <button class="btn btn--ghost btn--sm hidden" id="admin-audit-logs-btn" type="button">Audit Logs <i class=fa-lock aria-hidden=true></i></button>
         </div>
       </div>
     </section>
@@ -263,7 +264,7 @@
     <!-- Mobile Vertical Popup Picker for Dashboard -->
     <div class="mobile-view-picker-container">
       <button type="button" class="mobile-picker-btn" id="mobile-view-picker-trigger">
-        <span class="picker-icon">📦</span>
+        <span class="picker-icon"><i class=fa-box aria-hidden=true></i></span>
         <span class="picker-text">
           <small>CURRENT VIEW</small>
           <strong id="mobile-current-view-label">Parts & Tools</strong>
@@ -291,7 +292,7 @@
           <p class="muted small">All members can browse tools & check stock. Admins manage catalog items.</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--ghost btn--sm" id="export-inventory-csv-btn" type="button" title="Download inventory spreadsheet">📥 Export CSV</button>
+          <button class="btn btn--ghost btn--sm" id="export-inventory-csv-btn" type="button" title="Download inventory spreadsheet"><i class=fa-download aria-hidden=true></i> Export CSV</button>
           <button class="btn btn--primary btn--sm hidden" id="add-item-button" type="button">＋ Add Item (Admin)</button>
         </div>
       </div>
@@ -299,7 +300,7 @@
       <div class="filters">
         <div class="mobile-filter-picker-container">
           <button type="button" class="mobile-filter-picker-btn" id="mobile-filter-inv-trigger">
-            <span>⚙️ Filter Category: <strong id="mobile-current-filter-inv-label">All</strong></span>
+            <span><i class=fa-gear aria-hidden=true></i> Filter Category: <strong id="mobile-current-filter-inv-label">All</strong></span>
             <span>▾</span>
           </button>
         </div>
@@ -309,7 +310,7 @@
           <button class="catbtn" data-category="Electrical">Electrical <span id="count-electrical">0</span></button>
           <button class="catbtn" data-category="Software">Software <span id="count-software">0</span></button>
           <button class="catbtn" data-category="Miscellaneous">Misc <span id="count-miscellaneous">0</span></button>
-          <button class="catbtn" data-category="ToolsOnly">🛠 Tools Only <span id="count-tools">0</span></button>
+          <button class="catbtn" data-category="ToolsOnly"><i class=fa-screwdriver-wrench aria-hidden=true></i> Tools Only <span id="count-tools">0</span></button>
         </div>
         <input class="search" id="search-items" type="search" placeholder="Search name, location, part #" aria-label="Search inventory">
       </div>
@@ -340,7 +341,7 @@
           <p class="muted small">Schedule lab meetings and track attendance for Mechanical, Electrical, Software, and Business departments. Admins schedule shifts; all members can sign up!</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--ghost btn--sm hidden" id="gcal-connect-btn" type="button" title="Shifts you join are added to your Google Calendar automatically">📅 Sync to Google Calendar</button>
+          <button class="btn btn--ghost btn--sm hidden" id="gcal-connect-btn" type="button" title="Shifts you join are added to your Google Calendar automatically"><i class=fa-calendar-days aria-hidden=true></i> Sync to Google Calendar</button>
           <button class="btn btn--primary btn--sm hidden" id="add-shift-btn" type="button">＋ Schedule Shift (Admin)</button>
         </div>
       </div>
@@ -360,7 +361,7 @@
           <p class="muted small">Team-wide Bill of Needs: parts required for current robot mechanisms, ordering queue, and arrival status.</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--ghost btn--sm" id="export-parts-needed-csv-btn" type="button" title="Download ordering queue spreadsheet">📥 Export CSV</button>
+          <button class="btn btn--ghost btn--sm" id="export-parts-needed-csv-btn" type="button" title="Download ordering queue spreadsheet"><i class=fa-download aria-hidden=true></i> Export CSV</button>
           <button class="btn btn--primary btn--sm hidden" id="add-part-needed-btn" type="button">＋ Request Robot Part (Admin)</button>
         </div>
       </div>
@@ -461,7 +462,7 @@
           <p class="muted small">Restricted administrative ledger for team orders, vendor invoices, and robot expense tracking.</p>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
-          <button class="btn btn--ghost btn--sm" id="export-spending-csv-btn" type="button" title="Download purchase orders spreadsheet">📥 Export CSV</button>
+          <button class="btn btn--ghost btn--sm" id="export-spending-csv-btn" type="button" title="Download purchase orders spreadsheet"><i class=fa-download aria-hidden=true></i> Export CSV</button>
           <button class="btn btn--primary btn--sm" id="add-spending-btn" type="button">＋ Record Purchase</button>
         </div>
       </div>
@@ -489,8 +490,8 @@
       <div style="display:flex; justify-content:space-between; align-items:center; padding:0 24px 16px; flex-wrap:wrap; gap:10px;">
         <div class="filterbar" id="spending-season-filter-tabs" style="display:flex; gap:8px;">
           <button class="catbtn filterpill active" data-period="all" type="button">All Purchases</button>
-          <button class="catbtn filterpill" data-period="inseason" type="button" id="spending-inseason-pill">⚡ In-Season</button>
-          <button class="catbtn filterpill" data-period="offseason" type="button">🛠️ Offseason Pre-Kickoff</button>
+          <button class="catbtn filterpill" data-period="inseason" type="button" id="spending-inseason-pill"><i class=fa-bolt aria-hidden=true></i> In-Season</button>
+          <button class="catbtn filterpill" data-period="offseason" type="button"><i class=fa-screwdriver-wrench aria-hidden=true></i> Offseason Pre-Kickoff</button>
         </div>
         <div class="muted small" style="display:flex; align-items:center; gap:6px;">
           <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span> <span id="spending-kickoff-label">Kickoff</span>
@@ -536,15 +537,15 @@
           <input type="text" id="log-search-input" placeholder="Search actor, item, play, notes…" style="width:230px; font-size:12px; padding:6px 10px;" />
           <select id="log-action-filter" style="width:160px; font-size:12px; padding:6px 8px;">
             <option value="ALL">All Event Types</option>
-            <option value="INVENTORY">📦 Inventory & Tools</option>
-            <option value="CHECKOUTS">🛠 Checkouts & Returns</option>
-            <option value="PLANNER">📋 Team Tasks</option>
-            <option value="PARTS">🛒 Robot Parts Needed</option>
-            <option value="SHIFTS">📅 Shop Shifts & Attendance</option>
-            <option value="SPENDING">💰 Spending & Budget</option>
-            <option value="STRATEGY">🎯 Strategy & Whiteboard</option>
-            <option value="SCOUTING">📊 Match Scouting Logs</option>
-            <option value="MEMBERS">👥 Member Permissions</option>
+            <option value="INVENTORY">Inventory & Tools</option>
+            <option value="CHECKOUTS">Checkouts & Returns</option>
+            <option value="PLANNER">Team Tasks</option>
+            <option value="PARTS">Robot Parts Needed</option>
+            <option value="SHIFTS">Shop Shifts & Attendance</option>
+            <option value="SPENDING">Spending & Budget</option>
+            <option value="STRATEGY">Strategy & Whiteboard</option>
+            <option value="SCOUTING">Match Scouting Logs</option>
+            <option value="MEMBERS">Member Permissions</option>
           </select>
           <button class="btn btn--ghost btn--sm" id="refresh-logs-btn" type="button">↻ Refresh Logs</button>
         </div>
@@ -593,9 +594,9 @@
       <div class="user-controls-block">
         <div style="display:flex; gap:8px; align-items:center;">
           <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams?year=2026" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
-            <span>🌐</span> Statbotics 2026 Teams ↗
+            <span><i class=fa-globe aria-hidden=true></i></span> Statbotics 2026 Teams ↗
           </a>
-          <button class="btn btn--ghost btn--sm" id="strat-sync-btn" type="button">🔄 Sync 2026 Statbotics</button>
+          <button class="btn btn--ghost btn--sm" id="strat-sync-btn" type="button"><i class=fa-arrows-rotate aria-hidden=true></i> Sync 2026 Statbotics</button>
         </div>
       </div>
     </section>
@@ -603,10 +604,10 @@
     <!-- Mobile Vertical Popup Picker for Strategy -->
     <div class="mobile-view-picker-container">
       <button type="button" class="mobile-picker-btn" id="mobile-strat-picker-trigger">
-        <span class="picker-icon">🎯</span>
+        <span class="picker-icon"><i class=fa-bullseye aria-hidden=true></i></span>
         <span class="picker-text">
           <small>STRATEGY SECTION</small>
-          <strong id="mobile-current-strat-label">🎨 Tactical Field Playbook</strong>
+          <strong id="mobile-current-strat-label"><i class=fa-palette aria-hidden=true></i> Tactical Field Playbook</strong>
         </span>
         <span class="picker-arrow">▾</span>
       </button>
@@ -614,11 +615,11 @@
 
     <!-- Strategy Navigation Subtabs -->
     <nav class="viewtabs" id="strategy-tabs">
-      <button class="viewtab active" data-strat-view="playbook" type="button">🎨 Tactical Field Playbook</button>
-      <button class="viewtab" data-strat-view="rankings" type="button">🏆 FRC Rankings & Statbotics <span class="badgenum" id="badge-strat-count">50</span></button>
+      <button class="viewtab active" data-strat-view="playbook" type="button"><i class=fa-palette aria-hidden=true></i> Tactical Field Playbook</button>
+      <button class="viewtab" data-strat-view="rankings" type="button"><i class=fa-trophy aria-hidden=true></i> FRC Rankings & Statbotics <span class="badgenum" id="badge-strat-count">50</span></button>
       <button class="viewtab" data-strat-view="scouting" type="button">Scouting <span class="badgenum" id="badge-scout-count">0</span></button>
-      <button class="viewtab" data-strat-view="simulator" type="button">⚔️ Match Simulator</button>
-      <button class="viewtab" data-strat-view="lookup" type="button">🔍 Team Deep Dive</button>
+      <button class="viewtab" data-strat-view="simulator" type="button"><i class=fa-shield-halved aria-hidden=true></i> Match Simulator</button>
+      <button class="viewtab" data-strat-view="lookup" type="button"><i class=fa-magnifying-glass aria-hidden=true></i> Team Deep Dive</button>
     </nav>
 
     <!-- 1. TACTICAL PLAYBOOK / WHITEBOARD (Rebuilt Field Canvas) -->
@@ -634,14 +635,14 @@
         <div class="playbook-toolbar">
           <div class="tool-group">
             <span class="tool-label">TOOL:</span>
-            <button type="button" class="tool-btn active" data-tool="pen" title="Freehand Path">✏️ Draw</button>
+            <button type="button" class="tool-btn active" data-tool="pen" title="Freehand Path"><i class=fa-pen aria-hidden=true></i> Draw</button>
             <button type="button" class="tool-btn" data-tool="arrow" title="Route Arrow">↗️ Arrow</button>
-            <button type="button" class="tool-btn" data-tool="line" title="Straight Line">📏 Line</button>
-            <button type="button" class="tool-btn" data-tool="token-red" title="Red Alliance Robot">🔴 Red Bot</button>
-            <button type="button" class="tool-btn" data-tool="token-blue" title="Blue Alliance Robot">🔵 Blue Bot</button>
-            <button type="button" class="tool-btn" data-tool="piece-fuel" title="Fuel Cell Game Piece">🟡 Fuel</button>
-            <button type="button" class="tool-btn" data-tool="piece-relic" title="Relic Artifact Piece">🏺 Artifact</button>
-            <button type="button" class="tool-btn" data-tool="eraser" title="Eraser">🧼 Eraser</button>
+            <button type="button" class="tool-btn" data-tool="line" title="Straight Line"><i class=fa-ruler aria-hidden=true></i> Line</button>
+            <button type="button" class="tool-btn" data-tool="token-red" title="Red Alliance Robot"><i class=fa-circle style=color:#e04848 aria-hidden=true></i> Red Bot</button>
+            <button type="button" class="tool-btn" data-tool="token-blue" title="Blue Alliance Robot"><i class=fa-circle style=color:#3b6fe0 aria-hidden=true></i> Blue Bot</button>
+            <button type="button" class="tool-btn" data-tool="piece-fuel" title="Fuel Cell Game Piece"><i class=fa-circle style=color:#f2b630 aria-hidden=true></i> Fuel</button>
+            <button type="button" class="tool-btn" data-tool="piece-relic" title="Relic Artifact Piece"><i class=fa-gem aria-hidden=true></i> Artifact</button>
+            <button type="button" class="tool-btn" data-tool="eraser" title="Eraser"><i class=fa-eraser aria-hidden=true></i> Eraser</button>
           </div>
 
           <div class="tool-group">
@@ -665,10 +666,10 @@
 
           <div class="tool-group" style="margin-left:auto;">
             <button type="button" class="btn btn--sm btn--primary" id="field-choreo-play-btn" style="background:#8b5cf6; border-color:#8b5cf6; display:inline-flex; align-items:center; gap:5px;" title="Choreo Trajectory Simulation">▶ Simulate Path (Choreo)</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="field-fullscreen-btn" title="Toggle Fullscreen Field Mode">⛶ Fullscreen</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="field-fullscreen-btn" title="Toggle Fullscreen Field Mode"><i class=fa-expand aria-hidden=true></i> Fullscreen</button>
             <button type="button" class="btn btn--sm btn--ghost" id="field-undo-btn">↺ Undo</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="field-clear-btn">🗑 Clear</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="field-export-btn">🖼 Export PNG</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="field-clear-btn"><i class=fa-trash-can aria-hidden=true></i> Clear</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="field-export-btn"><i class=fa-image aria-hidden=true></i> Export PNG</button>
           </div>
         </div>
 
@@ -679,7 +680,7 @@
         <div class="playbook-save-bar">
           <div style="display:flex; gap:10px; flex:1; max-width:600px;">
             <input type="text" id="playbook-plan-name" placeholder="Strategy name e.g. Auto High Hub Rush, Teleop Fuel Cycle, Finals Match 1..." maxlength="80">
-            <button type="button" class="btn btn--primary" id="playbook-save-btn">💾 Save Play</button>
+            <button type="button" class="btn btn--primary" id="playbook-save-btn"><i class=fa-floppy-disk aria-hidden=true></i> Save Play</button>
           </div>
           <div class="saved-plays-count">
             <span id="saved-plays-count-text" class="mono small muted">Saved Plays (0)</span>
@@ -704,7 +705,7 @@
         </div>
         <div class="toolbar-actions" style="display:flex; gap:8px; align-items:center;">
           <a class="btn btn--ghost btn--sm" href="https://www.statbotics.io/teams?year=2026" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
-            <span>🌐</span> Open 2026 Statbotics Teams ↗
+            <span><i class=fa-globe aria-hidden=true></i></span> Open 2026 Statbotics Teams ↗
           </a>
           <input class="search" id="strat-team-search" type="search" placeholder="⌕ Search team #, name, city..." style="width:240px;">
         </div>
@@ -713,7 +714,7 @@
       <div class="filters">
         <div class="mobile-filter-picker-container">
           <button type="button" class="mobile-filter-picker-btn" id="mobile-sort-strat-trigger">
-            <span>📊 Sort: <strong id="mobile-current-sort-label">Sort by Total EPA</strong></span>
+            <span><i class=fa-chart-column aria-hidden=true></i> Sort: <strong id="mobile-current-sort-label">Sort by Total EPA</strong></span>
             <span>▾</span>
           </button>
         </div>
@@ -871,15 +872,15 @@
             <div class="scout-toggles-grid">
               <label class="scout-toggle-pill">
                 <input type="checkbox" id="scout-auto-moved">
-                <span>🚀 Left Starting Line (+2)</span>
+                <span><i class=fa-rocket aria-hidden=true></i> Left Starting Line (+2)</span>
               </label>
               <label class="scout-toggle-pill">
                 <input type="checkbox" id="scout-auto-depot">
-                <span>📦 Scored from Depot</span>
+                <span><i class=fa-box aria-hidden=true></i> Scored from Depot</span>
               </label>
               <label class="scout-toggle-pill">
                 <input type="checkbox" id="scout-auto-climb">
-                <span>🧗 Auto Level 1 Climb (+15)</span>
+                <span><i class=fa-stairs aria-hidden=true></i> Auto Level 1 Climb (+15)</span>
               </label>
             </div>
           </div>
@@ -925,19 +926,19 @@
             <div class="scout-toggles-grid">
               <label class="scout-toggle-pill">
                 <input type="checkbox" id="scout-nav-bump">
-                <span>⛰️ Crossed Field Bump</span>
+                <span><i class=fa-mountain aria-hidden=true></i> Crossed Field Bump</span>
               </label>
               <label class="scout-toggle-pill">
                 <input type="checkbox" id="scout-nav-trench">
-                <span>🚇 Navigated Trench</span>
+                <span><i class=fa-train-subway aria-hidden=true></i> Navigated Trench</span>
               </label>
               <label class="scout-toggle-pill">
                 <input type="checkbox" id="scout-intake-floor">
-                <span>🧲 Floor Feeder Intake</span>
+                <span><i class=fa-magnet aria-hidden=true></i> Floor Feeder Intake</span>
               </label>
               <label class="scout-toggle-pill">
                 <input type="checkbox" id="scout-hp-feed">
-                <span>👤 Human Player Outpost Feed</span>
+                <span><i class=fa-user aria-hidden=true></i> Human Player Outpost Feed</span>
               </label>
             </div>
           </div>
@@ -982,11 +983,11 @@
             <div class="scout-toggles-grid" style="margin-bottom: 12px;">
               <label class="scout-toggle-pill" style="color:#f87171;">
                 <input type="checkbox" id="scout-died">
-                <span>⚠️ Disabled / Broke Down</span>
+                <span><i class=fa-triangle-exclamation aria-hidden=true></i> Disabled / Broke Down</span>
               </label>
               <label class="scout-toggle-pill" style="color:#f87171;">
                 <input type="checkbox" id="scout-tipped">
-                <span>🔄 Tipped Over</span>
+                <span><i class=fa-arrows-rotate aria-hidden=true></i> Tipped Over</span>
               </label>
             </div>
 
@@ -1057,8 +1058,8 @@
           <p class="muted small">Simulate 3-vs-3 FRC alliance matches with 1,000 statistical iterations using actual team EPA data and variance distributions.</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn--ghost btn--sm" id="sim-preset-nyx" type="button">⚡ NYX 11744 Matchup</button>
-          <button class="btn btn--ghost btn--sm" id="sim-preset-finals" type="button">🏆 Finals Matchup</button>
+          <button class="btn btn--ghost btn--sm" id="sim-preset-nyx" type="button"><i class=fa-bolt aria-hidden=true></i> NYX 11744 Matchup</button>
+          <button class="btn btn--ghost btn--sm" id="sim-preset-finals" type="button"><i class=fa-trophy aria-hidden=true></i> Finals Matchup</button>
         </div>
       </div>
 
@@ -1067,27 +1068,27 @@
           <!-- Red Alliance Selector -->
           <div class="sim-alliance-box red">
             <div class="sim-alliance-head">
-              <strong style="color:#ef4444; font-family:var(--font-mono); font-size:14px;">🔴 RED ALLIANCE</strong>
+              <strong style="color:#ef4444; font-family:var(--font-mono); font-size:14px;"><i class=fa-circle style=color:#e04848 aria-hidden=true></i> RED ALLIANCE</strong>
               <span class="mono small muted" id="sim-red-total-epa">Total EPA: 0.0</span>
             </div>
             <div class="sim-slot">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="margin:0; font-size:11px; font-weight:700;">Captain / R1:</label>
-                <input type="text" class="sim-slot-search" data-target="sim-red-1" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+                <input type="text" class="sim-slot-search" data-target="sim-red-1" placeholder="Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
               </div>
               <select id="sim-red-1" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="margin:0; font-size:11px; font-weight:700;">Pick 1 / R2:</label>
-                <input type="text" class="sim-slot-search" data-target="sim-red-2" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+                <input type="text" class="sim-slot-search" data-target="sim-red-2" placeholder="Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
               </div>
               <select id="sim-red-2" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="margin:0; font-size:11px; font-weight:700;">Pick 2 / R3:</label>
-                <input type="text" class="sim-slot-search" data-target="sim-red-3" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+                <input type="text" class="sim-slot-search" data-target="sim-red-3" placeholder="Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
               </div>
               <select id="sim-red-3" class="sim-team-select"></select>
             </div>
@@ -1096,27 +1097,27 @@
           <!-- Blue Alliance Selector -->
           <div class="sim-alliance-box blue">
             <div class="sim-alliance-head">
-              <strong style="color:#3b82f6; font-family:var(--font-mono); font-size:14px;">🔵 BLUE ALLIANCE</strong>
+              <strong style="color:#3b82f6; font-family:var(--font-mono); font-size:14px;"><i class=fa-circle style=color:#3b6fe0 aria-hidden=true></i> BLUE ALLIANCE</strong>
               <span class="mono small muted" id="sim-blue-total-epa">Total EPA: 0.0</span>
             </div>
             <div class="sim-slot">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="margin:0; font-size:11px; font-weight:700;">Captain / B1:</label>
-                <input type="text" class="sim-slot-search" data-target="sim-blue-1" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+                <input type="text" class="sim-slot-search" data-target="sim-blue-1" placeholder="Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
               </div>
               <select id="sim-blue-1" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="margin:0; font-size:11px; font-weight:700;">Pick 1 / B2:</label>
-                <input type="text" class="sim-slot-search" data-target="sim-blue-2" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+                <input type="text" class="sim-slot-search" data-target="sim-blue-2" placeholder="Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
               </div>
               <select id="sim-blue-2" class="sim-team-select"></select>
             </div>
             <div class="sim-slot">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="margin:0; font-size:11px; font-weight:700;">Pick 2 / B3:</label>
-                <input type="text" class="sim-slot-search" data-target="sim-blue-3" placeholder="🔍 Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
+                <input type="text" class="sim-slot-search" data-target="sim-blue-3" placeholder="Search team # or name..." style="padding:2px 8px; font-size:11px; width:170px; height:24px;">
               </div>
               <select id="sim-blue-3" class="sim-team-select"></select>
             </div>
@@ -1125,7 +1126,7 @@
 
         <div style="text-align:center; margin-bottom: 24px;">
           <button class="btn btn--primary" id="run-sim-btn" type="button" style="padding: 12px 32px; font-size: 14px;">
-            ⚡ Run 1,000-Match Monte Carlo Simulation
+            <i class=fa-bolt aria-hidden=true></i> Run 1,000-Match Monte Carlo Simulation
           </button>
         </div>
 
@@ -1214,7 +1215,7 @@
        PAGE 3: SECRET INTEL (CONFIDENTIAL SCOUTING FOR SECRET ADMINS)
        ======================================================================== -->
   <main id="secrets-screen" class="main-content hidden">
-    <section class="welcome" style="border-left: 4px solid #f43f5e; background: linear-gradient(135deg, rgba(244, 63, 94, 0.08), transparent);">
+    <section class="welcome" style="border-left: 4px solid #e04848; background: var(--red-dim);">
       <div>
         <span class="eyebrow" style="color:#f43f5e;">TOP SECRET / EYES ONLY</span>
         <h1>Secret <em>Intelligence.</em></h1>
@@ -1239,7 +1240,7 @@
         <!-- Add Secret Intel Form -->
         <div class="card" style="border: 1px solid rgba(244, 63, 94, 0.4); background: rgba(244, 63, 94, 0.03); margin-bottom: 24px;">
           <h3 style="margin-top:0; color:#f43f5e; display:flex; align-items:center; gap:8px;">
-            <span>🕵️</span> Log New Person / Team Dossier
+            <span><i class=fa-user-secret aria-hidden=true></i></span> Log New Person / Team Dossier
           </h3>
 
           <form id="secret-scout-form">
@@ -1260,8 +1261,8 @@
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span class="muted small" style="color:#fb7185;">🔒 Saved strictly to Secret Admin clearance</span>
-              <button type="submit" class="btn" style="background:#f43f5e; border-color:#f43f5e; color:#ffffff;" id="save-secret-btn">💾 Log Secret Entry</button>
+              <span class="muted small" style="color:#fb7185;"><i class=fa-lock aria-hidden=true></i> Saved strictly to Secret Admin clearance</span>
+              <button type="submit" class="btn" style="background:#f43f5e; border-color:#f43f5e; color:#ffffff;" id="save-secret-btn"><i class=fa-floppy-disk aria-hidden=true></i> Log Secret Entry</button>
             </div>
           </form>
         </div>
@@ -1314,19 +1315,19 @@
         <div class="dept-check-group">
           <label class="dept-check-label">
             <input type="checkbox" name="prof-dept" value="Mechanical">
-            <span>⚙️ Mechanical</span>
+            <span><i class=fa-gear aria-hidden=true></i> Mechanical</span>
           </label>
           <label class="dept-check-label">
             <input type="checkbox" name="prof-dept" value="Electrical">
-            <span>⚡ Electrical</span>
+            <span><i class=fa-bolt aria-hidden=true></i> Electrical</span>
           </label>
           <label class="dept-check-label">
             <input type="checkbox" name="prof-dept" value="Software">
-            <span>💻 Software</span>
+            <span><i class=fa-laptop-code aria-hidden=true></i> Software</span>
           </label>
           <label class="dept-check-label">
             <input type="checkbox" name="prof-dept" value="Business">
-            <span>💼 Business</span>
+            <span><i class=fa-briefcase aria-hidden=true></i> Business</span>
           </label>
         </div>
 
@@ -1390,7 +1391,7 @@
         <!-- Assign Members (Admin) -->
         <div class="assign-box">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-            <label style="margin:0;">👥 Assigned Members <span class="muted small" id="shift-assign-count">(0)</span></label>
+            <label style="margin:0;"><i class=fa-users aria-hidden=true></i> Assigned Members <span class="muted small" id="shift-assign-count">(0)</span></label>
             <div class="assign-quick" id="shift-assign-quick">
               <button type="button" class="textbtn" data-assign-dept="__dept">+ Shift's department</button>
               <button type="button" class="textbtn" data-assign-dept="__clear">Clear</button>
@@ -1405,7 +1406,7 @@
         <div class="recurrence-box" id="shift-recurrence-row">
           <label class="dept-check-label" style="margin: 0; cursor: pointer;">
             <input type="checkbox" id="shift-repeat-weekly">
-            <span>🔁 Repeat weekly</span>
+            <span><i class=fa-repeat aria-hidden=true></i> Repeat weekly</span>
           </label>
           <div id="shift-repeat-options" class="hidden" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
             <label for="shift-repeat-count" style="margin: 0; font-size: 12px; white-space: nowrap;">Repeat for:</label>
@@ -1455,7 +1456,7 @@
             <label for="item-is-tool" style="margin-bottom:10px;">Item Classification</label>
             <select id="item-is-tool">
               <option value="false">Part / Consumable</option>
-              <option value="true">🛠 Tool / Equipment (Supports Check-Out)</option>
+              <option value="true">Tool / Equipment (Supports Check-Out)</option>
             </select>
           </div>
         </div>
@@ -1568,7 +1569,7 @@
           <div>
             <label for="pn-priority">Priority</label>
             <select id="pn-priority">
-              <option value="urgent">Urgent 🔥</option>
+              <option value="urgent">Urgent</option>
               <option value="high" selected>High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
@@ -1641,7 +1642,7 @@
             <select id="task-priority">
               <option value="medium">Medium</option>
               <option value="high">High</option>
-              <option value="urgent">Urgent 🔥</option>
+              <option value="urgent">Urgent</option>
               <option value="low">Low</option>
             </select>
           </div>
@@ -1724,9 +1725,9 @@
           <div>
             <label for="spend-season-period">Season Period *</label>
             <select id="spend-season-period">
-              <option value="auto" id="spend-season-auto-option">⚡ Auto (by kickoff date)</option>
-              <option value="offseason">🛠️ Offseason Purchase</option>
-              <option value="inseason">🏆 In-Season Build Purchase</option>
+              <option value="auto" id="spend-season-auto-option">Auto (by kickoff date)</option>
+              <option value="offseason">Offseason Purchase</option>
+              <option value="inseason">In-Season Build Purchase</option>
             </select>
           </div>
           <div>
@@ -1737,7 +1738,7 @@
 
         <!-- Mandatory Receipt / Charge Screenshot -->
         <div style="background:rgba(255,255,255,0.03); border:1px dashed var(--accent-line); border-radius:10px; padding:14px; margin:14px 0;">
-          <label style="margin-top:0; font-weight:700; color:var(--accent-bright);">📸 Receipt / Credit Card Charge Screenshot * (Mandatory)</label>
+          <label style="margin-top:0; font-weight:700; color:var(--accent-bright);"><i class=fa-camera aria-hidden=true></i> Receipt / Credit Card Charge Screenshot * (Mandatory)</label>
           <p class="muted small" style="margin-bottom:8px;">Upload a screenshot of the credit card charge, invoice, or store receipt to verify team expense reporting.</p>
           <input type="file" id="spend-receipt-file" accept="image/*" style="font-size:12px; padding:6px;">
           <div id="spend-receipt-preview-wrap" class="hidden" style="margin-top:10px; display:flex; align-items:center; gap:12px;">
@@ -1789,31 +1790,31 @@
       </div>
       <div class="bottom-sheet-options" id="mobile-view-options">
         <button type="button" class="sheet-option active" data-view="inventory">
-          <div class="sheet-option-title"><span class="opt-icon">📦</span> Parts & Tools</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-box aria-hidden=true></i></span> Parts & Tools</div>
           <span class="sheet-badge" id="m-badge-all">0</span>
         </button>
         <button type="button" class="sheet-option" data-view="checkouts">
-          <div class="sheet-option-title"><span class="opt-icon">🛠</span> Active Checkouts</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-screwdriver-wrench aria-hidden=true></i></span> Active Checkouts</div>
           <span class="sheet-badge" id="m-badge-checkouts">0</span>
         </button>
         <button type="button" class="sheet-option" data-view="parts-needed">
-          <div class="sheet-option-title"><span class="opt-icon">🤖</span> Parts Needed for Robot</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-robot aria-hidden=true></i></span> Parts Needed for Robot</div>
           <span class="sheet-badge" id="m-badge-parts-needed">0</span>
         </button>
         <button type="button" class="sheet-option" data-view="shifts">
-          <div class="sheet-option-title"><span class="opt-icon">📅</span> Shifts & Calendar</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-calendar-days aria-hidden=true></i></span> Shifts & Calendar</div>
           <span class="sheet-badge" id="m-badge-shifts">0</span>
         </button>
         <button type="button" class="sheet-option" data-view="planner">
-          <div class="sheet-option-title"><span class="opt-icon">📋</span> Team Planner</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-clipboard-list aria-hidden=true></i></span> Team Planner</div>
           <span class="sheet-badge" id="m-badge-planner">0</span>
         </button>
         <button type="button" class="sheet-option hidden" id="m-tab-spending" data-view="spending">
-          <div class="sheet-option-title"><span class="opt-icon">💰</span> Spending & Budget</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-sack-dollar aria-hidden=true></i></span> Spending & Budget</div>
           <span class="sheet-badge">Admin</span>
         </button>
         <button type="button" class="sheet-option hidden" id="m-tab-members" data-view="members">
-          <div class="sheet-option-title"><span class="opt-icon">👥</span> Member Access</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-users aria-hidden=true></i></span> Member Access</div>
           <span class="sheet-badge" id="m-badge-members">0</span>
         </button>
       </div>
@@ -1833,23 +1834,23 @@
       </div>
       <div class="bottom-sheet-options" id="mobile-strat-options">
         <button type="button" class="sheet-option active" data-strat-view="playbook">
-          <div class="sheet-option-title"><span class="opt-icon">🎨</span> Tactical Field Playbook</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-palette aria-hidden=true></i></span> Tactical Field Playbook</div>
           <span class="sheet-badge">Canvas</span>
         </button>
         <button type="button" class="sheet-option" data-strat-view="rankings">
-          <div class="sheet-option-title"><span class="opt-icon">🏆</span> FRC Rankings & Statbotics</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-trophy aria-hidden=true></i></span> FRC Rankings & Statbotics</div>
           <span class="sheet-badge" id="m-badge-strat-count">50</span>
         </button>
         <button type="button" class="sheet-option" data-strat-view="scouting">
-          <div class="sheet-option-title"><span class="opt-icon">📋</span> Scouting</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-clipboard-list aria-hidden=true></i></span> Scouting</div>
           <span class="sheet-badge" id="m-badge-scout-count">0</span>
         </button>
         <button type="button" class="sheet-option" data-strat-view="simulator">
-          <div class="sheet-option-title"><span class="opt-icon">⚔️</span> Match Simulator</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-shield-halved aria-hidden=true></i></span> Match Simulator</div>
           <span class="sheet-badge">Monte Carlo</span>
         </button>
         <button type="button" class="sheet-option" data-strat-view="lookup">
-          <div class="sheet-option-title"><span class="opt-icon">🔍</span> Team Deep Dive</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-magnifying-glass aria-hidden=true></i></span> Team Deep Dive</div>
           <span class="sheet-badge">Stats</span>
         </button>
       </div>
@@ -1869,27 +1870,27 @@
       </div>
       <div class="bottom-sheet-options" id="mobile-filter-inv-options">
         <button type="button" class="sheet-option active" data-category="All">
-          <div class="sheet-option-title"><span class="opt-icon">🌐</span> All Subsystems</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-globe aria-hidden=true></i></span> All Subsystems</div>
           <span class="sheet-badge" id="m-filter-all">0</span>
         </button>
         <button type="button" class="sheet-option" data-category="Mechanical">
-          <div class="sheet-option-title"><span class="opt-icon">⚙️</span> Mechanical</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-gear aria-hidden=true></i></span> Mechanical</div>
           <span class="sheet-badge" id="m-filter-mech">0</span>
         </button>
         <button type="button" class="sheet-option" data-category="Electrical">
-          <div class="sheet-option-title"><span class="opt-icon">⚡</span> Electrical</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-bolt aria-hidden=true></i></span> Electrical</div>
           <span class="sheet-badge" id="m-filter-elec">0</span>
         </button>
         <button type="button" class="sheet-option" data-category="Software">
-          <div class="sheet-option-title"><span class="opt-icon">💻</span> Software</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-laptop-code aria-hidden=true></i></span> Software</div>
           <span class="sheet-badge" id="m-filter-soft">0</span>
         </button>
         <button type="button" class="sheet-option" data-category="Miscellaneous">
-          <div class="sheet-option-title"><span class="opt-icon">📦</span> Miscellaneous</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-box aria-hidden=true></i></span> Miscellaneous</div>
           <span class="sheet-badge" id="m-filter-misc">0</span>
         </button>
         <button type="button" class="sheet-option" data-category="ToolsOnly">
-          <div class="sheet-option-title"><span class="opt-icon">🔧</span> Tools Only</div>
+          <div class="sheet-option-title"><span class="opt-icon"><i class=fa-wrench aria-hidden=true></i></span> Tools Only</div>
           <span class="sheet-badge" id="m-filter-tools">0</span>
         </button>
       </div>
@@ -1909,22 +1910,22 @@
       </div>
       <div class="bottom-sheet-options" id="mobile-sort-strat-options">
         <button type="button" class="sheet-option active" data-sort="epa">
-          <div class="sheet-option-title">⚡ Sort by Total EPA</div>
+          <div class="sheet-option-title"><i class=fa-bolt aria-hidden=true></i> Sort by Total EPA</div>
         </button>
         <button type="button" class="sheet-option" data-sort="auto_epa">
-          <div class="sheet-option-title">🤖 Auto EPA</div>
+          <div class="sheet-option-title"><i class=fa-robot aria-hidden=true></i> Auto EPA</div>
         </button>
         <button type="button" class="sheet-option" data-sort="teleop_epa">
-          <div class="sheet-option-title">🎮 Teleop EPA</div>
+          <div class="sheet-option-title"><i class=fa-gamepad aria-hidden=true></i> Teleop EPA</div>
         </button>
         <button type="button" class="sheet-option" data-sort="endgame_epa">
-          <div class="sheet-option-title">🗼 Tower Climb EPA</div>
+          <div class="sheet-option-title"><i class=fa-tower-observation aria-hidden=true></i> Tower Climb EPA</div>
         </button>
         <button type="button" class="sheet-option" data-sort="scout_matches">
-          <div class="sheet-option-title">📋 Scouted Matches</div>
+          <div class="sheet-option-title"><i class=fa-clipboard-list aria-hidden=true></i> Scouted Matches</div>
         </button>
         <button type="button" class="sheet-option" data-sort="winrate">
-          <div class="sheet-option-title">🏆 Win Rate %</div>
+          <div class="sheet-option-title"><i class=fa-trophy aria-hidden=true></i> Win Rate %</div>
         </button>
       </div>
     </div>
@@ -1933,23 +1934,23 @@
   <!-- Mobile Bottom Navigation Bar -->
   <nav class="mobile-bottom-nav" id="mobile-bottom-bar" aria-label="Mobile Navigation">
     <button type="button" class="mobile-nav-item active" id="mob-btn-dashboard" data-page="dashboard">
-      <span class="nav-icon">🛠</span>
+      <span class="nav-icon"><i class=fa-screwdriver-wrench aria-hidden=true></i></span>
       <span>Shop</span>
     </button>
     <button type="button" class="mobile-nav-item" id="mob-btn-duties" data-page="duties">
-      <span class="nav-icon">🗓</span>
+      <span class="nav-icon"><i class=fa-calendar aria-hidden=true></i></span>
       <span>Sign-ups</span>
     </button>
     <button type="button" class="mobile-nav-item" id="mob-btn-strategy" data-page="strategy">
-      <span class="nav-icon">🎯</span>
+      <span class="nav-icon"><i class=fa-bullseye aria-hidden=true></i></span>
       <span>Strategy</span>
     </button>
     <button type="button" class="mobile-nav-item secrets-item hidden" id="mob-btn-secrets" data-page="secrets">
-      <span class="nav-icon">🕵️</span>
+      <span class="nav-icon"><i class=fa-user-secret aria-hidden=true></i></span>
       <span>Secret Intel</span>
     </button>
     <button type="button" class="mobile-nav-item" id="mob-btn-menu" aria-label="Open Menu">
-      <span class="nav-icon">☰</span>
+      <span class="nav-icon"><i class=fa-bars aria-hidden=true></i></span>
       <span>Menu</span>
     </button>
   </nav>
@@ -1959,7 +1960,7 @@
   <div id="command-palette-modal" class="modalback hidden" role="dialog" aria-modal="true" aria-labelledby="cmd-palette-title">
     <div class="modal cmd-palette-modal" style="max-width:560px; padding:20px;">
       <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line); padding-bottom:14px;">
-        <span style="font-size:18px;">⚡</span>
+        <span style="font-size:18px;"><i class=fa-bolt aria-hidden=true></i></span>
         <input type="text" id="command-palette-input" placeholder="Type a command, item name, view, or action..." autocomplete="off" style="border:none; background:transparent; font-size:16px; font-weight:600; padding:0; box-shadow:none;" />
         <kbd class="shortcut-kbd" style="font-size:11px;">ESC</kbd>
       </div>
@@ -1984,7 +1985,7 @@
         <div id="barcode-location" style="font-size:12px; color:#64748b; margin-top:8px;"></div>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
-        <button class="btn btn--primary btn--sm" id="print-barcode-btn" type="button">🖨️ Print Shop Label</button>
+        <button class="btn btn--primary btn--sm" id="print-barcode-btn" type="button"><i class=fa-print aria-hidden=true></i> Print Shop Label</button>
       </div>
     </div>
   </div>
@@ -2056,6 +2057,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028l"></script>
+  <script type="module" src="js/app.js?v=20261028m"></script>
 </body>
 </html>

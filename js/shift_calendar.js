@@ -170,7 +170,7 @@ function evHtml(e) {
   return `<div class="gcal-ev ${mine ? "is-mine" : ""} ${ctx.isAdmin() ? "can-drag" : ""} ${short ? "short" : ""}" data-ev="${s.id}"
       style="--c:${DEPT_COLORS[s.department] || "#5b3ce6"}; top:${top}px; height:${h}px; left:calc(${(e.col / e.cols) * 100}% + 1px); width:calc(${100 / e.cols}% - 3px);"
       title="${ctx.esc(s.title)} · ${fmtTime(e.a)} – ${fmtTime(e.b)}">
-    <b>${ctx.esc(s.title)}</b>${short ? `<span>, ${fmtTime(e.a)}</span>` : `<span>${fmtTime(e.a)} – ${fmtTime(e.b)}</span><span>${ctx.esc(s.location || "")}${(s.attendees || []).length ? ` · 👥 ${(s.attendees || []).length}` : ""}</span>`}
+    <b>${ctx.esc(s.title)}</b>${short ? `<span>, ${fmtTime(e.a)}</span>` : `<span>${fmtTime(e.a)} – ${fmtTime(e.b)}</span><span>${ctx.esc(s.location || "")}${(s.attendees || []).length ? ` · <i class=fa-users aria-hidden=true></i> ${(s.attendees || []).length}` : ""}</span>`}
     ${ctx.isAdmin() ? `<i class="gcal-resize" data-resize></i>` : ""}
   </div>`;
 }
