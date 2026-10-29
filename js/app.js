@@ -1,10 +1,11 @@
-import * as gcal from "./gcal.js?v=20261028p";
-import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028p";
-import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028p";
-import { initActivity, loadShopSession } from "./activity.js?v=20261028p";
-import { initAnalytics } from "./analytics.js?v=20261028p";
-import { initDuties } from "./duties.js?v=20261028p";
-import { initScoutHub } from "./scouting.js?v=20261028p";
+import * as gcal from "./gcal.js?v=20261028q";
+import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028q";
+import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028q";
+import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028q";
+import { initActivity, loadShopSession } from "./activity.js?v=20261028q";
+import { initAnalytics } from "./analytics.js?v=20261028q";
+import { initDuties } from "./duties.js?v=20261028q";
+import { initScoutHub } from "./scouting.js?v=20261028q";
 
 /* Supabase Configuration */
 const SUPABASE_URL = "https://wdzrttyxcedkaifzkjvp.supabase.co";
@@ -101,6 +102,11 @@ function authMode(mode) {
   $("#auth-title").textContent = signIn ? "Sign in" : "Create account";
   $("#auth-subtitle").textContent = signIn ? "" : "New accounts need approval from a team lead.";
   $("#auth-subtitle").hidden = signIn;
+  // PIN sign-in is offered on the sign-in tab only
+  $("#pin-form")?.classList.add("hidden");
+  $("#pin-or")?.classList.toggle("hidden", !signIn);
+  $("#show-pin-login")?.classList.toggle("hidden", !signIn);
+  $(".auth-switch")?.classList.remove("hidden");
   $("#auth-message").classList.add("hidden");
 }
 
@@ -255,6 +261,7 @@ async function logAction(action, entityType, entityId, details) {
 }
 
 async function signOut() {
+  clearPinSession();
   if (channel && supabase) {
     await supabase.removeChannel(channel);
     channel = null;
@@ -1278,7 +1285,8 @@ async function loadMembers() {
               <span>${label}</span>
             </label>`).join("")}
         </div>
-        <div>
+        <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
+          ${!p.is_admin ? `<button class="btn btn--ghost btn--sm" data-action="set-pin" data-id="${p.id}" data-name="${esc(p.full_name)}" title="Give ${esc(p.full_name)} a new sign-in PIN"><i class=fa-grip aria-hidden=true></i> PIN</button>` : ""}
           ${p.id !== currentUser.id ? `
             <button class="btn btn--danger btn--sm" data-action="revoke-member" data-id="${p.id}" data-name="${esc(p.full_name)}">Revoke</button>
           ` : ''}
@@ -1646,6 +1654,7 @@ function openProfileModal() {
     cb.checked = depts.includes(cb.value);
   });
   $("#prof-discord").value = currentProfile.discord_id || "";
+  loadPinStatus();
   $("#profile-modal").classList.remove("hidden");
   $("#prof-name").focus();
 
@@ -3297,6 +3306,8 @@ $("#admin-members-list").addEventListener("click", async e => {
   const id = b.dataset.id;
   const name = b.dataset.name;
   const action = b.dataset.action;
+
+  if (action === "set-pin") return setPin(id, name);
 
   if (action === "approve-member" || action === "revoke-member") {
     const approve = action === "approve-member";
@@ -5974,6 +5985,9 @@ $("#mob-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
 $("#mob-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-analytics")?.addEventListener("click", () => switchPage("analytics"));
+
+/* Sign in with PIN */
+initPinLogin({ url: SUPABASE_URL, publicKey: SUPABASE_PUBLIC_KEY, getClient: () => supabase, getUser: () => currentUser, getProfile: () => currentProfile, toast, message, signOut });
 
 /* Activity: active-time tracking per feature + shop check-in */
 initActivity({

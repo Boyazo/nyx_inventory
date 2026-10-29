@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028p">
+<link rel="stylesheet" href="css/style.css?v=20261028q">
 </head>
 <body class="is-auth">
 
@@ -149,6 +149,23 @@
         <input id="signin-password" type="password" autocomplete="current-password" required>
         <button class="btn btn--primary btn--full" type="submit">Sign in</button>
         <button class="textbtn auth-forgot" type="button" id="forgot-password">Forgot password?</button>
+      </form>
+
+      <div class="auth-or" id="pin-or"><span>or</span></div>
+      <button type="button" class="btn btn--ghost btn--full" id="show-pin-login"><i class=fa-grip aria-hidden=true></i> Sign in with PIN</button>
+
+      <form id="pin-form" class="pin-pane hidden" autocomplete="off">
+        <label for="pin-input" class="pin-label">Enter your 6-digit PIN</label>
+        <input id="pin-input" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" aria-describedby="pin-help">
+        <div class="pin-dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pin-pad">
+          <button type="button" data-pin="1">1</button><button type="button" data-pin="2">2</button><button type="button" data-pin="3">3</button>
+          <button type="button" data-pin="4">4</button><button type="button" data-pin="5">5</button><button type="button" data-pin="6">6</button>
+          <button type="button" data-pin="7">7</button><button type="button" data-pin="8">8</button><button type="button" data-pin="9">9</button>
+          <button type="button" data-pin="clear" aria-label="Clear">Clear</button><button type="button" data-pin="0">0</button><button type="button" data-pin="back" aria-label="Delete last digit"><i class=fa-delete-left aria-hidden=true></i></button>
+        </div>
+        <p id="pin-help" class="muted small pin-help">Get a PIN from your profile, or ask an admin. PIN sign-ins sign out after 15 minutes of no activity.</p>
+        <button type="button" class="textbtn auth-forgot" id="pin-back">Use email instead</button>
       </form>
 
       <form id="signup-form" class="hidden">
@@ -1308,6 +1325,15 @@
         <input id="prof-discord" inputmode="numeric" maxlength="22" placeholder="e.g. 284019482734919681">
         <p class="muted small" style="margin:4px 0 0;">In Discord: Settings → Advanced → turn on <b>Developer Mode</b>, then click your name → <b>Copy User ID</b>.</p>
 
+        <div class="pin-profile" id="pin-profile">
+          <label style="margin-top:16px;">Sign-in PIN</label>
+          <p class="muted small" id="pin-profile-status" style="margin:4px 0 8px;">Loading…</p>
+          <div class="pin-profile-actions">
+            <button type="button" class="btn btn--ghost btn--sm" id="pin-profile-new">Create PIN</button>
+            <button type="button" class="btn btn--ghost btn--sm hidden" id="pin-profile-remove">Remove PIN</button>
+          </div>
+        </div>
+
         <label style="margin-top:16px;">My Departments (Select all that apply):</label>
         <div class="dept-check-group">
           <label class="dept-check-label">
@@ -2054,6 +2080,16 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028p"></script>
+  <div id="pin-reveal-modal" class="modalback hidden" role="dialog" aria-modal="true" aria-labelledby="pin-reveal-title">
+    <div class="modal" style="max-width:380px; text-align:center;">
+      <h2 id="pin-reveal-title" style="margin:0 0 4px;">Sign-in PIN</h2>
+      <p class="muted small" id="pin-reveal-for"></p>
+      <div class="pin-reveal" id="pin-reveal-code"></div>
+      <p class="muted small">Write it down now — it won't be shown again. Making a new PIN replaces this one.</p>
+      <div class="modalactions" style="justify-content:center;"><button type="button" class="btn btn--primary" id="pin-reveal-done">Done</button></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js?v=20261028q"></script>
 </body>
 </html>

@@ -3497,3 +3497,87 @@ body.is-auth { padding-bottom: 0 !important; }
   .an-card { padding: 14px; }
   .an-table-wrap { margin: 0 -14px; }
 }
+
+/* ==========================================================================
+   Sign in with PIN
+   ========================================================================== */
+.auth-or { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--text-faint); font-size: 12px; }
+.auth-or::before, .auth-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.auth-or.hidden, #show-pin-login.hidden, .pin-pane.hidden, .auth-switch.hidden { display: none !important; }
+#show-pin-login { width: 100%; height: 44px; }
+.pin-pane { margin-top: 6px; text-align: center; }
+.pin-label { display: block; margin: 0 0 10px !important; font-size: 14px !important; color: var(--text-muted) !important; font-weight: 500; }
+.pin-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.pin-dots { display: flex; justify-content: center; gap: 14px; margin: 4px 0 20px; }
+.pin-dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line-strong); transition: background-color 120ms var(--ease-out), border-color 120ms var(--ease-out), transform 120ms var(--ease-out); }
+.pin-dots i.on { background: var(--accent); border-color: var(--accent); transform: scale(1.08); }
+.pin-pane.is-error .pin-dots { animation: pin-shake 320ms var(--ease-out); }
+.pin-pane.is-error .pin-dots i { border-color: var(--red); }
+.pin-pane.is-busy .pin-dots i.on { animation: pin-pulse 900ms ease-in-out infinite; }
+@keyframes pin-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-8px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
+@keyframes pin-pulse { 50% { opacity: .4; } }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
+.pin-pad button {
+  height: 64px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-subtle);
+  font-size: 24px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: background-color 80ms var(--ease-out), transform 80ms var(--ease-out);
+}
+.pin-pad button:active { transform: scale(0.95); background: var(--line); }
+.pin-pad button[data-pin="clear"], .pin-pad button[data-pin="back"] { background: transparent; border-color: transparent; font-size: 15px; color: var(--text-muted); }
+.pin-pad button[data-pin="back"] { font-size: 20px; }
+.pin-help { margin: 16px 0 0; }
+.pin-reveal { font-size: 40px; font-weight: 700; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; color: var(--text); margin: 14px 0 10px; }
+.pin-profile-actions { display: flex; gap: 8px; }
+.pin-profile-actions .hidden { display: none; }
+@media (prefers-reduced-motion: reduce) { .pin-pane.is-error .pin-dots, .pin-pane.is-busy .pin-dots i.on { animation: none; } }
+
+/* ==========================================================================
+   Touchscreens: 44px targets (Apple HIG), 16px inputs, no hover-only behaviour
+   ========================================================================== */
+@media (pointer: coarse) {
+  html { -webkit-tap-highlight-color: transparent; }
+  button, a, input, select, textarea, label { touch-action: manipulation; }   /* no double-tap zoom delay */
+
+  .btn, .btn--sm, .shop-checkin, .gcal-btn, .gcal-create, .global-search-btn, .sidebar-toggle-btn { min-height: 44px !important; }
+  .btn--sm { padding-left: 14px !important; padding-right: 14px !important; }
+  .actionbtn, .task-stepbtn { min-height: 40px !important; min-width: 40px; padding: 8px 12px !important; }
+  .catbtn, .viewtab, .scout-subnav button, .gcal-views button, .duty-toggle button, .theme-opt-btn, .auth-switch .tab { min-height: 42px !important; }
+  .sidebar-link { min-height: 46px !important; }
+  .sidebar-sublink { min-height: 42px; padding: 10px 12px; font-size: 14px; }
+  .textbtn { min-height: 40px; padding: 8px 4px; }
+  .close, .gcal-pop-close { min-width: 44px; min-height: 44px; }
+  .gcal-icon { width: 44px; height: 44px; }
+  .gcal-icon.sm { width: 36px; height: 36px; }
+  .gcal-mini-grid button { min-height: 34px; }
+  .gcal-resize { height: 16px; }
+  .gcal-ev { min-height: 28px; }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, .search { min-height: 46px; font-size: 16px !important; }
+  textarea { font-size: 16px !important; }
+  input[type="checkbox"], input[type="radio"] { width: 22px; height: 22px; }
+  label { padding-top: 2px; padding-bottom: 2px; }
+
+  .qtybtn { width: 44px !important; height: 44px !important; }
+  .scout-step-btns button { min-height: 48px; min-width: 52px; }
+  .scout-tags span, .assign-chip, .role-toggle span { padding: 10px 14px !important; }
+  .scout-toggle-pill { min-height: 48px; }
+  .robot-slot, .pit-tile { min-height: 96px; }
+  .duty-cell { min-height: 52px; }
+  .pp-row { padding: 12px; }
+  .pick-move { display: block; min-height: 40px; }
+  .an-barrow { padding: 8px 0; }
+  .an-table th, .an-table td { padding-top: 12px; padding-bottom: 12px; }
+  .mobile-nav-item { min-height: 56px; }
+  .mobile-filter-picker-btn, .mobile-picker-btn { min-height: 46px !important; }
+  .tool-btn, .size-btn { min-height: 44px !important; padding: 8px 14px !important; font-size: 14px !important; }
+  .swatch { width: 40px !important; height: 40px !important; }
+  .tool-group { gap: 8px !important; flex-wrap: wrap; }
+
+  /* Spacing so neighbouring targets aren't mis-tapped */
+  .actions, .toolbar-actions, .picks-actions, .modalactions, .user-quick-actions { gap: 10px !important; }
+}
+@media (hover: none) {
+  .task-card:hover, .shift-card:hover, .stat:hover, .itemrow:hover, .play-card:hover, .pit-tile:hover { transform: none !important; background: var(--bg-card) !important; }
+  .gcal-ev .gcal-resize::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 3px; margin-left: -9px; border-radius: 2px; background: rgba(255,255,255,.8); }
+}

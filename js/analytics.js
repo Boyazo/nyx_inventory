@@ -306,6 +306,8 @@ function sortedRows() {
 
 /* ---------- interaction ---------- */
 async function onClick(e) {
+  const t = e.target.closest("[data-tip]");
+  if (t) tip(t);   // tap shows the tooltip on touchscreens
   const r = e.target.closest("[data-range]");
   if (r) { st.range = r.dataset.range; return load(); }
   if (e.target.closest("[data-an=refresh]")) return load();

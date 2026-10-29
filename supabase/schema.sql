@@ -885,3 +885,21 @@ using(user_id = (select auth.uid()) or (select public.is_team_admin()))
 with check(user_id = (select auth.uid()) or (select public.is_team_admin()));
 drop policy if exists "Admins delete shop sessions" on public.shop_sessions;
 create policy "Admins delete shop sessions" on public.shop_sessions for delete to authenticated using((select public.is_team_admin()));
+
+-- 17. Sign in with PIN (quick-login edge function). Both tables are service-role only: RLS on, no policies.
+create table if not exists public.quick_login_codes (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  code_hmac text not null unique,          -- HMAC of the 6-digit PIN; the PIN itself is never stored
+  created_by_name text not null default '',
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz
+);
+alter table public.quick_login_codes enable row level security;
+
+create table if not exists public.pin_attempts (
+  key text primary key,                    -- 'all' or 'ip:<hash>'
+  failed_count integer not null default 0,
+  window_start timestamptz,
+  locked_until timestamptz
+);
+alter table public.pin_attempts enable row level security;
