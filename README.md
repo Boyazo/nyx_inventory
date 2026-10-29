@@ -40,6 +40,15 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
    * It ensures only admins can write to inventory, tasks, parts needed, and spending records.
    * It registers Realtime publications for live team synchronization.
 
+## Custom Domain (workspace.nyx11744.org)
+
+1. **Porkbun → nyx11744.org → DNS:** add a record — Type `CNAME`, Host `workspace`, Answer `boyazo.github.io`, TTL `600`.
+2. **GitHub (repo admin) → Settings → Pages → Custom domain:** enter `workspace.nyx11744.org`, Save, wait for the DNS check, then tick **Enforce HTTPS**. (This site deploys with GitHub Actions, so the domain is set here rather than with a `CNAME` file.)
+3. **Supabase → Authentication → URL Configuration:** Site URL `https://workspace.nyx11744.org`; add `https://workspace.nyx11744.org/**` to Redirect URLs (keep the github.io one until everyone has switched).
+4. **Google Cloud → Clients → your web client:** add `https://workspace.nyx11744.org` to Authorized JavaScript origins.
+
+The old `boyazo.github.io/nyx_inventory` address redirects to the new domain automatically.
+
 ## One-command Supabase Setup
 
 Someone with access to the Supabase project (or invited to its organization) runs, from the repo root:
@@ -79,7 +88,7 @@ The first run records the existing rosters quietly, so only *new* assignments ar
 ## Google Calendar Setup
 
 1. In Google Cloud Console, enable the **Google Calendar API** and create an OAuth client of type *Web application*.
-2. Add the site origin (e.g. `https://boyazo.github.io`) under *Authorized JavaScript origins*, and configure the OAuth consent screen with the `calendar.events` scope.
+2. Add the site origin (`https://workspace.nyx11744.org`, plus `https://boyazo.github.io` while the old address is still used) under *Authorized JavaScript origins*, and configure the OAuth consent screen with the `calendar.events` scope.
 3. Paste the client id into `GOOGLE_CLIENT_ID` in [`js/gcal.js`](js/gcal.js). The *Sync to Google Calendar* button appears once it is set.
 
 ## Season Rollover
