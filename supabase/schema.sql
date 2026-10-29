@@ -915,9 +915,14 @@ create table if not exists public.inventory_categories (
   sort integer not null default 0
 );
 insert into public.inventory_categories (name, kind, sort) values
-  ('Mechanical', 'part', 10), ('Electrical', 'part', 20), ('Software', 'part', 30), ('Miscellaneous', 'part', 40),
+  ('Mechanical', 'part', 15), ('Electrical', 'part', 20), ('Software', 'part', 30), ('Miscellaneous', 'part', 40),
   ('Hand Tools', 'tool', 110), ('Power Tools', 'tool', 120), ('Measuring & Layout', 'tool', 130),
-  ('Electrical Tools', 'tool', 140), ('Pit & Safety', 'tool', 150)
+  ('Electrical Tools', 'tool', 140), ('Pit & Safety', 'tool', 150),
+  -- specific part types, ahead of the broad buckets above
+  ('Structure', 'part', 1), ('Bearings', 'part', 2), ('Pulleys & Belts', 'part', 3), ('Gears', 'part', 4),
+  ('Sprockets & Chain', 'part', 5), ('Shafts & Hubs', 'part', 6), ('Wheels', 'part', 7),
+  ('Fasteners & Hardware', 'part', 8), ('Motors', 'part', 9), ('Motor Controllers', 'part', 11),
+  ('Wiring & Connectors', 'part', 12), ('Sensors', 'part', 13), ('Pneumatics', 'part', 14)
 on conflict (name) do nothing;
 alter table public.inventory_categories enable row level security;
 drop policy if exists "Members read inventory categories" on public.inventory_categories;
