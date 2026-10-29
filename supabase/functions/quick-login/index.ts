@@ -139,12 +139,13 @@ async function login(req: Request, body: any) {
 async function setCode(req: Request, body: any) {
   const me = await caller(req);
   if (!me) return json({ error: "Sign in first." }, 401);
-  const target = body.user_id && body.user_id !== me.id ? String(body.user_id) : me.id;
-  if (target !== me.id && !me.is_staff) return json({ error: "Only admins and moderators can set codes for others." }, 403);
+  if (body.user_id && body.user_id !== me.id) {
+    return json({ error: "PINs are strictly private to each member. You can only set or change your own PIN." }, 403);
+  }
+  const target = me.id;
 
   const { data: tp } = await db.from("profiles").select("*").eq("id", target).maybeSingle();
   if (!tp?.is_approved) return json({ error: "That member isn't approved yet." }, 400);
-  if (tp.is_admin && target !== me.id) return json({ error: "Admins can only manage their own PIN." }, 403);
 
   if (body.pin !== undefined && body.pin !== null && body.pin !== "") {
     if (target !== me.id) return json({ error: "Members choose their own PIN. For someone else, make a random one." }, 403);
@@ -190,13 +191,10 @@ async function setCode(req: Request, body: any) {
 async function clearCode(req: Request, body: any) {
   const me = await caller(req);
   if (!me) return json({ error: "Sign in first." }, 401);
-  const target = body.user_id && body.user_id !== me.id ? String(body.user_id) : me.id;
-  if (target !== me.id && !me.is_staff) return json({ error: "Only admins and moderators can remove codes for others." }, 403);
-  if (target !== me.id) {
-    const { data: tp, error } = await db.from("profiles").select("*").eq("id", target).maybeSingle();
-    if (error || !tp) return json({ error: "Couldn't verify that member." }, 400);
-    if (tp.is_admin) return json({ error: "Admins can only manage their own PIN." }, 403);
+  if (body.user_id && body.user_id !== me.id) {
+    return json({ error: "PINs are strictly private to each member. You can only remove your own PIN." }, 403);
   }
+  const target = me.id;
   await db.from("quick_login_codes").delete().eq("user_id", target);
   await log(me.id, me.name, "PIN_REMOVED", { target });
   return json({ ok: true });

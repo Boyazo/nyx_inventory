@@ -79,10 +79,10 @@ for (const action of ["set_code", "clear_code"]) {
       else assert.notEqual(app.codes.get("actor").code_hmac, "original");
     });
     for (const target of ["member", "moderator"]) {
-      test(`${actor} ${action} for ${target} respects staff permissions`, async () => {
+      test(`${actor} cannot ${action} for ${target} (self-only PIN)`, async () => {
         const app = setup(actor, target);
-        assert.equal((await app.request(action)).status, actor === "member" ? 403 : 200);
-        if (actor === "member") assert.deepEqual(app.writes, []);
+        assert.equal((await app.request(action)).status, 403);
+        assert.deepEqual(app.writes, []);
       });
     }
   }

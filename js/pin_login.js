@@ -151,14 +151,13 @@ async function saveChosenPin() {
   loadPinStatus();
 }
 
-export async function setPin(userId = null, name = "") {
-  if (userId && !confirm(`Give ${name} a new sign-in PIN? Any PIN they had stops working.`)) return;
-  const res = await call("set_code", userId ? { user_id: userId } : {}, true);
+export async function setPin() {
+  const res = await call("set_code", {}, true);
   if (res.error) return ctx.toast(res.error, true);
-  $("#pin-reveal-for").textContent = userId ? `PIN for ${res.name}` : "Your new PIN";
+  $("#pin-reveal-for").textContent = "Your new PIN";
   $("#pin-reveal-code").textContent = `${res.code.slice(0, 3)} ${res.code.slice(3)}`;
   $("#pin-reveal-modal").classList.remove("hidden");
-  if (!userId) loadPinStatus();
+  loadPinStatus();
 }
 
 async function removeOwnPin() {
