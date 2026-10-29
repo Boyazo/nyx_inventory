@@ -22,6 +22,7 @@ A modern, responsive shared tools/parts inventory, robot parts ordering tracker,
 - **Scouting Hub (modelled on 4414 HighTide's workflow)** — *Strategy & Scouting → Scouting*:
   - **Event:** an admin imports the event's teams and qualification schedule from The Blue Alliance (TBA read key stays in that admin's browser) or enters team numbers by hand; one event is marked active for everyone.
   - **Match:** scouts step to a match, see its six robots and claim one — the database allows only one scout per robot per match. Phone-first form with stepper counters, 1–10 driver/defense ratings and quick tags.
+  - **Assign (admins only):** a match × robot grid to choose who scouts each robot, a range tool ("Priya on Red 2 for Q1–Q15"), and auto-rotate (six scouts on duty per shift, rotating through everyone selected). Assigned scouts get their robot pre-filled and a "Next: Q12 · 254" shortcut.
   - **Pit:** a grid of every team showing scouted / not scouted, with a quick capabilities checklist.
   - **Teams:** each team's pit answers, every match report and averages (fuel, accuracy, climb, driver/defense, tags).
   - **Pick lists:** every scout keeps their own tiered pick lists (Tier 1–3, Do Not Pick, Uncategorized; drag to sort). Admins merge everyone's latest list into the team's primary list with a consensus score per team.

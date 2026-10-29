@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261028g">
+<link rel="stylesheet" href="css/style.css?v=20261028h">
 </head>
 <body>
 
@@ -749,6 +749,7 @@
           <button type="button" data-scout-pane="pit">Pit</button>
           <button type="button" data-scout-pane="teams">Teams</button>
           <button type="button" data-scout-pane="picks">Pick Lists</button>
+          <button type="button" data-scout-pane="assign" id="scout-assign-tab" hidden>Assign</button>
           <button type="button" data-scout-pane="event">Event</button>
         </nav>
         <div class="scout-event-chip" id="scout-event-chip">No event selected</div>
@@ -758,6 +759,7 @@
       <div class="scout-pane" id="scout-pane-teams" hidden></div>
       <div class="scout-pane" id="scout-pane-picks" hidden></div>
       <div class="scout-pane" id="scout-pane-event" hidden></div>
+      <div class="scout-pane" id="scout-pane-assign" hidden></div>
 
       <div class="scout-pane" id="scout-pane-match" style="padding: 16px 20px; max-width: 820px; margin: 0 auto;">
         <form id="scout-entry-form">
@@ -2035,6 +2037,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261028g"></script>
+  <script type="module" src="js/app.js?v=20261028h"></script>
 </body>
 </html>

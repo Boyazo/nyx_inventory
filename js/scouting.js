@@ -35,6 +35,8 @@ const state = {
   pit: new Map(),
   lists: [],
   pane: "match",
+  members: [],
+  rotation: new Set(),
   openListId: null,
   teamFilter: "",
 };
@@ -89,7 +91,7 @@ async function load() {
   }
   const saved = lsGet(LS_EVENT);
   state.key = state.events.some(e => e.event_key === saved) ? saved : (state.events.find(e => e.is_active)?.event_key || state.events[0]?.event_key || "");
-  await Promise.all([loadClaims(), loadPit(), loadLists()]);
+  await Promise.all([loadClaims(), loadPit(), loadLists(), loadMembers()]);
   state.ready = true;
   renderAll();
 }
@@ -98,6 +100,10 @@ async function loadClaims() {
   if (!state.key) { state.claims = []; return; }
   const { data } = await db().from("scout_claims").select("*").eq("event_key", state.key);
   state.claims = data || [];
+}
+async function loadMembers() {
+  const { data } = await db().from("profiles").select("id, full_name, departments").eq("is_approved", true);
+  state.members = (data || []).sort((a, b) => a.full_name.localeCompare(b.full_name));
 }
 async function loadPit() {
   state.pit = new Map();
@@ -180,7 +186,8 @@ function teamStats(team) {
 function showPane(p) {
   state.pane = p;
   document.querySelectorAll("#scout-subnav [data-scout-pane]").forEach(b => b.classList.toggle("active", b.dataset.scoutPane === p));
-  ["match", "pit", "teams", "picks", "event"].forEach(id => {
+  if (p === "assign" && !isAdmin()) p = state.pane = "match";
+  ["match", "pit", "teams", "picks", "event", "assign"].forEach(id => {
     const el = document.getElementById(`scout-pane-${id}`);
     if (el) el.hidden = id !== p;
   });
@@ -188,12 +195,15 @@ function showPane(p) {
 }
 
 function renderAll() {
+  const assignTab = $("#scout-assign-tab");
+  if (assignTab) assignTab.hidden = !isAdmin();
   renderChip();
   renderPicker();
   renderPit();
   renderTeams();
   renderPicks();
   renderEventPane();
+  renderAssign();
 }
 
 function renderChip() {
@@ -246,7 +256,26 @@ function renderPicker() {
   }
   const n = currentMatchNum();
   const match = (ev.matches || []).find(m => m.match_num === n);
-  const head = `
+
+  // Admin assignments: auto-fill this match and show the scout's next one
+  const done = new Set((ctx.getRecords() || []).filter(r => (r.event_key || "") === ev.event_key).map(r => `${r.match_num}:${Number(r.team_num)}`));
+  const myAssigned = state.claims.filter(c => c.scout_id === me()?.id && c.assigned_by_name).sort((a, b) => a.match_num - b.match_num);
+  const mineHere = state.claims.find(c => c.match_num === n && c.scout_id === me()?.id);
+  if (mineHere && match && !$("#scout-team-num").value) {
+    $("#scout-team-num").value = mineHere.team_num;
+    const idx = match.red.indexOf(mineHere.team_num);
+    const station = idx >= 0 ? `R${idx + 1}` : `B${match.blue.indexOf(mineHere.team_num) + 1}`;
+    const st = document.querySelector(`input[name="scout-station"][value="${station}"]`);
+    if (st) st.checked = true;
+  }
+  const upcoming = myAssigned.filter(c => !done.has(`${c.match_num}:${c.team_num}`) && c.match_num >= n);
+  const next = upcoming.find(c => c.match_num !== n) || null;
+  const banner = myAssigned.length ? `
+    <div class="assign-banner">
+      <span><b>Your assignments:</b> ${upcoming.length ? `${upcoming.length} left` : "all done ✓"}${myAssigned.length ? ` · ${[...new Set(myAssigned.map(c => c.match_num))].length} matches total` : ""}</span>
+      ${next ? `<button type="button" class="btn btn--ghost btn--sm" data-goto-match="${next.match_num}">Next: Q${next.match_num} · ${next.team_num} →</button>` : ""}
+    </div>` : "";
+  const head = banner + `
     <div class="scout-picker-head">
       <div>
         <div class="scout-phase-title" style="margin:0;"><span>Pick your robot</span></div>
@@ -269,7 +298,7 @@ function renderPicker() {
       const mine = claim && claim.scout_id === me()?.id;
       const done = scouted.has(team);
       const info = teamInfo(team);
-      const status = done ? "Scouted ✓" : mine ? "Yours — tap to release" : claim ? `Claimed by ${esc(claim.scout_name)}` : "Open";
+      const status = done ? "Scouted ✓" : mine ? (claim.assigned_by_name ? "Assigned to you" : "Yours — tap to release") : claim ? `${claim.assigned_by_name ? "Assigned" : "Claimed"}: ${esc(claim.scout_name)}` : "Open";
       return `<button type="button" class="robot-slot ${station[0] === "R" ? "red" : "blue"} ${mine ? "is-mine" : ""} ${claim && !mine ? "is-taken" : ""} ${done ? "is-done" : ""}"
         data-claim-team="${team}" data-station="${station}" ${claim && !mine ? "disabled" : ""}>
         <span class="robot-station">${station}</span>
@@ -302,6 +331,11 @@ function renderPicker() {
     renderPicker();
   });
   host.querySelectorAll("[data-claim-team]").forEach(b => b.onclick = () => toggleClaim(Number(b.dataset.claimTeam), b.dataset.station));
+  host.querySelectorAll("[data-goto-match]").forEach(b => b.onclick = () => {
+    $("#scout-match-num").value = b.dataset.gotoMatch;
+    $("#scout-team-num").value = "";
+    renderPicker();
+  });
   const qp = $("#scout-team-quickpick");
   if (qp) qp.onchange = () => { $("#scout-team-num").value = qp.value; };
 }
@@ -310,6 +344,7 @@ async function toggleClaim(team, station) {
   const n = currentMatchNum();
   const mine = state.claims.find(c => c.match_num === n && c.scout_id === me()?.id);
   if (mine && mine.team_num === team) {
+    if (mine.assigned_by_name && !confirm(`${mine.assigned_by_name} assigned you this robot. Release it so someone else can scout it?`)) return;
     await db().from("scout_claims").delete().eq("event_key", state.key).eq("match_num", n).eq("team_num", team);
     $("#scout-team-num").value = "";
     await loadClaims();
@@ -860,6 +895,170 @@ async function setActive(key) {
   const { error } = await db().from("scout_events").update({ is_active: true }).eq("event_key", key);
   if (error) return ctx.toast("Couldn't set active event: " + error.message, true);
   await load();
+}
+
+/* ---------- assign pane (admins): who scouts which robot in which match ---------- */
+
+const STATIONS = ["R1", "R2", "R3", "B1", "B2", "B3"];
+const teamAt = (m, st) => (st[0] === "R" ? m.red : m.blue)[Number(st[1]) - 1];
+
+function renderAssign() {
+  const host = $("#scout-pane-assign");
+  if (!host || host.hidden) return;
+  if (!isAdmin()) { host.innerHTML = ""; return; }
+  const ev = event();
+  const matches = ev?.matches || [];
+  if (!matches.length) {
+    host.innerHTML = `<div class="scout-card scout-picker-empty" style="margin:20px;">${ev ? "This event has no imported match schedule yet. Import it from The Blue Alliance under <b>Event</b> to assign scouts." : emptyEvent()}</div>`;
+    return;
+  }
+  const first = matches[0].match_num, last = matches[matches.length - 1].match_num;
+  const claimAt = (n, team) => state.claims.find(c => c.match_num === n && c.team_num === team);
+  const load = new Map();
+  state.claims.forEach(c => load.set(c.scout_id, (load.get(c.scout_id) || 0) + 1));
+  const memberOpts = sel => `<option value="">—</option>` + state.members.map(m => `<option value="${m.id}" ${m.id === sel ? "selected" : ""}>${esc(m.full_name)}</option>`).join("");
+  const unassigned = matches.reduce((n, m) => n + STATIONS.filter(st => !claimAt(m.match_num, teamAt(m, st))).length, 0);
+
+  host.innerHTML = `
+    <div class="scout-pane-head">
+      <div><h3>Assign scouts</h3><span class="muted small">Admins only · ${matches.length} matches · ${unassigned} robot slots unassigned. Assigned scouts see the robot as theirs on the Match tab.</span></div>
+    </div>
+
+    <div class="assign-tools">
+      <div class="scout-card">
+        <div class="scout-phase-title"><span>Assign a range</span></div>
+        <div class="assign-row">
+          <select id="as-scout" aria-label="Scout">${memberOpts("")}</select>
+          <select id="as-station" aria-label="Station">${STATIONS.map(s => `<option>${s}</option>`).join("")}</select>
+          <label class="assign-range">Q<input id="as-from" type="number" min="${first}" max="${last}" value="${first}" aria-label="From match"></label>
+          <label class="assign-range">to Q<input id="as-to" type="number" min="${first}" max="${last}" value="${Math.min(last, first + 9)}" aria-label="To match"></label>
+          <button type="button" class="btn btn--primary btn--sm" id="as-apply">Assign</button>
+        </div>
+      </div>
+      <div class="scout-card">
+        <div class="scout-phase-title"><span>Auto-rotate</span><span class="muted small">${state.rotation.size} selected</span></div>
+        <div class="scout-tags" id="as-rotation">
+          ${state.members.map(m => `<label><input type="checkbox" value="${m.id}" ${state.rotation.has(m.id) ? "checked" : ""}><span>${esc(m.full_name)}</span></label>`).join("")}
+        </div>
+        <div class="assign-row">
+          <label class="assign-range">Shift of <input id="ar-block" type="number" min="1" max="30" value="6" aria-label="Matches per shift"> matches</label>
+          <label class="assign-range">Q<input id="ar-from" type="number" min="${first}" max="${last}" value="${first}" aria-label="From match"></label>
+          <label class="assign-range">to Q<input id="ar-to" type="number" min="${first}" max="${last}" value="${last}" aria-label="To match"></label>
+          <button type="button" class="btn btn--primary btn--sm" id="ar-apply">Fill range</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="ar-clear">Clear range</button>
+        </div>
+        <p class="muted small" style="margin:6px 0 0;">Six scouts are on duty each shift; the rest rest. Shifts rotate through everyone you select.</p>
+      </div>
+    </div>
+
+    <div class="assign-load">
+      ${state.members.filter(m => load.has(m.id)).map(m => `<span class="pill">${esc(m.full_name)} · ${load.get(m.id)}</span>`).join("") || `<span class="muted small">No one assigned yet.</span>`}
+    </div>
+
+    <div class="assign-grid-wrap">
+      <table class="assign-grid">
+        <thead><tr><th>Match</th>${STATIONS.map(st => `<th class="${st[0] === "R" ? "red" : "blue"}">${st}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${matches.map(m => `<tr>
+            <th>Q${m.match_num}</th>
+            ${STATIONS.map(st => {
+              const team = teamAt(m, st);
+              const c = claimAt(m.match_num, team);
+              return `<td class="${st[0] === "R" ? "red" : "blue"} ${c ? "is-set" : ""}">
+                <span class="assign-team">${team ?? "—"}</span>
+                <select data-assign-match="${m.match_num}" data-assign-team="${team}" aria-label="Scout for Q${m.match_num} ${st}">${memberOpts(c?.scout_id || "")}</select>
+              </td>`;
+            }).join("")}
+          </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+
+  host.querySelectorAll("[data-assign-match]").forEach(sel => sel.onchange = async () => {
+    const n = Number(sel.dataset.assignMatch), team = Number(sel.dataset.assignTeam);
+    await assignSlots([{ n, team, scoutId: sel.value || null }]);
+  });
+  $("#as-apply").onclick = async () => {
+    const scoutId = $("#as-scout").value;
+    if (!scoutId) return ctx.toast("Choose a scout first.", true);
+    const st = $("#as-station").value, from = Number($("#as-from").value), to = Number($("#as-to").value);
+    const slots = matches.filter(m => m.match_num >= from && m.match_num <= to).map(m => ({ n: m.match_num, team: teamAt(m, st), scoutId }));
+    await assignSlots(slots, `Assigned ${memberName(scoutId)} to ${st} for ${slots.length} matches.`);
+  };
+  $("#as-rotation").onchange = e => {
+    const cb = e.target.closest("input");
+    if (!cb) return;
+    cb.checked ? state.rotation.add(cb.value) : state.rotation.delete(cb.value);
+    host.querySelector(".assign-tools .scout-card:nth-child(2) .scout-phase-title span:last-child").textContent = `${state.rotation.size} selected`;
+  };
+  $("#ar-apply").onclick = async () => {
+    const people = state.members.filter(m => state.rotation.has(m.id)).map(m => m.id);
+    if (!people.length) return ctx.toast("Select the scouts to rotate.", true);
+    const block = Math.max(1, Number($("#ar-block").value) || 6);
+    const from = Number($("#ar-from").value), to = Number($("#ar-to").value);
+    const range = matches.filter(m => m.match_num >= from && m.match_num <= to);
+    if (!confirm(`Fill Q${from}–Q${to} by rotating ${people.length} scouts in ${block}-match shifts? This replaces existing assignments in that range.`)) return;
+    const slots = rotationPlan(range, people, block);
+    await clearRange(from, to);
+    await assignSlots(slots, `Filled ${range.length} matches with ${people.length} scouts.`);
+  };
+  $("#ar-clear").onclick = async () => {
+    const from = Number($("#ar-from").value), to = Number($("#ar-to").value);
+    if (!confirm(`Remove every assignment and claim from Q${from} to Q${to}?`)) return;
+    await clearRange(from, to);
+    await loadClaims();
+    renderAssign();
+    ctx.toast(`Cleared Q${from}–Q${to}.`);
+  };
+}
+
+/* Six on duty per shift; the on-duty group advances through the roster each shift so everyone rests in turn */
+function rotationPlan(range, people, block) {
+  const slots = [];
+  range.forEach((m, i) => {
+    const shift = Math.floor(i / block);
+    const onDuty = Math.min(6, people.length);
+    STATIONS.slice(0, onDuty).forEach((st, k) => {
+      const scoutId = people[(shift * onDuty + k) % people.length];
+      slots.push({ n: m.match_num, team: teamAt(m, st), scoutId });
+    });
+  });
+  return slots;
+}
+
+const memberName = id => state.members.find(m => m.id === id)?.full_name || "Scout";
+
+async function clearRange(from, to) {
+  const { error } = await db().from("scout_claims").delete().eq("event_key", state.key).gte("match_num", from).lte("match_num", to);
+  if (error) ctx.toast("Couldn't clear: " + error.message, true);
+}
+
+/* slots: [{ n, team, scoutId|null }]. Frees the robot and the scout's other robot in that match, then writes. */
+async function assignSlots(slots, doneMsg) {
+  const valid = slots.filter(s => s.team != null);
+  const removals = [];
+  valid.forEach(s => {
+    removals.push(db().from("scout_claims").delete().eq("event_key", state.key).eq("match_num", s.n).eq("team_num", s.team));
+  });
+  await Promise.all(removals);
+  const rows = valid.filter(s => s.scoutId).map(s => ({
+    event_key: state.key, match_num: s.n, team_num: s.team, scout_id: s.scoutId, scout_name: memberName(s.scoutId),
+    assigned_by_name: myName(), claimed_at: new Date().toISOString(),
+  }));
+  // A scout can only hold one robot per match: drop their other robot in these matches first
+  const byScout = new Map();
+  rows.forEach(r => byScout.set(r.scout_id, [...(byScout.get(r.scout_id) || []), r.match_num]));
+  await Promise.all([...byScout].map(([sid, ns]) => db().from("scout_claims").delete().eq("event_key", state.key).eq("scout_id", sid).in("match_num", ns)));
+  let error = null;
+  for (let i = 0; i < rows.length && !error; i += 200) {
+    ({ error } = await db().from("scout_claims").insert(rows.slice(i, i + 200)));
+  }
+  await loadClaims();
+  renderAssign();
+  renderPicker();
+  if (error) return ctx.toast("Some assignments failed: " + error.message, true);
+  ctx.logAction("SCOUT_ASSIGNMENTS", "scout_claims", state.key, { event_key: state.key, slots: rows.length });
+  if (doneMsg) ctx.toast(doneMsg);
 }
 
 /* ---------- shared bits ---------- */

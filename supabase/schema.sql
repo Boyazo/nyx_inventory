@@ -658,9 +658,14 @@ using((select public.is_team_admin())) with check((select public.is_team_admin()
 
 drop policy if exists "Members read claims" on public.scout_claims;
 create policy "Members read claims" on public.scout_claims for select to authenticated using((select public.is_approved_member()));
+-- Scouts claim robots for themselves; admins can also assign any scout to any robot
+alter table public.scout_claims add column if not exists assigned_by_name text not null default '';
 drop policy if exists "Members claim robots for themselves" on public.scout_claims;
 create policy "Members claim robots for themselves" on public.scout_claims for insert to authenticated
-with check(scout_id = (select auth.uid()) and (select public.is_approved_member()));
+with check((scout_id = (select auth.uid()) and (select public.is_approved_member())) or (select public.is_team_admin()));
+drop policy if exists "Admins reassign claims" on public.scout_claims;
+create policy "Admins reassign claims" on public.scout_claims for update to authenticated
+using((select public.is_team_admin())) with check((select public.is_team_admin()));
 drop policy if exists "Members release own claims; admins any" on public.scout_claims;
 create policy "Members release own claims; admins any" on public.scout_claims for delete to authenticated
 using(scout_id = (select auth.uid()) or (select public.is_team_admin()));
