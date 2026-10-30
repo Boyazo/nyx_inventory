@@ -4383,19 +4383,63 @@ function initPlaybook() {
   // Save Play
   $("#playbook-save-btn")?.addEventListener("click", savePlaybookPlay);
 
-  // Fullscreen Playbook Toggle
+  // Fullscreen Playbook & Apple Whiteboard Drawer Toggle
   const fsBtn = $("#field-fullscreen-btn");
   const pbContainer = $(".playbook-container");
+  const toolsToggleBtn = $("#field-tools-toggle-btn");
+  const floatFsBtn = $("#field-float-fs-btn");
+  const floatUndoBtn = $("#field-float-undo-btn");
+  const floatClearBtn = $("#field-float-clear-btn");
+
+  function toggleToolsDrawer(force) {
+    if (!pbContainer) return;
+    const isOpen = force !== undefined ? force : !pbContainer.classList.contains("tools-drawer-open");
+    pbContainer.classList.toggle("tools-drawer-open", isOpen);
+    toolsToggleBtn?.classList.toggle("is-open", isOpen);
+  }
 
   function togglePlaybookFullscreen(force) {
     if (!pbContainer) return;
     const isActive = force !== undefined ? force : !pbContainer.classList.contains("fullscreen-active");
     pbContainer.classList.toggle("fullscreen-active", isActive);
+    if (!isActive) {
+      pbContainer.classList.remove("tools-drawer-open");
+      toolsToggleBtn?.classList.remove("is-open");
+    }
     if (fsBtn) fsBtn.innerHTML = isActive ? "✕ Exit Fullscreen" : "<i class=fa-expand aria-hidden=true></i> Fullscreen";
     setTimeout(renderCanvas, 60);
   }
 
   fsBtn?.addEventListener("click", () => togglePlaybookFullscreen());
+  floatFsBtn?.addEventListener("click", () => togglePlaybookFullscreen(false));
+  toolsToggleBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleToolsDrawer();
+  });
+
+  floatUndoBtn?.addEventListener("click", () => {
+    if (playHistory.length > 0) {
+      playHistory.pop();
+      renderCanvas();
+      toast("Undid last action.");
+    }
+  });
+
+  floatClearBtn?.addEventListener("click", () => {
+    if (playHistory.length === 0) return;
+    if (confirm("Clear all tactical marks on the field?")) {
+      playHistory = [];
+      renderCanvas();
+      toast("Field cleared.");
+    }
+  });
+
+  // Close tools popover when user starts drawing or clicks outside
+  canvas.addEventListener("pointerdown", () => {
+    if (pbContainer.classList.contains("tools-drawer-open")) {
+      toggleToolsDrawer(false);
+    }
+  });
 
   // Listen for orientation change on mobile devices: auto-fullscreen landscape field when in strategy tab
   function handleOrientationChange() {
