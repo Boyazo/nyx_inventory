@@ -1937,42 +1937,86 @@ body.is-dragging-task, body.is-dragging-task * { cursor: grabbing !important; }
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
+  width: 100dvw !important;
   height: 100vh !important;
+  height: 100dvh !important;
   max-width: 100vw !important;
   max-height: 100vh !important;
   z-index: 99999 !important;
   background: #090912 !important;
-  padding: 8px !important;
+  padding: env(safe-area-inset-top, 6px) env(safe-area-inset-right, 8px) env(safe-area-inset-bottom, 6px) env(safe-area-inset-left, 8px) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 .playbook-container.fullscreen-active .canvas-wrapper {
-  flex: 1 1 auto !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
   height: 100% !important;
-  max-height: calc(100vh - 100px) !important;
+  width: 100% !important;
+  max-height: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border-radius: 6px !important;
+  background: #000 !important;
+  overflow: hidden !important;
 }
 .playbook-container.fullscreen-active #field-canvas {
-  width: auto !important;
-  height: 100% !important;
-  max-height: 100% !important;
   max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto !important;
+  height: auto !important;
   aspect-ratio: 2 / 1 !important;
   object-fit: contain !important;
+  display: block !important;
+  margin: auto !important;
 }
 .playbook-container.fullscreen-active .playbook-toolbar {
   position: relative !important;
+  flex-shrink: 0 !important;
   flex-direction: row !important;
-  flex-wrap: wrap !important;
-  gap: 6px !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 8px !important;
   padding: 6px 10px !important;
-  background: rgba(18, 20, 28, 0.95) !important;
+  background: rgba(18, 20, 28, 0.96) !important;
   border-radius: 8px !important;
   z-index: 10 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  white-space: nowrap !important;
+  scrollbar-width: none !important;
+}
+.playbook-container.fullscreen-active .playbook-toolbar::-webkit-scrollbar {
+  display: none !important;
+}
+.playbook-container.fullscreen-active .tool-group {
+  flex-wrap: nowrap !important;
+  flex-shrink: 0 !important;
+  gap: 4px !important;
+}
+.playbook-container.fullscreen-active .tool-btn,
+.playbook-container.fullscreen-active .size-btn {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+}
+.playbook-container.fullscreen-active .swatch {
+  width: 24px !important;
+  height: 24px !important;
+}
+.playbook-container.fullscreen-active .btn {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+}
+.playbook-container.fullscreen-active .tool-label {
+  font-size: 10px !important;
 }
 .playbook-container.fullscreen-active .playbook-save-bar,
 .playbook-container.fullscreen-active .eyebrow,
@@ -1980,9 +2024,28 @@ body.is-dragging-task, body.is-dragging-task * { cursor: grabbing !important; }
   display: none !important;
 }
 
-@media (max-width: 950px) and (orientation: landscape) {
-  body.auto-landscape-playbook .playbook-container {
-    padding: 6px !important;
+@media (orientation: landscape) and (max-height: 600px) {
+  .playbook-container.fullscreen-active {
+    padding: env(safe-area-inset-top, 4px) env(safe-area-inset-right, 6px) env(safe-area-inset-bottom, 4px) env(safe-area-inset-left, 6px) !important;
+  }
+  .playbook-container.fullscreen-active .playbook-toolbar {
+    padding: 3px 8px !important;
+    gap: 6px !important;
+  }
+  .playbook-container.fullscreen-active .tool-btn,
+  .playbook-container.fullscreen-active .size-btn,
+  .playbook-container.fullscreen-active .btn {
+    min-height: 28px !important;
+    height: 28px !important;
+    padding: 2px 8px !important;
+    font-size: 10.5px !important;
+  }
+  .playbook-container.fullscreen-active .swatch {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .playbook-container.fullscreen-active .tool-label {
+    display: none !important;
   }
 }
 
