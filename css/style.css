@@ -3756,6 +3756,32 @@ body.is-auth { padding-bottom: 0 !important; }
 .cat-add { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-top: 14px; }
 #categories-modal h4 { margin: 12px 0 8px; font-size: 13px; color: var(--text-muted); }
 
+/* Parts & Tools: choose a type, then narrow the catalog. */
+.inventory-browser { padding: 0 20px 16px; border-bottom: 1px solid var(--line); }
+.inventory-kinds { display: flex; gap: 8px; margin-bottom: 18px; }
+.inventory-kind { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.inventory-kind span { border-radius: 5px; background: var(--bg-subtle); padding: 2px 6px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.inventory-kind.active { color: var(--accent); border-color: var(--accent-line); background: var(--accent-dim); }
+.inventory-kind:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.inventory-controls { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(145px, 190px) minmax(165px, 200px); gap: 12px; margin-bottom: 16px; }
+.inventory-controls label { margin: 0; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.inventory-controls input, .inventory-controls select { display: block; width: 100%; margin: 6px 0 0; min-width: 0; min-height: 42px; }
+.inventory-category-filters { margin-bottom: 12px; }
+.inventory-results-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; color: var(--text-muted); font-size: 12px; }
+@media (max-width: 900px) { #inv-filter-tabs { display: none !important; } }
+#inventory-reset[hidden], #startup-retry[hidden] { display: none !important; }
+#view-inventory .inv-section { padding-top: 20px; padding-bottom: 12px; }
+@media (max-width: 700px) {
+  .inventory-browser { padding: 0 12px 12px; }
+  .inventory-kinds { gap: 6px; }
+  .inventory-kind { flex: 1; flex-wrap: wrap; padding: 10px 8px; gap: 5px; }
+  .inventory-kind i { display: none; }
+  .inventory-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  .inventory-controls .inventory-search { grid-column: 1 / -1; }
+  .inventory-results-bar { align-items: flex-start; }
+  .inventory-results-bar .textbtn { flex-shrink: 0; }
+}
+
 /* Full team meeting switch */
 .ftm-toggle { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px !important; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
 .ftm-toggle input { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }

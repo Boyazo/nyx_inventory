@@ -42,21 +42,19 @@ export function groupOf(x) {
   return { section: tool ? "Tools" : "Parts", name, key: `${tool ? 1 : 0}-${String(order).padStart(5, "0")}-${name}` };
 }
 
-/* Filter tabs: All · each part category · All tools · each tool category */
-export function renderFilterTabs(host, items, active) {
+/* Categories are scoped by the Parts / Tools selector above them. */
+export function renderFilterTabs(host, items, active, kind = "all") {
   const count = pred => items.filter(pred).length;
   const tab = (value, label, n, icon = "") =>
-    `<button class="catbtn ${active === value ? "active" : ""}" data-category="${ctx.esc(value)}" type="button">${icon}${ctx.esc(label)} <span>${n}</span></button>`;
+    `<button class="catbtn ${active === value ? "active" : ""}" data-category="${ctx.esc(value)}" type="button" aria-pressed="${active === value}">${icon}${ctx.esc(label)} <span>${n}</span></button>`;
   const parts = partCategories().map(c => tab(c.name, c.name, count(x => !isToolItem(x) && x.category === c.name)));
   const tools = toolCategories().map(c => tab(c.name, c.name, count(x => isToolItem(x) && x.category === c.name)));
   const otherTools = count(x => isToolItem(x) && kindOf(x.category) !== "tool");
   host.innerHTML = [
-    tab("All", "All", items.length),
-    ...parts,
-    `<span class="cat-divider" aria-hidden="true"></span>`,
-    tab("ToolsOnly", "All tools", count(isToolItem), `<i class=fa-screwdriver-wrench aria-hidden=true></i> `),
-    ...tools,
-    otherTools ? tab(OTHER_TOOLS, OTHER_TOOLS, otherTools) : "",
+    tab("All", "All categories", items.length),
+    ...(kind !== "tool" ? parts : []),
+    ...(kind !== "part" ? tools : []),
+    kind !== "part" && otherTools ? tab(OTHER_TOOLS, OTHER_TOOLS, otherTools) : "",
   ].join("");
 }
 

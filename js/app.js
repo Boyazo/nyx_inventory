@@ -1,7 +1,7 @@
 import * as gcal from "./gcal.js?v=20261028t";
 import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028t";
 import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028t";
-import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028t";
+import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, isToolItem, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028v";
 import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028t";
 import { initActivity, loadShopSession } from "./activity.js?v=20261028t";
 import { initAnalytics } from "./analytics.js?v=20261028t";
@@ -31,6 +31,7 @@ let taskDrag = null;
 let teamMembers = [];
 let shiftAssignSelected = new Set();
 let activeCategory = "All";
+let activeInventoryKind = "all";
 let activePlannerSubsystem = "All";
 let activePartsFilter = "All";
 let activeShiftDept = "All";
@@ -137,6 +138,7 @@ function screens(which) {
     $("#duties-screen")?.classList.add("hidden");
     $("#analytics-screen")?.classList.add("hidden");
   }
+  window.nyxStartup?.finish();
 }
 
 function switchPage(pageName) {
@@ -301,7 +303,6 @@ async function checkUser(user) {
     return;
   }
 
-  screens("inventory");
   const name = data.full_name || user.email || "Team Member";
   const depts = (data.departments && data.departments.length) ? data.departments.join(" · ").toUpperCase() : "GENERAL";
   const roleParts = [];
@@ -340,6 +341,7 @@ async function checkUser(user) {
   if (data.is_secret) {
     loadSecretIntel();
   }
+  screens("inventory");
 
   // Subscribe to realtime changes
   if (!channel) {
@@ -373,6 +375,7 @@ async function checkUser(user) {
   }
   } catch (err) {
     console.error("checkUser error:", err);
+    window.nyxStartup?.fail("Couldn't load your workspace. Please try again.");
     toast("Workspace load error: " + err.message, true);
   }
 }
@@ -580,35 +583,52 @@ function renderStockBar() {
 
 function renderItems() {
   renderStockBar();
-  const toolsCount = allItems.filter(x => x.is_tool).length;
+  const toolsCount = allItems.filter(isToolItem).length;
+  $("#inv-count-all").textContent = allItems.length;
+  $("#inv-count-parts").textContent = allItems.length - toolsCount;
+  $("#inv-count-tools").textContent = toolsCount;
+  $$('[data-inventory-kind]').forEach(button => {
+    const active = button.dataset.inventoryKind === activeInventoryKind;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 
   const elStatItems = $("#stat-items"); if (elStatItems) elStatItems.textContent = allItems.length;
   const elBadgeAll = $("#badge-all"); if (elBadgeAll) elBadgeAll.textContent = allItems.length;
 
   const tabs = $("#inv-filter-tabs");
-  if (tabs) renderFilterTabs(tabs, allItems, activeCategory);
+  const scopedItems = allItems.filter(x => activeInventoryKind === "all" || isToolItem(x) === (activeInventoryKind === "tool"));
+  if (tabs) renderFilterTabs(tabs, scopedItems, activeCategory, activeInventoryKind);
+  $("#mobile-current-filter-inv-label").textContent = activeCategory === "All" ? "All categories" : activeCategory;
 
   const searchInput = $("#search-items");
   const q = searchInput ? searchInput.value.trim().toLowerCase() : "";
-  const shown = allItems.filter(x => {
+  const stock = $("#inventory-stock").value;
+  const sort = $("#inventory-sort").value;
+  const shown = scopedItems.filter(x => {
     if (!matchesFilter(x, activeCategory)) return false;
+    if (stock !== "all" && stockStatus(x) !== stock) return false;
     if (!q) return true;
     return [x.name, x.category, x.location, x.notes, x.part_number].join(" ").toLowerCase().includes(q);
   });
-
+  $("#inventory-results").textContent = `${shown.length} of ${allItems.length} items · Grouped by category`;
+  $("#inventory-reset").hidden = activeInventoryKind === "all" && activeCategory === "All" && stock === "all" && !q;
 
   const list = $("#items-list");
   if (!list) return;
 
   if (!shown.length) {
     list.innerHTML = '<div style="padding:40px; text-align:center;" class="muted">' +
-      (allItems.length ? "No matching items found. Try another search or category." : "No inventory items recorded yet.") +
+      (allItems.length ? "No items match these filters. Clear filters or try a different search." : "No inventory items recorded yet.") +
       '</div>';
     return;
   }
 
   // Parts first, then tools, each grouped by category (in the admins' category order)
-  const grouped = shown.map(x => ({ x, g: groupOf(x) })).sort((a, b) => a.g.key.localeCompare(b.g.key) || a.x.name.localeCompare(b.x.name));
+  const withinGroup = (a, b) => (sort === "quantity" ? Number(a.quantity) - Number(b.quantity)
+    : sort === "location" ? (a.location || "Shop").localeCompare(b.location || "Shop", undefined, { numeric: true }) : 0)
+    || a.name.localeCompare(b.name, undefined, { numeric: true });
+  const grouped = shown.map(x => ({ x, g: groupOf(x) })).sort((a, b) => a.g.key.localeCompare(b.g.key) || withinGroup(a.x, b.x));
   const groupSize = new Map();
   grouped.forEach(({ g }) => groupSize.set(g.key, (groupSize.get(g.key) || 0) + 1));
   let lastSection = null, lastGroup = null;
@@ -2766,6 +2786,23 @@ $("#checkout-form").addEventListener("submit", async e => {
 
 const elSearchItems = $("#search-items");
 if (elSearchItems) elSearchItems.addEventListener("input", renderItems);
+$(".inventory-kinds")?.addEventListener("click", e => {
+  const button = e.target.closest("[data-inventory-kind]");
+  if (!button) return;
+  activeInventoryKind = button.dataset.inventoryKind;
+  activeCategory = "All";
+  renderItems();
+});
+$("#inventory-stock")?.addEventListener("change", renderItems);
+$("#inventory-sort")?.addEventListener("change", renderItems);
+$("#inventory-reset")?.addEventListener("click", () => {
+  activeInventoryKind = "all";
+  activeCategory = "All";
+  $("#search-items").value = "";
+  $("#inventory-stock").value = "all";
+  renderItems();
+  $("#search-items").focus();
+});
 
 /* Inventory category tabs are rendered from the categories list, so listen on the container */
 $("#inv-filter-tabs")?.addEventListener("click", e => {
@@ -3406,6 +3443,7 @@ async function initSupabase() {
   if (!configured) {
     const elNotice = $("#setup-notice");
     if (elNotice) elNotice.classList.remove("hidden");
+    window.nyxStartup?.fail("The workspace isn't configured yet. Contact your team admin.");
     return;
   }
 
@@ -3438,6 +3476,7 @@ async function initSupabase() {
 
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
+        screens("auth");
         const elRec = $("#recovery-modal");
         if (elRec) elRec.classList.remove("hidden");
       } else if (event === "SIGNED_OUT") {
@@ -3451,13 +3490,16 @@ async function initSupabase() {
 
     const { data, error } = await supabase.auth.getSession();
     if (error) {
-      console.warn("Session check notice:", error.message);
+      throw error;
     }
     if (data?.session) {
       await checkUser(data.session.user);
+    } else {
+      screens("auth");
     }
   } catch (err) {
     console.error("Supabase init error:", err);
+    window.nyxStartup?.fail("Couldn't connect to your workspace. Check your connection and try again.");
     const elNotice = $("#setup-notice");
     if (elNotice) {
       elNotice.classList.remove("hidden");
