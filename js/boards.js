@@ -355,8 +355,8 @@ async function importPlanner() {
 function newCard(listId) {
   state.draft = { id: null, board_id: state.boardId, list_id: listId, title: "", description: "", labels: [], assignees: [], start_date: null, due_date: null, checklist: [] };
   state.openCard = null;
+  $("#bd-modal").classList.remove("hidden"); // visible first, so the text boxes can size to their content
   renderCardModal();
-  $("#bd-modal").classList.remove("hidden");
   $("#bd-c-title")?.focus();
 }
 
@@ -539,8 +539,8 @@ function ensureModal() {
 }
 function openCard(id) {
   state.openCard = id;
-  renderCardModal();
   $("#bd-modal").classList.remove("hidden");
+  renderCardModal();
 }
 function closeCard() {
   const active = document.activeElement;
@@ -607,7 +607,7 @@ function renderCardModal() {
     </div>`;
 
   const title = $("#bd-c-title");
-  const fit = ta => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
+  const fit = ta => { ta.style.height = "auto"; if (ta.scrollHeight) ta.style.height = ta.scrollHeight + 2 + "px"; };
   fit(title);
   title.oninput = () => { fit(title); if (draft) c.title = title.value; };
   title.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); if (draft) createCard(); else title.blur(); } };
