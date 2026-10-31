@@ -334,6 +334,7 @@ function sanitize(html) {
 
 /* ---------- saving ---------- */
 function markDirty(now) {
+  $(".docs-templates--inline")?.remove(); // templates only offered on an empty page
   state.dirty = true;
   state.lastEditAt = Date.now();
   renderStatus();

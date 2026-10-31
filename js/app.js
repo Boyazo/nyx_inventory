@@ -7,7 +7,7 @@ import { initActivity, loadShopSession } from "./activity.js?v=20261028t";
 import { initAnalytics } from "./analytics.js?v=20261028t";
 import { initDuties } from "./duties.js?v=20261028t";
 import { initSeason } from "./season.js?v=20261031a";
-import { initDocs } from "./docs.js?v=20261031e";
+import { initDocs } from "./docs.js?v=20261031f";
 import { initBoards } from "./boards.js?v=20261031c";
 import { initScoutHub } from "./scouting.js?v=20261028t";
 
