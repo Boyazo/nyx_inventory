@@ -1054,7 +1054,7 @@ insert into public.boards (name, short, description, color, labels, sort) values
   ('Hardware', 'HW', 'Mechanical, electrical and CAD work', '#d97706', array['Mechanical', 'Electrical', 'CAD', 'Fabrication', 'Blocked', 'Urgent'], 10),
   ('Software', 'SW', 'Robot code, autos, vision and tools', '#2563eb', array['Bug', 'Feature', 'Auto', 'Vision', 'Tuning', 'Urgent'], 20),
   ('Business & Marketing', 'BAM', 'Sponsors, outreach, awards, media and fundraising', '#db2777', array['Sponsors', 'Outreach', 'Social', 'Awards', 'Fundraising', 'Urgent'], 30),
-  ('Team Timeline', 'Timeline', 'Season milestones, events and deadlines for the whole team', '#5b3ce6', array['Milestone', 'Event', 'Deadline', 'Travel'], 40)
+  ('Team Timeline', 'Timeline', 'Season milestones, events and deadlines for the whole team', '#5b3ce6', array['Milestone', 'Event', 'Deadline', 'Travel'], 5)
 on conflict (name) do nothing;
 
 -- Default lists, only for boards that have none yet
