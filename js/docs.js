@@ -182,7 +182,8 @@ async function openDoc(id) {
   ancestors(current()).forEach(a => state.expanded.add(a.id));
   renderNav();
   renderPage();
-  $("#docs-page")?.scrollIntoView({ block: "start", behavior: "smooth" });
+  // On phones the page list sits above the page, so bring the page into view
+  if (window.innerWidth <= 860) $("#docs-page")?.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
 /* ---------- page ---------- */

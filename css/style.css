@@ -2229,9 +2229,9 @@ body.is-dragging-task, body.is-dragging-task * { cursor: grabbing !important; }
 }
 
 
-/* By default on PC/Desktop screens (>900px), hide mobile bottom navigation bar */
-.mobile-bottom-nav {
-  display: none !important;
+/* PC/Desktop screens (>900px) hide the mobile bottom navigation bar */
+@media (min-width: 901px) {
+  .mobile-bottom-nav { display: none !important; }
 }
 
 /* Modal Bottom Sheets */
@@ -4214,3 +4214,6 @@ html.is-touch .bd-chip-input { width: 120px !important; }
 .sidebar-link.active .sidebar-icon { filter: none; opacity: 1; }
 .sidebar-count { font-size: 11.5px; font-weight: 600; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .sidebar-link.active .sidebar-count { color: var(--accent); }
+#docs-page { scroll-margin-top: 80px; }
+/* Bottom-bar tabs the viewer can't use (e.g. Secret Intel) stay hidden on phones too */
+.mobile-bottom-nav .mobile-nav-item.hidden { display: none !important; }
