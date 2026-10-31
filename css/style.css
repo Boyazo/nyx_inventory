@@ -2229,9 +2229,9 @@ body.is-dragging-task, body.is-dragging-task * { cursor: grabbing !important; }
 }
 
 
-/* By default on PC/Desktop screens (>900px), hide mobile bottom navigation bar */
-.mobile-bottom-nav {
-  display: none !important;
+/* PC/Desktop screens (>900px) hide the mobile bottom navigation bar */
+@media (min-width: 901px) {
+  .mobile-bottom-nav { display: none !important; }
 }
 
 /* Modal Bottom Sheets */
@@ -2547,9 +2547,8 @@ body.is-dragging-task, body.is-dragging-task * { cursor: grabbing !important; }
 }
 
 /* Planner cards: keep long-press from triggering text selection / callouts on touch */
-@media (hover: none) {
-  .task-card:hover { transform: none; }
-}
+/* touchscreens (html.is-touch is set in index.html) */
+html.is-touch .task-card:hover { transform: none; }
 
 /* Shift member picker (admin) */
 .assign-box {
@@ -3089,7 +3088,8 @@ label { color: var(--text) !important; font-weight: 500; font-size: 13px; }
 .pick-ghost { position: fixed; z-index: 9999; pointer-events: none; box-shadow: var(--shadow-md); transform: rotate(1.5deg); cursor: grabbing; }
 .pick-placeholder { border: 2px dashed var(--accent-line); border-radius: 8px; background: var(--accent-dim); }
 .scout-event-row { display: grid !important; grid-template-columns: minmax(200px, 2fr) 1fr auto auto; align-items: center; gap: 10px; }
-@media (hover: none) { .pick-move { display: block; } }
+/* touchscreens (html.is-touch is set in index.html) */
+html.is-touch .pick-move { display: block; }
 
 @media (max-width: 900px) {
   .scout-hubbar { padding: 0 12px 10px; }
@@ -3699,52 +3699,46 @@ body.is-auth { padding-bottom: 0 !important; }
 /* ==========================================================================
    Touchscreens: 44px targets (Apple HIG), 16px inputs, no hover-only behaviour
    ========================================================================== */
-@media (pointer: coarse) {
-  html { -webkit-tap-highlight-color: transparent; }
-  button, a, input, select, textarea, label { touch-action: manipulation; }   /* no double-tap zoom delay */
-
-  .btn, .btn--sm, .shop-checkin, .gcal-btn, .gcal-create, .global-search-btn, .sidebar-toggle-btn { min-height: 44px !important; }
-  .btn--sm { padding-left: 14px !important; padding-right: 14px !important; }
-  .actionbtn, .task-stepbtn { min-height: 40px !important; min-width: 40px; padding: 8px 12px !important; }
-  .catbtn, .viewtab, .scout-subnav button, .gcal-views button, .duty-toggle button, .theme-opt-btn, .auth-switch .tab { min-height: 42px !important; }
-  .sidebar-link { min-height: 46px !important; }
-  .sidebar-sublink { min-height: 42px; padding: 10px 12px; font-size: 14px; }
-  .textbtn { min-height: 40px; padding: 8px 4px; }
-  .close, .gcal-pop-close { min-width: 44px; min-height: 44px; }
-  .gcal-icon { width: 44px; height: 44px; }
-  .gcal-icon.sm { width: 36px; height: 36px; }
-  .gcal-mini-grid button { min-height: 34px; }
-  .gcal-resize { height: 16px; }
-  .gcal-ev { min-height: 28px; }
-
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, .search { min-height: 46px; font-size: 16px !important; }
-  textarea { font-size: 16px !important; }
-  input[type="checkbox"], input[type="radio"] { width: 22px; height: 22px; }
-  label { padding-top: 2px; padding-bottom: 2px; }
-
-  .qtybtn { width: 44px !important; height: 44px !important; }
-  .scout-step-btns button { min-height: 48px; min-width: 52px; }
-  .scout-tags span, .assign-chip, .role-toggle span { padding: 10px 14px !important; }
-  .scout-toggle-pill { min-height: 48px; }
-  .robot-slot, .pit-tile { min-height: 96px; }
-  .duty-cell { min-height: 52px; }
-  .pp-row { padding: 12px; }
-  .pick-move { display: block; min-height: 40px; }
-  .an-barrow { padding: 8px 0; }
-  .an-table th, .an-table td { padding-top: 12px; padding-bottom: 12px; }
-  .mobile-nav-item { min-height: 56px; }
-  .mobile-filter-picker-btn, .mobile-picker-btn { min-height: 46px !important; }
-  .tool-btn, .size-btn { min-height: 44px !important; padding: 8px 14px !important; font-size: 14px !important; }
-  .swatch { width: 40px !important; height: 40px !important; }
-  .tool-group { gap: 8px !important; flex-wrap: wrap; }
-
-  /* Spacing so neighbouring targets aren't mis-tapped */
-  .actions, .toolbar-actions, .picks-actions, .modalactions, .user-quick-actions { gap: 10px !important; }
-}
-@media (hover: none) {
-  .task-card:hover, .shift-card:hover, .stat:hover, .itemrow:hover, .play-card:hover, .pit-tile:hover { transform: none !important; background: var(--bg-card) !important; }
-  .gcal-ev .gcal-resize::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 3px; margin-left: -9px; border-radius: 2px; background: rgba(255,255,255,.8); }
-}
+/* touchscreens (html.is-touch is set in index.html) */
+html.is-touch { -webkit-tap-highlight-color: transparent; }
+html.is-touch button, html.is-touch a, html.is-touch input, html.is-touch select, html.is-touch textarea, html.is-touch label { touch-action: manipulation; }   /* no double-tap zoom delay */
+html.is-touch .btn, html.is-touch .btn--sm, html.is-touch .shop-checkin, html.is-touch .gcal-btn, html.is-touch .gcal-create, html.is-touch .global-search-btn, html.is-touch .sidebar-toggle-btn { min-height: 44px !important; }
+html.is-touch .btn--sm { padding-left: 14px !important; padding-right: 14px !important; }
+html.is-touch .actionbtn, html.is-touch .task-stepbtn { min-height: 40px !important; min-width: 40px; padding: 8px 12px !important; }
+html.is-touch .catbtn, html.is-touch .viewtab, html.is-touch .scout-subnav button, html.is-touch .gcal-views button, html.is-touch .duty-toggle button, html.is-touch .theme-opt-btn, html.is-touch .auth-switch .tab { min-height: 42px !important; }
+html.is-touch .sidebar-link { min-height: 46px !important; }
+html.is-touch .sidebar-sublink { min-height: 42px; padding: 10px 12px; font-size: 14px; }
+html.is-touch .textbtn { min-height: 40px; padding: 8px 4px; }
+html.is-touch .close, html.is-touch .gcal-pop-close { min-width: 44px; min-height: 44px; }
+html.is-touch .gcal-icon { width: 44px; height: 44px; }
+html.is-touch .gcal-icon.sm { width: 36px; height: 36px; }
+html.is-touch .gcal-mini-grid button { min-height: 34px; }
+html.is-touch .gcal-resize { height: 16px; }
+html.is-touch .gcal-ev { min-height: 28px; }
+html.is-touch input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), html.is-touch select, html.is-touch .search { min-height: 46px; font-size: 16px !important; }
+html.is-touch textarea { font-size: 16px !important; }
+html.is-touch input[type="checkbox"], html.is-touch input[type="radio"] { width: 22px; height: 22px; }
+html.is-touch label { padding-top: 2px; padding-bottom: 2px; }
+html.is-touch .qtybtn { width: 44px !important; height: 44px !important; }
+html.is-touch .scout-step-btns button { min-height: 48px; min-width: 52px; }
+html.is-touch .scout-tags span, html.is-touch .assign-chip, html.is-touch .role-toggle span { padding: 10px 14px !important; }
+html.is-touch .scout-toggle-pill { min-height: 48px; }
+html.is-touch .robot-slot, html.is-touch .pit-tile { min-height: 96px; }
+html.is-touch .duty-cell { min-height: 52px; }
+html.is-touch .pp-row { padding: 12px; }
+html.is-touch .pick-move { display: block; min-height: 40px; }
+html.is-touch .an-barrow { padding: 8px 0; }
+html.is-touch .an-table th, html.is-touch .an-table td { padding-top: 12px; padding-bottom: 12px; }
+html.is-touch .mobile-nav-item { min-height: 56px; }
+html.is-touch .mobile-filter-picker-btn, html.is-touch .mobile-picker-btn { min-height: 46px !important; }
+html.is-touch .tool-btn, html.is-touch .size-btn { min-height: 44px !important; padding: 8px 14px !important; font-size: 14px !important; }
+html.is-touch .swatch { width: 40px !important; height: 40px !important; }
+html.is-touch .tool-group { gap: 8px !important; flex-wrap: wrap; }
+/* Spacing so neighbouring targets aren't mis-tapped */
+html.is-touch .actions, html.is-touch .toolbar-actions, html.is-touch .picks-actions, html.is-touch .modalactions, html.is-touch .user-quick-actions { gap: 10px !important; }
+/* touchscreens (html.is-touch is set in index.html) */
+html.is-touch .task-card:hover, html.is-touch .shift-card:hover, html.is-touch .stat:hover, html.is-touch .itemrow:hover, html.is-touch .play-card:hover, html.is-touch .pit-tile:hover { transform: none !important; background: var(--bg-card) !important; }
+html.is-touch .gcal-ev .gcal-resize::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 3px; margin-left: -9px; border-radius: 2px; background: rgba(255,255,255,.8); }
 
 /* Inventory grouped by type */
 .cat-divider { width: 1px; align-self: stretch; background: var(--line-strong); margin: 4px 4px; }
@@ -4169,3 +4163,57 @@ body.bd-fullscreen-open { overflow: hidden; }
 .mention-menu button.active, .mention-menu button:hover { background: var(--bg-subtle); }
 .bd-title-input { min-height: 40px; }
 #bd-c-desc { min-height: 96px; }
+
+/* ==========================================================================
+   Touchscreens: Season Schedule, Docs and Boards
+   ========================================================================== */
+html.is-touch .ss-step { width: 44px; height: 44px; }
+html.is-touch .ss-icon { width: 40px; height: 40px; }
+html.is-touch .ss-note-btn, html.is-touch .ss-del, html.is-touch .ss-task .ss-date.is-default { opacity: 1; }
+html.is-touch .ss-task-row { padding: 6px 4px; gap: 10px; align-items: center; }
+html.is-touch .ss-checkwrap { padding: 8px; margin: -8px; }
+html.is-touch .ss-check, html.is-touch .db-check, html.is-touch .bd-cl-item input, html.is-touch .ss-pop-check input { width: 22px !important; height: 22px; }
+html.is-touch .ss-date { padding: 6px 8px; min-height: 36px; }
+html.is-touch .ss-add, html.is-touch .ss-notes-toggle { min-height: 40px; }
+html.is-touch .ss-tl-track { height: 76px; }
+html.is-touch .ss-tl-week { height: 34px; }
+html.is-touch .ss-tl-gate { width: 20px; height: 20px; margin-left: -10px; top: 48px; }
+html.is-touch .ss-menu > button, html.is-touch .docs-turn button { min-height: 44px; font-size: 15px; }
+html.is-touch .ss-popover { width: min(380px, calc(100vw - 24px)); }
+
+html.is-touch .docs-row { min-height: 42px; font-size: 15px; }
+html.is-touch .docs-row-add { opacity: 1; width: 32px; height: 32px; }
+html.is-touch .db-gutter { opacity: .55; }
+html.is-touch .db-plus, html.is-touch .db-handle { width: 30px; height: 32px; }
+html.is-touch .docs-slash button, html.is-touch .mention-menu button { min-height: 48px; }
+html.is-touch .docs-format button { min-width: 42px; height: 40px; font-size: 16px; }
+html.is-touch .docs-emoji button { font-size: 26px; padding: 8px; }
+html.is-touch .docs-crumbs button { min-height: 36px; }
+
+html.is-touch .bd-tab { min-height: 44px; padding: 8px 16px; }
+html.is-touch .bd-add-card { min-height: 44px; }
+html.is-touch .bd-card { padding: 12px; }
+html.is-touch .bd-card-title { font-size: 15px; }
+html.is-touch .bd-label--toggle { padding: 8px 12px; font-size: 13px; }
+html.is-touch .bd-member { padding: 6px 6px 6px 12px; }
+html.is-touch .bd-member button { min-width: 32px; min-height: 32px; }
+html.is-touch .bd-cl-item { min-height: 44px; }
+html.is-touch .bd-tl-row { height: 40px; }
+html.is-touch .bd-tl-bar { height: 32px; }
+html.is-touch .bd-list-head { min-height: 44px; }
+html.is-touch .bd-chip-input { width: 120px !important; }
+
+/* Sidebar: one flat list in labelled groups (Shop / Plan / Compete / Admin) */
+.sidebar-nav { gap: 1px !important; }
+.sidebar-group { display: flex; flex-direction: column; gap: 1px; }
+.sidebar-group:first-child .sidebar-section-title { margin-top: 4px !important; }
+.sidebar-group:not(:has(.sidebar-link:not(.hidden))) { display: none; }
+.sidebar-link .sidebar-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-link .sidebar-icon { width: 18px; text-align: center; flex-shrink: 0; }
+.sidebar-link.active { background: var(--accent-dim) !important; color: var(--accent) !important; }
+.sidebar-link.active .sidebar-icon { filter: none; opacity: 1; }
+.sidebar-count { font-size: 11.5px; font-weight: 600; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.sidebar-link.active .sidebar-count { color: var(--accent); }
+#docs-page { scroll-margin-top: 80px; }
+/* Bottom-bar tabs the viewer can't use (e.g. Secret Intel) stay hidden on phones too */
+.mobile-bottom-nav .mobile-nav-item.hidden { display: none !important; }

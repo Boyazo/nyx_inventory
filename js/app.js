@@ -2,12 +2,12 @@ import * as gcal from "./gcal.js?v=20261028t";
 import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028t";
 import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028t";
 import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028t";
-import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261028t";
+import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_login.js?v=20261031d";
 import { initActivity, loadShopSession } from "./activity.js?v=20261028t";
 import { initAnalytics } from "./analytics.js?v=20261028t";
 import { initDuties } from "./duties.js?v=20261028t";
 import { initSeason } from "./season.js?v=20261031a";
-import { initDocs } from "./docs.js?v=20261031b";
+import { initDocs } from "./docs.js?v=20261031f";
 import { initBoards } from "./boards.js?v=20261031c";
 import { initScoutHub } from "./scouting.js?v=20261028t";
 
@@ -152,17 +152,16 @@ function switchPage(pageName) {
 
   currentAppPage = pageName;
   syncSidebarSubnav();
-  $("#sidebar-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#sidebar-btn-strategy")?.classList.toggle("active", pageName === "strategy");
   $("#sidebar-btn-duties")?.classList.toggle("active", pageName === "duties");
   $("#sidebar-btn-analytics")?.classList.toggle("active", pageName === "analytics");
   $("#analytics-screen")?.classList.toggle("hidden", pageName !== "analytics");
-  $("#mob-btn-duties")?.classList.toggle("active", pageName === "duties");
   $("#duties-screen")?.classList.toggle("hidden", pageName !== "duties");
   // Boards use the full window width; every other page keeps the centred column
   document.body.classList.toggle("page-wide", pageName === "boards");
   ["season", "docs", "boards"].forEach(p => {
     $(`#sidebar-btn-${p}`)?.classList.toggle("active", pageName === p);
+    $(`#mob-btn-${p}`)?.classList.toggle("active", pageName === p);
     $(`#${p}-screen`)?.classList.toggle("hidden", pageName !== p);
   });
   $("#sidebar-btn-secrets")?.classList.toggle("active", pageName === "secrets");
@@ -192,9 +191,9 @@ function switchPage(pageName) {
   }
 }
 
-/* Sidebar sub-navigation mirrors the view tabs (visibility, active state, counts) */
+/* Sidebar links into the dashboard mirror its view tabs (visibility, active state, counts) */
 function syncSidebarSubnav() {
-  $$("#sidebar-subnav .sidebar-sublink").forEach(link => {
+  $$("#sidebar-nav [data-subview]").forEach(link => {
     const tab = document.querySelector(`.viewtab[data-view="${link.dataset.subview}"]`);
     link.classList.toggle("hidden", !tab || tab.classList.contains("hidden"));
     link.classList.toggle("active", currentAppPage === "dashboard" && link.dataset.subview === currentView);
@@ -206,7 +205,7 @@ function syncSidebarSubnav() {
   });
 }
 
-$("#sidebar-subnav")?.addEventListener("click", e => {
+$("#sidebar-nav")?.addEventListener("click", e => {
   const link = e.target.closest("[data-subview]");
   if (!link) return;
   switchPage("dashboard");
@@ -6090,7 +6089,6 @@ function setupSecretsEvents() {
 }
 
 /* Sidebar & Mobile Navigation listeners */
-$("#sidebar-btn-dashboard")?.addEventListener("click", () => switchPage("dashboard"));
 $("#sidebar-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
 $("#sidebar-btn-secrets")?.addEventListener("click", () => switchPage("secrets"));
 $("#sidebar-open-profile-btn")?.addEventListener("click", openProfileModal);
@@ -6098,10 +6096,12 @@ $("#sidebar-open-profile-btn")?.addEventListener("click", openProfileModal);
 // Mobile Bottom Nav Bar Clicks
 $("#mob-btn-dashboard")?.addEventListener("click", () => switchPage("dashboard"));
 $("#mob-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
-$("#mob-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-analytics")?.addEventListener("click", () => switchPage("analytics"));
-["season", "docs", "boards"].forEach(p => $(`#sidebar-btn-${p}`)?.addEventListener("click", () => switchPage(p)));
+["season", "docs", "boards"].forEach(p => {
+  $(`#sidebar-btn-${p}`)?.addEventListener("click", () => switchPage(p));
+  $(`#mob-btn-${p}`)?.addEventListener("click", () => switchPage(p));
+});
 
 /* Inventory categories (admins create; parts vs tools) */
 initInventoryCategories({ getClient: () => supabase, getProfile: () => currentProfile, getItems: () => allItems, reloadItems: () => loadItems(true), toast, esc, logAction });
