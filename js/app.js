@@ -6,6 +6,9 @@ import { initPinLogin, loadPinStatus, setPin, clearPinSession } from "./pin_logi
 import { initActivity, loadShopSession } from "./activity.js?v=20261028t";
 import { initAnalytics } from "./analytics.js?v=20261028t";
 import { initDuties } from "./duties.js?v=20261028t";
+import { initSeason } from "./season.js?v=20261031a";
+import { initDocs } from "./docs.js?v=20261031a";
+import { initBoards } from "./boards.js?v=20261031a";
 import { initScoutHub } from "./scouting.js?v=20261028t";
 
 /* Supabase Configuration */
@@ -136,6 +139,7 @@ function screens(which) {
     $("#secrets-screen")?.classList.add("hidden");
     $("#duties-screen")?.classList.add("hidden");
     $("#analytics-screen")?.classList.add("hidden");
+    ["season", "docs", "boards"].forEach(p => $(`#${p}-screen`)?.classList.add("hidden"));
   }
 }
 
@@ -155,6 +159,10 @@ function switchPage(pageName) {
   $("#analytics-screen")?.classList.toggle("hidden", pageName !== "analytics");
   $("#mob-btn-duties")?.classList.toggle("active", pageName === "duties");
   $("#duties-screen")?.classList.toggle("hidden", pageName !== "duties");
+  ["season", "docs", "boards"].forEach(p => {
+    $(`#sidebar-btn-${p}`)?.classList.toggle("active", pageName === p);
+    $(`#${p}-screen`)?.classList.toggle("hidden", pageName !== p);
+  });
   $("#sidebar-btn-secrets")?.classList.toggle("active", pageName === "secrets");
   $("#mob-btn-dashboard")?.classList.toggle("active", pageName === "dashboard");
   $("#mob-btn-strategy")?.classList.toggle("active", pageName === "strategy");
@@ -172,6 +180,9 @@ function switchPage(pageName) {
     initAnalytics({ getClient: () => supabase, getProfile: () => currentProfile, toast, esc, logAction, myName: () => myShiftName() });
   } else if (pageName === "duties") {
     initDuties({ getClient: () => supabase, getUser: () => currentUser, getProfile: () => currentProfile, toast, esc, logAction });
+  } else if (pageName === "season" || pageName === "docs" || pageName === "boards") {
+    const pageCtx = { getClient: () => supabase, getUser: () => currentUser, getProfile: () => currentProfile, toast, esc, logAction };
+    ({ season: initSeason, docs: initDocs, boards: initBoards })[pageName](pageCtx);
   } else if (pageName === "strategy") {
     initStrategyCenter();
   } else if (pageName === "secrets") {
@@ -6087,6 +6098,7 @@ $("#mob-btn-strategy")?.addEventListener("click", () => switchPage("strategy"));
 $("#mob-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-duties")?.addEventListener("click", () => switchPage("duties"));
 $("#sidebar-btn-analytics")?.addEventListener("click", () => switchPage("analytics"));
+["season", "docs", "boards"].forEach(p => $(`#sidebar-btn-${p}`)?.addEventListener("click", () => switchPage(p)));
 
 /* Inventory categories (admins create; parts vs tools) */
 initInventoryCategories({ getClient: () => supabase, getProfile: () => currentProfile, getItems: () => allItems, reloadItems: () => loadItems(true), toast, esc, logAction });
@@ -6406,6 +6418,9 @@ const commandList = [
   { id: "goto-spending", label: "Go to Spending & Budget Tracker", icon: "<i class=fa-sack-dollar aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("spending"); } },
   { id: "goto-members", label: "Go to Member Permissions & Access", icon: "<i class=fa-users aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("members"); } },
   { id: "goto-logs", label: "Go to Audit & Activity Logs", icon: "<i class=fa-lock aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("logs"); } },
+  { id: "goto-season", label: "Go to Build Season Schedule", icon: "<i class=fa-flag-checkered aria-hidden=true></i>", category: "Planning", run: () => switchPage("season") },
+  { id: "goto-boards", label: "Go to Boards (HW / SW / BAM / Timeline)", icon: "<i class=fa-table-columns aria-hidden=true></i>", category: "Planning", run: () => switchPage("boards") },
+  { id: "goto-docs", label: "Go to Team Docs", icon: "<i class=fa-book aria-hidden=true></i>", category: "Planning", run: () => switchPage("docs") },
   { id: "goto-playbook", label: "Go to Strategy Tactical Whiteboard", icon: "<i class=fa-bullseye aria-hidden=true></i>", category: "Strategy", run: () => { screens("strategy"); stratViews("playbook"); } },
   { id: "goto-rankings", label: "Go to Statbotics Team Rankings", icon: "<i class=fa-chart-column aria-hidden=true></i>", category: "Strategy", run: () => { screens("strategy"); stratViews("rankings"); } },
   { id: "goto-scouting", label: "Go to Match Scouting Sheet", icon: "<i class=fa-pen-to-square aria-hidden=true></i>", category: "Strategy", run: () => { screens("strategy"); stratViews("scouting"); } },

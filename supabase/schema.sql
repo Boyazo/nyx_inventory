@@ -934,3 +934,179 @@ create policy "Members read inventory categories" on public.inventory_categories
 drop policy if exists "Admins manage inventory categories" on public.inventory_categories;
 create policy "Admins manage inventory categories" on public.inventory_categories for all to authenticated
 using((select public.is_team_admin())) with check((select public.is_team_admin()));
+
+-- 19. Build season schedule: weeks / info / checklist sections with checkable tasks and notes.
+-- Everyone reads; admins and moderators edit, tick boxes and write notes.
+create table if not exists public.season_sections (
+  id uuid primary key default gen_random_uuid(),
+  season text not null default '2027',
+  kind text not null default 'week' check (kind in ('week', 'info', 'checklist')),
+  label text not null default '',
+  title text not null default '',
+  start_date date,
+  end_date date,
+  gate_label text not null default '',
+  gate_date date,
+  gate_done boolean not null default false,
+  gate_done_by_name text not null default '',
+  body text not null default '',
+  notes text not null default '',
+  sort double precision not null default 0,
+  updated_by_name text not null default '',
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.season_tasks (
+  id uuid primary key default gen_random_uuid(),
+  section_id uuid not null references public.season_sections(id) on delete cascade,
+  team text not null default '',
+  text text not null default '',
+  done boolean not null default false,
+  done_at timestamptz,
+  done_by_name text not null default '',
+  due_date date,
+  notes text not null default '',
+  sort double precision not null default 0,
+  updated_at timestamptz not null default now()
+);
+create index if not exists season_sections_season_idx on public.season_sections(season, sort);
+create index if not exists season_tasks_section_idx on public.season_tasks(section_id, sort);
+
+alter table public.season_sections enable row level security;
+alter table public.season_tasks enable row level security;
+drop policy if exists "Members read season sections" on public.season_sections;
+create policy "Members read season sections" on public.season_sections for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Staff manage season sections" on public.season_sections;
+create policy "Staff manage season sections" on public.season_sections for all to authenticated using((select public.is_team_staff())) with check((select public.is_team_staff()));
+drop policy if exists "Members read season tasks" on public.season_tasks;
+create policy "Members read season tasks" on public.season_tasks for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Staff manage season tasks" on public.season_tasks;
+create policy "Staff manage season tasks" on public.season_tasks for all to authenticated using((select public.is_team_staff())) with check((select public.is_team_staff()));
+
+-- 20. Team docs (Notion-style pages). Any member writes; staff can lock a page so only staff edit it.
+create table if not exists public.team_docs (
+  id uuid primary key default gen_random_uuid(),
+  parent_id uuid references public.team_docs(id) on delete cascade,
+  title text not null default '',
+  icon text not null default '',
+  blocks jsonb not null default '[]'::jsonb,
+  locked boolean not null default false,
+  sort double precision not null default 0,
+  created_by uuid references auth.users(id) default auth.uid(),
+  created_by_name text not null default '',
+  updated_by_name text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists team_docs_parent_idx on public.team_docs(parent_id, sort);
+
+alter table public.team_docs enable row level security;
+drop policy if exists "Members read docs" on public.team_docs;
+create policy "Members read docs" on public.team_docs for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Members create docs" on public.team_docs;
+create policy "Members create docs" on public.team_docs for insert to authenticated
+with check((select public.is_approved_member()) and created_by = (select auth.uid()) and (not locked or (select public.is_team_staff())));
+drop policy if exists "Members edit unlocked docs" on public.team_docs;
+create policy "Members edit unlocked docs" on public.team_docs for update to authenticated
+using((select public.is_approved_member()) and (not locked or (select public.is_team_staff())))
+with check((select public.is_approved_member()) and (not locked or (select public.is_team_staff())));
+drop policy if exists "Authors and staff delete docs" on public.team_docs;
+create policy "Authors and staff delete docs" on public.team_docs for delete to authenticated
+using((created_by = (select auth.uid()) and not locked) or (select public.is_team_staff()));
+
+-- 21. Trello-style boards (Hardware, Software, Business & Marketing, Team Timeline).
+-- Staff manage boards and lists; any member adds, edits and moves cards; authors and staff delete cards.
+create table if not exists public.boards (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique check (length(trim(name)) > 0),
+  short text not null default '',
+  description text not null default '',
+  color text not null default '#5b3ce6',
+  labels text[] not null default '{}'::text[],
+  sort integer not null default 0
+);
+create table if not exists public.board_lists (
+  id uuid primary key default gen_random_uuid(),
+  board_id uuid not null references public.boards(id) on delete cascade,
+  name text not null check (length(trim(name)) > 0),
+  sort double precision not null default 0,
+  unique (board_id, name)
+);
+create table if not exists public.board_cards (
+  id uuid primary key default gen_random_uuid(),
+  board_id uuid not null references public.boards(id) on delete cascade,
+  list_id uuid not null references public.board_lists(id) on delete cascade,
+  title text not null check (length(trim(title)) > 0),
+  description text not null default '',
+  labels text[] not null default '{}'::text[],
+  assignees text[] not null default '{}'::text[],
+  start_date date,
+  due_date date,
+  checklist jsonb not null default '[]'::jsonb,
+  position double precision not null default 0,
+  created_by uuid references auth.users(id) default auth.uid(),
+  created_by_name text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists board_cards_board_idx on public.board_cards(board_id, list_id, position);
+
+insert into public.boards (name, short, description, color, labels, sort) values
+  ('Hardware', 'HW', 'Mechanical, electrical and CAD work', '#d97706', array['Mechanical', 'Electrical', 'CAD', 'Fabrication', 'Blocked', 'Urgent'], 10),
+  ('Software', 'SW', 'Robot code, autos, vision and tools', '#2563eb', array['Bug', 'Feature', 'Auto', 'Vision', 'Tuning', 'Urgent'], 20),
+  ('Business & Marketing', 'BAM', 'Sponsors, outreach, awards, media and fundraising', '#db2777', array['Sponsors', 'Outreach', 'Social', 'Awards', 'Fundraising', 'Urgent'], 30),
+  ('Team Timeline', 'Timeline', 'Season milestones, events and deadlines for the whole team', '#5b3ce6', array['Milestone', 'Event', 'Deadline', 'Travel'], 40)
+on conflict (name) do nothing;
+
+-- Default lists, only for boards that have none yet
+do $$
+declare b record; l text; i integer;
+begin
+  for b in select id, name from public.boards where not exists (select 1 from public.board_lists where board_id = boards.id) loop
+    i := 0;
+    foreach l in array case b.name
+      when 'Hardware' then array['Backlog', 'To Do', 'In Progress', 'Testing', 'Done']
+      when 'Software' then array['Backlog', 'To Do', 'In Progress', 'Code Review', 'Done']
+      when 'Business & Marketing' then array['Ideas', 'To Do', 'In Progress', 'Waiting on Others', 'Done']
+      when 'Team Timeline' then array['Offseason', 'Kickoff & Prototyping', 'Build Season', 'Competition Prep', 'Competitions', 'Done']
+      else array['To Do', 'In Progress', 'Done'] end
+    loop
+      i := i + 1;
+      insert into public.board_lists (board_id, name, sort) values (b.id, l, i * 1000) on conflict do nothing;
+    end loop;
+  end loop;
+end $$;
+
+alter table public.boards enable row level security;
+alter table public.board_lists enable row level security;
+alter table public.board_cards enable row level security;
+drop policy if exists "Members read boards" on public.boards;
+create policy "Members read boards" on public.boards for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Staff manage boards" on public.boards;
+create policy "Staff manage boards" on public.boards for all to authenticated using((select public.is_team_staff())) with check((select public.is_team_staff()));
+drop policy if exists "Members read board lists" on public.board_lists;
+create policy "Members read board lists" on public.board_lists for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Staff manage board lists" on public.board_lists;
+create policy "Staff manage board lists" on public.board_lists for all to authenticated using((select public.is_team_staff())) with check((select public.is_team_staff()));
+drop policy if exists "Members read board cards" on public.board_cards;
+create policy "Members read board cards" on public.board_cards for select to authenticated using((select public.is_approved_member()));
+drop policy if exists "Members add board cards" on public.board_cards;
+create policy "Members add board cards" on public.board_cards for insert to authenticated
+with check((select public.is_approved_member()) and created_by = (select auth.uid()));
+drop policy if exists "Members edit board cards" on public.board_cards;
+create policy "Members edit board cards" on public.board_cards for update to authenticated
+using((select public.is_approved_member())) with check((select public.is_approved_member()));
+drop policy if exists "Authors and staff delete board cards" on public.board_cards;
+create policy "Authors and staff delete board cards" on public.board_cards for delete to authenticated
+using(created_by = (select auth.uid()) or (select public.is_team_staff()));
+
+do $$
+declare t text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach t in array array['season_sections', 'season_tasks', 'team_docs', 'boards', 'board_lists', 'board_cards'] loop
+      if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      end if;
+    end loop;
+  end if;
+end $$;
