@@ -30,8 +30,12 @@ async function call(action, payload = {}, withSession = false) {
   return res.json().catch(() => ({ error: "Unexpected response." }));
 }
 
+const isTouch = () => document.documentElement.classList.contains("is-touch");
+
 export function initPinLogin(context) {
   ctx = context;
+  // Touchscreens (shop tablets and kiosks) start on the PIN pad; "Use email instead" switches back
+  if (isTouch()) showPin(true);
 
   $("#show-pin-login")?.addEventListener("click", () => showPin(true));
   $("#pin-back")?.addEventListener("click", () => showPin(false));
@@ -79,7 +83,8 @@ export function showPin(on) {
   $("#pin-form")?.classList.toggle("hidden", !on);
   $("#auth-title").textContent = on ? "Sign in with PIN" : "Sign in";
   $("#auth-message")?.classList.add("hidden");
-  if (on) setTimeout(() => $("#pin-input")?.focus({ preventScroll: true }), 30);
+  // On touchscreens the on-screen pad is used, so don't pop up the device keyboard
+  if (on && !isTouch()) setTimeout(() => $("#pin-input")?.focus({ preventScroll: true }), 30);
 }
 
 function syncPin() {

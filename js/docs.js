@@ -182,7 +182,8 @@ async function openDoc(id) {
   ancestors(current()).forEach(a => state.expanded.add(a.id));
   renderNav();
   renderPage();
-  $("#docs-page")?.scrollIntoView({ block: "start", behavior: "smooth" });
+  // On phones the page list sits above the page, so bring the page into view
+  if (window.innerWidth <= 860) $("#docs-page")?.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
 /* ---------- page ---------- */
@@ -333,6 +334,7 @@ function sanitize(html) {
 
 /* ---------- saving ---------- */
 function markDirty(now) {
+  $(".docs-templates--inline")?.remove(); // templates only offered on an empty page
   state.dirty = true;
   state.lastEditAt = Date.now();
   renderStatus();
