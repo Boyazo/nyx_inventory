@@ -4202,3 +4202,15 @@ html.is-touch .bd-tl-row { height: 40px; }
 html.is-touch .bd-tl-bar { height: 32px; }
 html.is-touch .bd-list-head { min-height: 44px; }
 html.is-touch .bd-chip-input { width: 120px !important; }
+
+/* Sidebar: one flat list in labelled groups (Shop / Plan / Compete / Admin) */
+.sidebar-nav { gap: 1px !important; }
+.sidebar-group { display: flex; flex-direction: column; gap: 1px; }
+.sidebar-group:first-child .sidebar-section-title { margin-top: 4px !important; }
+.sidebar-group:not(:has(.sidebar-link:not(.hidden))) { display: none; }
+.sidebar-link .sidebar-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-link .sidebar-icon { width: 18px; text-align: center; flex-shrink: 0; }
+.sidebar-link.active { background: var(--accent-dim) !important; color: var(--accent) !important; }
+.sidebar-link.active .sidebar-icon { filter: none; opacity: 1; }
+.sidebar-count { font-size: 11.5px; font-weight: 600; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.sidebar-link.active .sidebar-count { color: var(--accent); }

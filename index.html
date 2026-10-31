@@ -28,7 +28,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261031d">
+<link rel="stylesheet" href="css/style.css?v=20261031e">
 </head>
 <body class="is-auth">
 
@@ -51,49 +51,71 @@
       </div>
     </div>
 
-    <div class="sidebar-section-title">Main menu</div>
-    <nav class="sidebar-nav">
-      <button class="sidebar-link active" id="sidebar-btn-dashboard" data-page="dashboard" type="button">
-        <span class="sidebar-icon"><i class=fa-screwdriver-wrench aria-hidden=true></i></span>
-        <span class="sidebar-label">Dashboard</span>
-      </button>
-      <div class="sidebar-subnav" id="sidebar-subnav">
-        <button class="sidebar-sublink" data-subview="inventory" type="button">Inventory <span data-badge="badge-all"></span></button>
-        <button class="sidebar-sublink" data-subview="checkouts" type="button">Checkouts <span data-badge="badge-checkouts"></span></button>
-        <button class="sidebar-sublink" data-subview="parts-needed" type="button">Parts Needed <span data-badge="badge-parts-needed"></span></button>
-        <button class="sidebar-sublink" data-subview="shifts" type="button">Shifts <span data-badge="badge-shifts"></span></button>
-        <button class="sidebar-sublink hidden" data-subview="planner" type="button">Planner <span data-badge="badge-planner"></span></button>
-        <button class="sidebar-sublink" data-subview="spending" type="button">Spending</button>
-        <button class="sidebar-sublink" data-subview="members" type="button">Members <span data-badge="badge-members"></span></button>
+    <nav class="sidebar-nav" id="sidebar-nav" aria-label="Main menu">
+      <div class="sidebar-group">
+        <div class="sidebar-section-title">Shop</div>
+        <button class="sidebar-link" data-subview="inventory" type="button">
+          <span class="sidebar-icon"><i class=fa-box aria-hidden=true></i></span>
+          <span class="sidebar-label">Inventory</span><span class="sidebar-count" data-badge="badge-all"></span>
+        </button>
+        <button class="sidebar-link" data-subview="checkouts" type="button">
+          <span class="sidebar-icon"><i class=fa-screwdriver-wrench aria-hidden=true></i></span>
+          <span class="sidebar-label">Checkouts</span><span class="sidebar-count" data-badge="badge-checkouts"></span>
+        </button>
+        <button class="sidebar-link" data-subview="parts-needed" type="button">
+          <span class="sidebar-icon"><i class=fa-cart-shopping aria-hidden=true></i></span>
+          <span class="sidebar-label">Parts Needed</span><span class="sidebar-count" data-badge="badge-parts-needed"></span>
+        </button>
+        <button class="sidebar-link" data-subview="shifts" type="button">
+          <span class="sidebar-icon"><i class=fa-clock aria-hidden=true></i></span>
+          <span class="sidebar-label">Shifts</span><span class="sidebar-count" data-badge="badge-shifts"></span>
+        </button>
       </div>
-      <button class="sidebar-link" id="sidebar-btn-season" data-page="season" type="button">
-        <span class="sidebar-icon"><i class=fa-flag-checkered aria-hidden=true></i></span>
-        <span class="sidebar-label">Season Schedule</span>
-      </button>
-      <button class="sidebar-link" id="sidebar-btn-boards" data-page="boards" type="button">
-        <span class="sidebar-icon"><i class=fa-table-columns aria-hidden=true></i></span>
-        <span class="sidebar-label">Boards</span>
-      </button>
-      <button class="sidebar-link" id="sidebar-btn-docs" data-page="docs" type="button">
-        <span class="sidebar-icon"><i class=fa-book aria-hidden=true></i></span>
-        <span class="sidebar-label">Docs</span>
-      </button>
-      <button class="sidebar-link hidden" id="sidebar-btn-analytics" data-page="analytics" type="button">
-        <span class="sidebar-icon"><i class=fa-chart-line aria-hidden=true></i></span>
-        <span class="sidebar-label">Analytics</span>
-      </button>
-      <button class="sidebar-link" id="sidebar-btn-duties" data-page="duties" type="button">
-        <span class="sidebar-icon"><i class=fa-calendar aria-hidden=true></i></span>
-        <span class="sidebar-label">Competition Sign-ups</span>
-      </button>
-      <button class="sidebar-link" id="sidebar-btn-strategy" data-page="strategy" type="button">
-        <span class="sidebar-icon"><i class=fa-bullseye aria-hidden=true></i></span>
-        <span class="sidebar-label">Strategy & Scouting</span>
-      </button>
-      <button class="sidebar-link hidden" id="sidebar-btn-secrets" data-page="secrets" type="button" style="color:#f43f5e; border-color:rgba(244, 63, 94, 0.2);">
-        <span class="sidebar-icon"><i class=fa-user-secret aria-hidden=true></i></span>
-        <span class="sidebar-label">Secret Intel</span>
-      </button>
+      <div class="sidebar-group">
+        <div class="sidebar-section-title">Plan</div>
+        <button class="sidebar-link" id="sidebar-btn-season" data-page="season" type="button">
+          <span class="sidebar-icon"><i class=fa-flag-checkered aria-hidden=true></i></span>
+          <span class="sidebar-label">Season Schedule</span>
+        </button>
+        <button class="sidebar-link" id="sidebar-btn-boards" data-page="boards" type="button">
+          <span class="sidebar-icon"><i class=fa-table-columns aria-hidden=true></i></span>
+          <span class="sidebar-label">Boards</span>
+        </button>
+        <button class="sidebar-link" id="sidebar-btn-docs" data-page="docs" type="button">
+          <span class="sidebar-icon"><i class=fa-book aria-hidden=true></i></span>
+          <span class="sidebar-label">Docs</span>
+        </button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-section-title">Compete</div>
+        <button class="sidebar-link" id="sidebar-btn-strategy" data-page="strategy" type="button">
+          <span class="sidebar-icon"><i class=fa-bullseye aria-hidden=true></i></span>
+          <span class="sidebar-label">Strategy &amp; Scouting</span>
+        </button>
+        <button class="sidebar-link" id="sidebar-btn-duties" data-page="duties" type="button">
+          <span class="sidebar-icon"><i class=fa-calendar-check aria-hidden=true></i></span>
+          <span class="sidebar-label">Competition Sign-ups</span>
+        </button>
+        <button class="sidebar-link hidden" id="sidebar-btn-secrets" data-page="secrets" type="button" style="color:#f43f5e;">
+          <span class="sidebar-icon"><i class=fa-user-secret aria-hidden=true></i></span>
+          <span class="sidebar-label">Secret Intel</span>
+        </button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-section-title">Admin</div>
+        <button class="sidebar-link" data-subview="spending" type="button">
+          <span class="sidebar-icon"><i class=fa-sack-dollar aria-hidden=true></i></span>
+          <span class="sidebar-label">Spending</span>
+        </button>
+        <button class="sidebar-link" data-subview="members" type="button">
+          <span class="sidebar-icon"><i class=fa-users aria-hidden=true></i></span>
+          <span class="sidebar-label">Members</span><span class="sidebar-count" data-badge="badge-members"></span>
+        </button>
+        <button class="sidebar-link hidden" id="sidebar-btn-analytics" data-page="analytics" type="button">
+          <span class="sidebar-icon"><i class=fa-chart-line aria-hidden=true></i></span>
+          <span class="sidebar-label">Analytics</span>
+        </button>
+      </div>
     </nav>
 
 
@@ -2009,9 +2031,13 @@
       <span class="nav-icon"><i class=fa-screwdriver-wrench aria-hidden=true></i></span>
       <span>Shop</span>
     </button>
-    <button type="button" class="mobile-nav-item" id="mob-btn-duties" data-page="duties">
-      <span class="nav-icon"><i class=fa-calendar aria-hidden=true></i></span>
-      <span>Sign-ups</span>
+    <button type="button" class="mobile-nav-item" id="mob-btn-season" data-page="season">
+      <span class="nav-icon"><i class=fa-flag-checkered aria-hidden=true></i></span>
+      <span>Schedule</span>
+    </button>
+    <button type="button" class="mobile-nav-item" id="mob-btn-boards" data-page="boards">
+      <span class="nav-icon"><i class=fa-table-columns aria-hidden=true></i></span>
+      <span>Boards</span>
     </button>
     <button type="button" class="mobile-nav-item" id="mob-btn-strategy" data-page="strategy">
       <span class="nav-icon"><i class=fa-bullseye aria-hidden=true></i></span>
@@ -2149,6 +2175,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261031d"></script>
+  <script type="module" src="js/app.js?v=20261031e"></script>
 </body>
 </html>
