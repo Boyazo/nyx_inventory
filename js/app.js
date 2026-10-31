@@ -7,8 +7,8 @@ import { initActivity, loadShopSession } from "./activity.js?v=20261028t";
 import { initAnalytics } from "./analytics.js?v=20261028t";
 import { initDuties } from "./duties.js?v=20261028t";
 import { initSeason } from "./season.js?v=20261031a";
-import { initDocs } from "./docs.js?v=20261031a";
-import { initBoards } from "./boards.js?v=20261031a";
+import { initDocs } from "./docs.js?v=20261031b";
+import { initBoards } from "./boards.js?v=20261031b";
 import { initScoutHub } from "./scouting.js?v=20261028t";
 
 /* Supabase Configuration */
@@ -159,6 +159,8 @@ function switchPage(pageName) {
   $("#analytics-screen")?.classList.toggle("hidden", pageName !== "analytics");
   $("#mob-btn-duties")?.classList.toggle("active", pageName === "duties");
   $("#duties-screen")?.classList.toggle("hidden", pageName !== "duties");
+  // Boards use the full window width; every other page keeps the centred column
+  document.body.classList.toggle("page-wide", pageName === "boards");
   ["season", "docs", "boards"].forEach(p => {
     $(`#sidebar-btn-${p}`)?.classList.toggle("active", pageName === p);
     $(`#${p}-screen`)?.classList.toggle("hidden", pageName !== p);
@@ -216,6 +218,7 @@ const viewTabsEl = document.querySelector(".viewtabs");
 if (viewTabsEl) new MutationObserver(syncSidebarSubnav).observe(viewTabsEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class"] });
 
 function switchView(viewName) {
+  if (viewName === "planner") viewName = "inventory"; // the planner was replaced by Boards
   currentView = viewName;
   syncSidebarSubnav();
   $$(".viewtab").forEach(tab => tab.classList.toggle("active", tab.dataset.view === viewName));
@@ -6414,7 +6417,6 @@ const commandList = [
   { id: "goto-checkouts", label: "Go to Active Checkouts", icon: "<i class=fa-screwdriver-wrench aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("checkouts"); } },
   { id: "goto-parts", label: "Go to Robot Parts Needed", icon: "<i class=fa-robot aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("parts-needed"); } },
   { id: "goto-shifts", label: "Go to Lab Shifts & Calendar", icon: "<i class=fa-calendar-days aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("shifts"); } },
-  { id: "goto-planner", label: "Go to Team Planner", icon: "<i class=fa-clipboard-list aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("planner"); } },
   { id: "goto-spending", label: "Go to Spending & Budget Tracker", icon: "<i class=fa-sack-dollar aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("spending"); } },
   { id: "goto-members", label: "Go to Member Permissions & Access", icon: "<i class=fa-users aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("members"); } },
   { id: "goto-logs", label: "Go to Audit & Activity Logs", icon: "<i class=fa-lock aria-hidden=true></i>", category: "Navigation", run: () => { screens("inventory"); views("logs"); } },

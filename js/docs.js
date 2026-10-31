@@ -2,9 +2,11 @@
  * Type "/" for blocks, or markdown shortcuts (# heading, - list, 1. list, [] to-do, > quote, ``` code, --- divider).
  * Pages nest; any member writes; staff can lock a page. Autosaves. Table: team_docs. */
 
+import { matchNames, showMentionMenu, hideMentionMenu, mentionMenuOpen, mentionKey } from "./mentions.js?v=20261031b";
+
 let ctx = null;
 const state = {
-  docs: [], currentId: null, loaded: false, missing: false, search: "", expanded: new Set(), navOpen: false,
+  docs: [], members: [], currentId: null, loaded: false, missing: false, search: "", expanded: new Set(), navOpen: false,
   saveTimer: null, saving: false, dirty: false, lastSavedAt: null, lastEditAt: 0, remoteChanged: false,
 };
 
@@ -60,7 +62,11 @@ export function initDocs(context) {
 }
 
 async function load() {
-  const { data, error } = await db().from("team_docs").select("*").order("sort").order("created_at");
+  const [{ data, error }, m] = await Promise.all([
+    db().from("team_docs").select("*").order("sort").order("created_at"),
+    db().from("profiles").select("full_name").eq("is_approved", true),
+  ]);
+  state.members = (m.data || []).map(x => x.full_name).filter(Boolean).sort((a, b) => a.localeCompare(b));
   state.missing = !!error && /relation|does not exist|schema cache/i.test(error.message);
   state.docs = data || [];
   state.loaded = true;
@@ -316,6 +322,7 @@ function sanitize(html) {
         out += /^(https?:\/\/|mailto:)/i.test(href) ? `<a href="${escText(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : inner;
       } else if (INLINE[tag]) out += inner ? `<${INLINE[tag]}>${inner}</${INLINE[tag]}>` : "";
       else if (tag === "DIV" || tag === "P") out += (out && !out.endsWith("<br>") ? "<br>" : "") + inner;
+      else if (tag === "SPAN" && n.hasAttribute("data-mention")) out += `<span class="mention" data-mention="" contenteditable="false">${inner}</span>`;
       else if (tag === "SPAN" && /font-weight:\s*(bold|[6-9]00)/.test(n.getAttribute("style") || "")) out += `<b>${inner}</b>`;
       else out += inner;
     });
@@ -504,6 +511,22 @@ function onInput(e) {
   const info = caretInfo(t);
   const m = info && info.collapsed && block.dataset.type !== "code" ? info.before.match(/(?:^|\s)\/([\w ]{0,20})$/) : null;
   if (m) openSlash(block, m[1]); else closeSlash();
+  const at = !m && info && info.collapsed && block.dataset.type !== "code" ? info.before.replace(/\u200B/g, "").match(/(?:^|\s)@([\w.'-]{0,20})$/) : null;
+  const people = at ? matchNames(state.members, at[1]) : [];
+  if (people.length) {
+    const r = info.range.getClientRects()[0] || t.getBoundingClientRect();
+    showMentionMenu(people, r, name => insertMention(t, at[1], name));
+  } else if (mentionMenuOpen()) hideMentionMenu();
+  markDirty();
+}
+
+/* Replace the typed "@query" with a mention chip */
+function insertMention(t, query, name) {
+  t.focus();
+  const sel = getSelection();
+  for (let i = 0; i < query.length + 1; i++) sel.modify("extend", "backward", "character");
+  sel.getRangeAt(0).deleteContents();
+  document.execCommand("insertHTML", false, `<span class="mention" data-mention="" contenteditable="false">@${escText(name)}</span>&nbsp;`);
   markDirty();
 }
 
@@ -535,6 +558,7 @@ const SHORTCUTS = { "#": "h1", "##": "h2", "###": "h3", "-": "ul", "*": "ul", "+
 function onKeyDown(e) {
   const t = e.target.closest?.(".db-text");
   if (!t) return;
+  if (mentionKey(e)) return;
   const block = blockOf(t);
   const type = block.dataset.type;
 

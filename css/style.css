@@ -4145,3 +4145,25 @@ body.is-auth { padding-bottom: 0 !important; }
   .bd-filters input[type="search"] { width: 100%; }
   .bd-modal-grid { grid-template-columns: 1fr; }
 }
+
+/* Boards: full window width, lists fill the screen height, optional full-screen mode */
+body.page-wide .shell { max-width: none; }
+#boards-screen .bd-board { height: calc(100vh - 290px); min-height: 460px; align-items: stretch; }
+#boards-screen .bd-list { flex-basis: 300px; max-height: 100%; align-self: flex-start; }
+#boards-screen.bd-fullscreen { position: fixed; inset: 0; z-index: 90; background: var(--bg); padding: 0; overflow: auto; }
+#boards-screen.bd-fullscreen > .welcome { display: none; }
+#boards-screen.bd-fullscreen > .panel { border: 0 !important; border-radius: 0 !important; min-height: 100vh; }
+#boards-screen.bd-fullscreen .bd-board { height: calc(100vh - 130px); }
+body.bd-fullscreen-open { overflow: hidden; }
+.bd-import { margin-left: auto; }
+.bd-new-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); margin-bottom: 2px; }
+.bd-foot-actions { display: flex; gap: 8px; }
+.bd-form label { margin-top: 10px; }
+.bd-form input[type="color"] { width: 56px; height: 34px; padding: 2px; }
+
+/* @mentions */
+.mention { display: inline; color: var(--accent); background: var(--accent-dim); border-radius: 4px; padding: 0 3px; font-weight: 600; white-space: nowrap; }
+.mention-menu { position: fixed; z-index: 140; width: 250px; max-height: 300px; overflow: auto; background: var(--bg-card); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow-md); padding: 6px; }
+.mention-menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; color: var(--text); padding: 6px 8px; border-radius: 6px; text-align: left; cursor: pointer; font-size: 13.5px; }
+.mention-menu button .bd-avatar { margin-left: 0; border: 0; }
+.mention-menu button.active, .mention-menu button:hover { background: var(--bg-subtle); }

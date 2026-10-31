@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261031a">
+<link rel="stylesheet" href="css/style.css?v=20261031b">
 </head>
 <body class="is-auth">
 
@@ -51,7 +51,7 @@
         <button class="sidebar-sublink" data-subview="checkouts" type="button">Checkouts <span data-badge="badge-checkouts"></span></button>
         <button class="sidebar-sublink" data-subview="parts-needed" type="button">Parts Needed <span data-badge="badge-parts-needed"></span></button>
         <button class="sidebar-sublink" data-subview="shifts" type="button">Shifts <span data-badge="badge-shifts"></span></button>
-        <button class="sidebar-sublink" data-subview="planner" type="button">Planner <span data-badge="badge-planner"></span></button>
+        <button class="sidebar-sublink hidden" data-subview="planner" type="button">Planner <span data-badge="badge-planner"></span></button>
         <button class="sidebar-sublink" data-subview="spending" type="button">Spending</button>
         <button class="sidebar-sublink" data-subview="members" type="button">Members <span data-badge="badge-members"></span></button>
       </div>
@@ -295,7 +295,7 @@
       <button class="viewtab" data-view="checkouts">Checkouts <span class="badgenum" id="badge-checkouts">0</span></button>
       <button class="viewtab" data-view="parts-needed">Parts Needed <span class="badgenum" id="badge-parts-needed">0</span></button>
       <button class="viewtab" data-view="shifts">Shifts <span class="badgenum" id="badge-shifts">0</span></button>
-      <button class="viewtab" data-view="planner">Planner <span class="badgenum" id="badge-planner">0</span></button>
+      <button class="viewtab hidden" data-view="planner">Planner <span class="badgenum" id="badge-planner">0</span></button>
       <button class="viewtab hidden" id="tab-spending" data-view="spending">Spending</button>
       <button class="viewtab hidden" id="tab-members" data-view="members">Members <span class="badgenum" id="badge-members">0</span></button>
     </nav>
@@ -1890,7 +1890,7 @@
           <div class="sheet-option-title"><span class="opt-icon"><i class=fa-calendar-days aria-hidden=true></i></span> Shifts & Calendar</div>
           <span class="sheet-badge" id="m-badge-shifts">0</span>
         </button>
-        <button type="button" class="sheet-option" data-view="planner">
+        <button type="button" class="sheet-option hidden" data-view="planner">
           <div class="sheet-option-title"><span class="opt-icon"><i class=fa-clipboard-list aria-hidden=true></i></span> Team Planner</div>
           <span class="sheet-badge" id="m-badge-planner">0</span>
         </button>
@@ -2138,6 +2138,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261031a"></script>
+  <script type="module" src="js/app.js?v=20261031b"></script>
 </body>
 </html>
