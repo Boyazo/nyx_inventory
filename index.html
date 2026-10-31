@@ -11,13 +11,24 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Shared inventory, tool tracking, robot parts needed, calendar shifts, and team dashboard for FRC Team 11744 Nyx (San Diego, CA)">
 <title>Nyx Dashboard</title>
+<script>
+  /* Touchscreen detection: any touch-capable screen (phones, tablets, touch laptops, shop kiosks) gets the
+     touch layout. Set before first paint; a later finger tap also switches it on. */
+  (function () {
+    var d = document.documentElement;
+    var touch = (navigator.maxTouchPoints || 0) > 0 || "ontouchstart" in window ||
+      (window.matchMedia && (matchMedia("(any-pointer: coarse)").matches || matchMedia("(hover: none)").matches));
+    if (touch) d.classList.add("is-touch");
+    window.addEventListener("pointerdown", function (e) { if (e.pointerType === "touch") d.classList.add("is-touch"); }, { passive: true, capture: true });
+  })();
+</script>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="teams_data.js"></script>
-<link rel="stylesheet" href="css/style.css?v=20261031c">
+<link rel="stylesheet" href="css/style.css?v=20261031d">
 </head>
 <body class="is-auth">
 
@@ -2138,6 +2149,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20261031c"></script>
+  <script type="module" src="js/app.js?v=20261031d"></script>
 </body>
 </html>
