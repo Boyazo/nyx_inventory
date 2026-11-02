@@ -458,7 +458,9 @@ initShiftCalendar({
       return toast("Couldn't move shift: " + error.message, true);
     }
     await logAction("SHIFT_UPDATED", "team_shifts", shift.id, { title: shift.title, from: before, to: patch, via: "calendar drag" });
-    toast(`Moved "${shift.title}" to ${new Date(patch.shift_date + "T12:00:00").toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}, ${patch.start_time}–${patch.end_time}.`);
+    const isAllDay = patch.start_time === "00:00" && patch.end_time === "23:59";
+    const timeLabel = isAllDay ? "Full Day" : `${patch.start_time}–${patch.end_time}`;
+    toast(`Moved "${shift.title}" to ${new Date(patch.shift_date + "T12:00:00").toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}, ${timeLabel}.`);
     loadShifts(true);
   },
 });
@@ -737,7 +739,8 @@ function shiftCardHtml(s) {
       return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     }
 
-    const timeStr = `${formatTime(s.start_time)} – ${formatTime(s.end_time)}`;
+    const isAllDay = (s.start_time === "00:00" && s.end_time === "23:59") || (s.start_time === s.end_time && s.start_time === "00:00");
+    const timeStr = isAllDay ? '<span class="pill" style="background:rgba(99, 102, 241, 0.15); color:var(--accent); font-weight:600; padding:2px 8px; border-radius:4px;"><i class="fa-calendar-day" aria-hidden="true"></i> Full Day</span>' : `${formatTime(s.start_time)} – ${formatTime(s.end_time)}`;
     const dateObj = new Date(s.shift_date + "T00:00:00");
     const dateStr = dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -1489,13 +1492,16 @@ function renderVerboseLogDetails(log) {
       narrative = `Deleted spending record <strong>${esc(d.title || "Record")}</strong> ($${Number(d.amount || 0).toFixed(2)} at ${esc(d.vendor || "Vendor")}).`;
       break;
 
-    case "SHIFT_CREATED":
-      narrative = `Scheduled lab shift: <strong>${esc(d.title || "Lab Shift")}</strong> (${esc(d.shift_date || "")} · ${esc(d.start_time || "")} - ${esc(d.end_time || "")})`;
+    case "SHIFT_CREATED": {
+      const isAllDay = d.start_time === "00:00" && d.end_time === "23:59";
+      const timePart = isAllDay ? "Full Day" : `${esc(d.start_time || "")} - ${esc(d.end_time || "")}`;
+      narrative = `Scheduled lab shift: <strong>${esc(d.title || "Lab Shift")}</strong> (${esc(d.shift_date || "")} · ${timePart})`;
       if (d.department) pills.push(`<b>Dept:</b> ${esc(d.department)}`);
       if (d.location) pills.push(`<b>Location:</b> ${esc(d.location)}`);
       if (d.repeatWeekly) pills.push(`<b>Recurring:</b> ${esc(d.repeatCount || 4)} weeks series`);
       if (d.notes) pills.push(`<b>Notes:</b> ${esc(d.notes)}`);
       break;
+    }
 
     case "SHIFT_ATTENDED":
       narrative = `<strong>${esc(d.member_name || log.user_name)}</strong> signed up for lab shift: <strong>${esc(d.shift_title || "Shift")}</strong> on ${esc(d.shift_date || "")}`;
@@ -1807,6 +1813,9 @@ function openShiftModal(shift, prefill) {
   $("#shift-title").value = shift ? shift.title : "";
   $("#shift-dept").value = shift ? shift.department : (activeShiftDept !== "All" ? activeShiftDept : "Mechanical");
   $("#shift-date").value = shift ? shift.shift_date : new Date().toISOString().slice(0, 10);
+  const isAllDay = shift ? (shift.start_time === "00:00" && shift.end_time === "23:59") : false;
+  setShiftTimingMode(isAllDay ? "allday" : "specific");
+
   $("#shift-start").value = shift ? shift.start_time : "16:00";
   $("#shift-end").value = shift ? shift.end_time : "19:30";
   $("#shift-location").value = shift ? (shift.location || "Main Shop") : "Main Shop";
@@ -1814,8 +1823,13 @@ function openShiftModal(shift, prefill) {
 
   if (!shift && prefill) {
     $("#shift-date").value = prefill.shift_date;
-    $("#shift-start").value = prefill.start_time;
-    $("#shift-end").value = prefill.end_time;
+    if (prefill.isAllDay) {
+      setShiftTimingMode("allday");
+    } else {
+      setShiftTimingMode("specific");
+      if (prefill.start_time) $("#shift-start").value = prefill.start_time;
+      if (prefill.end_time) $("#shift-end").value = prefill.end_time;
+    }
   }
   shiftAssignSelected = new Set(shift ? (shift.attendees || []) : [myShiftName()]);
   const ftm = $("#shift-full-team");
@@ -2163,13 +2177,20 @@ $("#shift-form").addEventListener("submit", async e => {
   const title = $("#shift-title").value.trim();
   const department = $("#shift-dept").value;
   const shift_date = $("#shift-date").value;
-  const start_time = $("#shift-start").value;
-  const end_time = $("#shift-end").value;
+  const timingMode = document.querySelector('input[name="shift-timing-type"]:checked')?.value || "specific";
+  const isAllDay = timingMode === "allday";
+  const start_time = isAllDay ? "00:00" : $("#shift-start").value;
+  const end_time = isAllDay ? "23:59" : $("#shift-end").value;
   const location = $("#shift-location").value.trim() || "Main Shop";
   const notes = $("#shift-notes").value.trim();
 
-  if (!title || !shift_date || !start_time || !end_time) {
+  if (!title || !shift_date || (!isAllDay && (!start_time || !end_time))) {
     toast("Please enter all required shift fields.", true);
+    return;
+  }
+
+  if (!isAllDay && start_time >= end_time) {
+    toast("End time must be after start time.", true);
     return;
   }
 
@@ -2737,6 +2758,42 @@ $("#add-shift-btn").addEventListener("click", () => openShiftModal(null));
 $("#close-shift-modal").addEventListener("click", closeShiftModal);
 $("#cancel-shift-modal").addEventListener("click", closeShiftModal);
 $("#shift-modal").addEventListener("click", e => { if (e.target.id === "shift-modal") closeShiftModal(); });
+
+function setShiftTimingMode(mode) {
+  const isAllDay = mode === "allday";
+  const rSpecific = $("#shift-type-specific");
+  const rAllDay = $("#shift-type-allday");
+  if (rSpecific) rSpecific.checked = !isAllDay;
+  if (rAllDay) rAllDay.checked = isAllDay;
+
+  const lblSpecific = $("#shift-mode-label-specific");
+  const lblAllDay = $("#shift-mode-label-allday");
+  if (lblSpecific) {
+    lblSpecific.style.borderColor = !isAllDay ? "var(--accent)" : "var(--line)";
+    lblSpecific.style.background = !isAllDay ? "var(--accent-dim)" : "var(--bg-card)";
+  }
+  if (lblAllDay) {
+    lblAllDay.style.borderColor = isAllDay ? "var(--accent)" : "var(--line)";
+    lblAllDay.style.background = isAllDay ? "var(--accent-dim)" : "var(--bg-card)";
+  }
+
+  const inputsRow = $("#shift-time-inputs-row");
+  const banner = $("#shift-allday-banner");
+  const startInput = $("#shift-start");
+  const endInput = $("#shift-end");
+
+  if (inputsRow) inputsRow.classList.toggle("hidden", isAllDay);
+  if (banner) banner.classList.toggle("hidden", !isAllDay);
+  if (startInput) startInput.required = !isAllDay;
+  if (endInput) endInput.required = !isAllDay;
+}
+
+document.querySelectorAll('input[name="shift-timing-type"]').forEach(r => {
+  r.addEventListener("change", e => {
+    setShiftTimingMode(e.target.value);
+  });
+});
+
 $("#shift-repeat-weekly")?.addEventListener("change", e => {
   $("#shift-repeat-options")?.classList.toggle("hidden", !e.target.checked);
 });

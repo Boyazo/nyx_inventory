@@ -1483,7 +1483,22 @@
           </div>
         </div>
 
-        <div class="formgrid">
+        <!-- Shift Timing Mode: Specific Time vs Full Day -->
+        <div style="margin: 10px 0 12px;">
+          <label style="display:block; margin-bottom:6px; font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Schedule Type</label>
+          <div class="shift-time-mode-group" role="radiogroup" aria-label="Shift time format" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <label class="shift-time-mode-btn is-active" id="shift-mode-label-specific" style="display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; cursor:pointer; background:var(--accent-dim); transition:all 0.15s ease;">
+              <input type="radio" name="shift-timing-type" id="shift-type-specific" value="specific" checked style="accent-color:var(--accent); width:16px; height:16px; margin:0;">
+              <span style="font-size:13px; font-weight:600;"><i class="fa-clock" aria-hidden="true" style="margin-right:4px;"></i> Specific Time</span>
+            </label>
+            <label class="shift-time-mode-btn" id="shift-mode-label-allday" style="display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; cursor:pointer; background:var(--bg-card); transition:all 0.15s ease;">
+              <input type="radio" name="shift-timing-type" id="shift-type-allday" value="allday" style="accent-color:var(--accent); width:16px; height:16px; margin:0;">
+              <span style="font-size:13px; font-weight:600;"><i class="fa-calendar-day" aria-hidden="true" style="margin-right:4px;"></i> Full Day</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="formgrid" id="shift-time-inputs-row">
           <div>
             <label for="shift-start">Start Time *</label>
             <input id="shift-start" type="time" value="16:00" required>
@@ -1492,6 +1507,11 @@
             <label for="shift-end">End Time *</label>
             <input id="shift-end" type="time" value="19:30" required>
           </div>
+        </div>
+
+        <div id="shift-allday-banner" class="hidden" style="margin-bottom:14px; padding:10px 14px; border-radius:8px; background:rgba(99, 102, 241, 0.1); border:1px solid rgba(99, 102, 241, 0.25); color:var(--text); font-size:12.5px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-calendar-check" style="color:var(--accent); font-size:15px;" aria-hidden="true"></i>
+          <span><b>Full Day Event:</b> This shift is scheduled for the whole day. Specific start/end hours are not needed.</span>
         </div>
 
         <label for="shift-location">Lab Location</label>

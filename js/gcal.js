@@ -80,6 +80,24 @@ export function disconnect() {
 
 function eventBody(shift) {
   const notes = (shift.notes || "").replace("[🔁 Weekly Shift]", "").trim();
+  const isAllDay = (shift.start_time === "00:00" && shift.end_time === "23:59") || (!shift.start_time && !shift.end_time);
+
+  if (isAllDay) {
+    // For all-day events in Google Calendar API, end date is exclusive (following day)
+    const nextDay = new Date(shift.shift_date + "T12:00:00");
+    nextDay.setDate(nextDay.getDate() + 1);
+    const endIso = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, "0")}-${String(nextDay.getDate()).padStart(2, "0")}`;
+    return {
+      summary: `NYX Build Shift: ${shift.title}`,
+      location: shift.location || "Main Shop",
+      description: [`${shift.department} shift (Full Day)`, notes, "Synced from Nyx Dashboard."].filter(Boolean).join("\n\n"),
+      start: { date: shift.shift_date },
+      end: { date: endIso },
+      reminders: { useDefault: true },
+      source: { title: "Nyx Dashboard", url: location.origin + location.pathname }
+    };
+  }
+
   return {
     summary: `NYX Build Shift: ${shift.title}`,
     location: shift.location || "Main Shop",
@@ -149,11 +167,23 @@ export async function syncShifts(shifts, myName) {
 /* Fallback link that opens a pre-filled Google Calendar event */
 export function templateLink(shift) {
   const compact = (d, t) => `${d.replace(/-/g, "")}T${t.slice(0, 5).replace(":", "")}00`;
+  const isAllDay = (shift.start_time === "00:00" && shift.end_time === "23:59") || (!shift.start_time && !shift.end_time);
   const b = eventBody(shift);
+  
+  let datesParam;
+  if (isAllDay) {
+    const nextDay = new Date(shift.shift_date + "T12:00:00");
+    nextDay.setDate(nextDay.getDate() + 1);
+    const endIso = `${nextDay.getFullYear()}${String(nextDay.getMonth() + 1).padStart(2, "0")}${String(nextDay.getDate()).padStart(2, "0")}`;
+    datesParam = `${shift.shift_date.replace(/-/g, "")}/${endIso}`;
+  } else {
+    datesParam = `${compact(shift.shift_date, shift.start_time)}/${compact(shift.shift_date, shift.end_time)}`;
+  }
+
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: b.summary,
-    dates: `${compact(shift.shift_date, shift.start_time)}/${compact(shift.shift_date, shift.end_time)}`,
+    dates: datesParam,
     ctz: TEAM_TIMEZONE,
     location: b.location,
     details: b.description

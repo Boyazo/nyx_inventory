@@ -32,6 +32,7 @@ function addMonths(s, n) { const d = parse(s); d.setDate(1); d.setMonth(d.getMon
 function startOfWeek(s) { const d = parse(s); d.setDate(d.getDate() - d.getDay()); return iso(d); }
 const toMin = t => { const [h, m] = String(t || "0:0").split(":").map(Number); return h * 60 + (m || 0); };
 const toTime = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const isShiftAllDay = s => (s.start_time === "00:00" && s.end_time === "23:59") || (!s.start_time && !s.end_time);
 const fmtTime = m => { const h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}${mm ? ":" + String(mm).padStart(2, "0") : ""}${h < 12 || h === 24 ? "am" : "pm"}`; };
 const snap = m => Math.round(m / SNAP) * SNAP;
 
@@ -179,15 +180,43 @@ function timeHtml() {
   const days = visibleDays();
   const all = shifts();
   const hours = Array.from({ length: DAY_END - DAY_START }, (_, i) => DAY_START + i);
+
+  // Check if any day in the visible range has all-day shifts
+  const allDayByDate = {};
+  let hasAnyAllDay = false;
+  days.forEach(d => {
+    const list = all.filter(s => s.shift_date === d && isShiftAllDay(s));
+    if (list.length) {
+      allDayByDate[d] = list;
+      hasAnyAllDay = true;
+    } else {
+      allDayByDate[d] = [];
+    }
+  });
+
   return `<div class="gcal-time" style="--days:${days.length}; --hour:${HOUR_H}px;">
     <div class="gcal-head">
       <div class="gcal-gutter"></div>
       ${days.map(d => { const dt = parse(d); return `<button type="button" class="gcal-dayhead ${d === today() ? "today" : ""}" data-cal-goto="${d}"><span>${dt.toLocaleDateString([], { weekday: "short" }).toUpperCase()}</span><b>${dt.getDate()}</b></button>`; }).join("")}
     </div>
+    ${hasAnyAllDay ? `
+    <div class="gcal-allday-row" style="display:grid; grid-template-columns:var(--gutter) repeat(var(--days), 1fr); border-bottom:1px solid var(--line); background:var(--bg-card);">
+      <div class="gcal-allday-label" style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; padding:6px 6px 4px; display:flex; align-items:center; justify-content:center; letter-spacing:0.04em;">All-Day</div>
+      ${days.map(d => `
+        <div class="gcal-allday-cell" data-date="${d}" style="padding:4px 4px; border-left:1px solid var(--line); display:flex; flex-direction:column; gap:3px; min-height:28px;">
+          ${(allDayByDate[d] || []).map(s => `
+            <div class="gcal-chip ${ctx.isAdmin() ? "can-drag" : ""}" data-ev="${s.id}" style="--c:${DEPT_COLORS[s.department] || "#5b3ce6"}; background:var(--c); color:#fff; font-weight:600; padding:2px 6px; border-radius:4px; font-size:11px;" title="${ctx.esc(s.title)} · Full Day">
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><i class="fa-calendar-day" aria-hidden="true" style="margin-right:3px; font-size:10px;"></i>${ctx.esc(s.title)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `).join("")}
+    </div>
+    ` : ""}
     <div class="gcal-scroll">
       <div class="gcal-grid" style="height:${(DAY_END - DAY_START) * HOUR_H}px">
         <div class="gcal-times">${hours.map(h => `<span style="top:${(h - DAY_START) * HOUR_H}px">${h === DAY_START ? "" : fmtTime(h * 60).toUpperCase()}</span>`).join("")}</div>
-        ${days.map(d => `<div class="gcal-col ${d === today() ? "today" : ""}" data-date="${d}">${layoutDay(all.filter(s => s.shift_date === d)).map(evHtml).join("")}</div>`).join("")}
+        ${days.map(d => `<div class="gcal-col ${d === today() ? "today" : ""}" data-date="${d}">${layoutDay(all.filter(s => s.shift_date === d && !isShiftAllDay(s))).map(evHtml).join("")}</div>`).join("")}
       </div>
     </div>
   </div>`;
@@ -203,10 +232,18 @@ function monthHtml() {
   return `<div class="gcal-month" style="--rows:${rows}">
     ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => `<div class="gcal-mdow">${d.toUpperCase()}</div>`).join("")}
     ${cells.slice(0, rows * 7).map(c => {
-      const list = all.filter(s => s.shift_date === c).sort((a, b) => toMin(a.start_time) - toMin(b.start_time));
+      const list = all.filter(s => s.shift_date === c).sort((a, b) => {
+        const aAll = isShiftAllDay(a), bAll = isShiftAllDay(b);
+        if (aAll && !bAll) return -1;
+        if (!aAll && bAll) return 1;
+        return toMin(a.start_time) - toMin(b.start_time);
+      });
       return `<div class="gcal-mcell ${parse(c).getMonth() !== month ? "out" : ""}" data-date="${c}">
         <button type="button" class="gcal-mnum ${c === today() ? "today" : ""}" data-cal-goto="${c}">${parse(c).getDate()}</button>
-        ${list.slice(0, 3).map(s => `<div class="gcal-chip ${ctx.isAdmin() ? "can-drag" : ""}" data-ev="${s.id}" style="--c:${DEPT_COLORS[s.department] || "#5b3ce6"}"><i></i>${fmtTime(toMin(s.start_time))} ${ctx.esc(s.title)}</div>`).join("")}
+        ${list.slice(0, 3).map(s => {
+          const isAll = isShiftAllDay(s);
+          return `<div class="gcal-chip ${ctx.isAdmin() ? "can-drag" : ""}" data-ev="${s.id}" style="--c:${DEPT_COLORS[s.department] || "#5b3ce6"}"><i></i>${isAll ? "Full Day" : fmtTime(toMin(s.start_time))} ${ctx.esc(s.title)}</div>`;
+        }).join("")}
         ${list.length > 3 ? `<button type="button" class="gcal-more" data-cal-goto="${c}">${list.length - 3} more</button>` : ""}
       </div>`;
     }).join("")}
@@ -444,8 +481,9 @@ const end = e => {
   if (d.kind === "create") { d.box.remove(); return createAt(d.date, d.a, d.b); }
   if (d.kind === "chip") { d.ghost.remove(); host.querySelectorAll(".gcal-mcell.drop").forEach(c => c.classList.remove("drop")); }
   d.el.classList.remove("is-dragging");
-  const patch = { shift_date: d.date, start_time: toTime(d.a), end_time: toTime(d.b) };
-  const changed = patch.shift_date !== d.shift.shift_date || toMin(patch.start_time) !== toMin(d.shift.start_time) || toMin(patch.end_time) !== toMin(d.shift.end_time);
+  const isAllDay = isShiftAllDay(d.shift);
+  const patch = isAllDay ? { shift_date: d.date, start_time: "00:00", end_time: "23:59" } : { shift_date: d.date, start_time: toTime(d.a), end_time: toTime(d.b) };
+  const changed = patch.shift_date !== d.shift.shift_date || (!isAllDay && (toMin(patch.start_time) !== toMin(d.shift.start_time) || toMin(patch.end_time) !== toMin(d.shift.end_time)));
   if (changed) ctx.onMove(d.shift, patch);
   else renderShiftCalendar();
 };
