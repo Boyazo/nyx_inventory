@@ -269,13 +269,15 @@ alter table public.spending_records enable row level security;
 alter table public.team_shifts enable row level security;
 
 -- Trigger to prevent non-admins from modifying privilege flags (is_admin, is_moderator, is_secret, is_strategy, is_approved)
+-- NOTE: is_secret can strictly and exclusively be toggled by Raymond Liu (UID: ad38a63b-8be3-45e6-8a2e-f7457febe6a0).
 create or replace function public.check_profile_update()
 returns trigger language plpgsql security definer set search_path = public
 as $$
 declare
   caller_is_admin boolean;
+  caller_id uuid := auth.uid();
 begin
-  -- If privilege flags are untouched, allow user update (name, departments)
+  -- If privilege flags are untouched, allow user update (name, departments, etc.)
   if (old.is_admin is not distinct from new.is_admin)
      and (old.is_secret is not distinct from new.is_secret)
      and (old.is_strategy is not distinct from new.is_strategy)
@@ -284,10 +286,17 @@ begin
     return new;
   end if;
 
+  -- Special lock: ONLY Raymond Liu (ad38a63b-8be3-45e6-8a2e-f7457febe6a0) can change the secret role
+  if (old.is_secret is distinct from new.is_secret) then
+    if caller_id is null or caller_id <> 'ad38a63b-8be3-45e6-8a2e-f7457febe6a0'::uuid then
+      raise exception 'Permission Denied: Only Raymond Liu can assign or revoke the Secret role.';
+    end if;
+  end if;
+
   -- Privilege flags were modified; check if the caller is an active team admin
   select (is_admin = true and is_approved = true) into caller_is_admin
   from public.profiles
-  where id = auth.uid();
+  where id = caller_id;
 
   if caller_is_admin is true then
     return new;

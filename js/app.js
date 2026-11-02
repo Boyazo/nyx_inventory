@@ -22,6 +22,7 @@ const $$ = (s) => document.querySelectorAll(s);
 let supabase = null;
 let currentUser = null;
 let currentProfile = null;
+const RAYMOND_UID = "ad38a63b-8be3-45e6-8a2e-f7457febe6a0";
 let allItems = [];
 let allCheckouts = [];
 let allTasks = [];
@@ -1305,11 +1306,18 @@ async function loadMembers() {
           <div class="muted small mono">${depts} ${p.id === currentUser.id ? '(You)' : ''}</div>
         </div>
         <div class="role-toggles">
-          ${[["is_admin", "Admin"], ["is_moderator", "Moderator"], ["is_strategy", "Strategy"], ["is_secret", "Secret"]].map(([flag, label]) => `
-            <label class="role-toggle ${p[flag] ? "is-on" : ""}" title="${p.id === currentUser.id && flag === "is_admin" ? "You can't remove your own admin role" : `Toggle ${label} for ${esc(p.full_name)}`}">
-              <input type="checkbox" data-role-flag="${flag}" data-id="${p.id}" data-name="${esc(p.full_name)}" ${p[flag] ? "checked" : ""} ${p.id === currentUser.id && flag === "is_admin" ? "disabled" : ""}>
+          ${[["is_admin", "Admin"], ["is_moderator", "Moderator"], ["is_strategy", "Strategy"], ["is_secret", "Secret"]].map(([flag, label]) => {
+            const isRaymond = currentUser?.id === RAYMOND_UID;
+            const disabled = (p.id === currentUser.id && flag === "is_admin") || (flag === "is_secret" && !isRaymond);
+            let titleText = `Toggle ${label} for ${esc(p.full_name)}`;
+            if (p.id === currentUser.id && flag === "is_admin") titleText = "You can't remove your own admin role";
+            else if (flag === "is_secret" && !isRaymond) titleText = "Only Raymond Liu can assign or revoke the Secret role";
+            return `
+            <label class="role-toggle ${p[flag] ? "is-on" : ""}" style="${flag === 'is_secret' && !isRaymond ? 'opacity:0.6; cursor:not-allowed;' : ''}" title="${titleText}">
+              <input type="checkbox" data-role-flag="${flag}" data-id="${p.id}" data-name="${esc(p.full_name)}" ${p[flag] ? "checked" : ""} ${disabled ? "disabled" : ""}>
               <span>${label}</span>
-            </label>`).join("")}
+            </label>`;
+          }).join("")}
         </div>
         <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
           ${p.id !== currentUser.id ? `
@@ -2643,20 +2651,33 @@ $("#signup-form").addEventListener("submit", async e => {
   }
 
   const b = e.submitter; b.disabled = true;
-  const { data, error } = await supabase.auth.signUp({
+  let { data, error } = await supabase.auth.signUp({
     email, password,
     options: {
-      data: { full_name: name },
-      emailRedirectTo: location.origin + location.pathname
+      data: { full_name: name }
     }
   });
-  b.disabled = false;
-  if (error) { message(error.message, true); return; }
+  if (error) {
+    b.disabled = false;
+    message(error.message, true);
+    return;
+  }
+
+  // If Supabase project has email confirmation enabled in dashboard, immediately sign in with the password
+  // so the user avoids needing to check their email, landing directly on the admin pending approval screen
   if (!data.session) {
-    message("Confirmation email sent. After verifying your email, sign in. An admin must approve you.", false);
-  } else {
-    message("Account created. Waiting for team admin approval.", false);
+    const signInRes = await supabase.auth.signInWithPassword({ email, password });
+    if (!signInRes.error && signInRes.data?.session) {
+      data = signInRes.data;
+    }
+  }
+
+  b.disabled = false;
+  if (data?.session) {
+    message("Account created! Waiting for team admin approval.", false);
     await checkUser(data.user);
+  } else {
+    message("Account registered! A team admin must approve your profile before you can sign in.", false);
   }
 });
 
@@ -3395,6 +3416,11 @@ $("#admin-members-list").addEventListener("change", async e => {
   const { roleFlag: flag, id, name } = cb.dataset;
   const label = { is_admin: "Admin", is_moderator: "Moderator", is_strategy: "Strategy", is_secret: "Secret" }[flag];
   if (id === currentUser.id && flag === "is_admin" && !cb.checked) { cb.checked = true; return; }
+  if (flag === "is_secret" && currentUser?.id !== RAYMOND_UID) {
+    cb.checked = !cb.checked;
+    toast("Permission Denied: Only Raymond Liu can modify the Secret role.", true);
+    return;
+  }
   if (flag === "is_moderator" && cb.checked && !confirm(`Make ${name} a moderator? Moderators can manage inventory, parts, shifts, the planner, scouting and sign-ups, but not members, roles, spending, the audit log or analytics.`)) { cb.checked = false; return; }
   if (flag === "is_admin" && cb.checked && !confirm(`Make ${name} an admin? Admins can manage everything, including other members' roles.`)) { cb.checked = false; return; }
   cb.disabled = true;
