@@ -3710,11 +3710,50 @@ function initStrategyCenter() {
 let isSyncingStatbotics = false;
 let lastStatboticsSyncTime = 0;
 
+function applyStatboticsRecord(target, d) {
+  if (!d) return false;
+  const epaObj = d.epa || {};
+  const breakdown = epaObj.breakdown || {};
+  const stats = epaObj.stats || {};
+  const ranks = epaObj.ranks || {};
+  const rec = d.record || {};
+
+  const epaVal = epaObj.total_points ?? breakdown.total_points ?? d.epa_end ?? d.epa ?? (d.norm_epa?.current ? (d.norm_epa.current - 1500) / 10 + 40 : null);
+  if (epaVal == null || isNaN(epaVal)) return false;
+
+  target.epa = Number(Number(epaVal).toFixed(1));
+  target.auto_epa = Number((breakdown.auto_points ?? d.auto_epa_end ?? d.auto_epa ?? (epaVal * 0.25)).toFixed(1));
+  target.teleop_epa = Number((breakdown.teleop_points ?? d.teleop_epa_end ?? d.teleop_epa ?? (epaVal * 0.58)).toFixed(1));
+  target.endgame_epa = Number((breakdown.endgame_points ?? d.endgame_epa_end ?? d.endgame_epa ?? (epaVal * 0.17)).toFixed(1));
+
+  if (d.name && (!target.name || target.name.startsWith("Team "))) {
+    target.name = d.name;
+  }
+  if (d.state || d.country) {
+    target.location = d.state ? `${d.state}, ${d.country || "USA"}` : (d.country || target.location || "USA");
+  }
+  if (d.rookie_year) {
+    target.rookie = d.rookie_year;
+  }
+  if (ranks.total?.rank) {
+    target.rank = ranks.total.rank;
+  }
+  if (rec.wins != null) {
+    target.record = `${rec.wins || 0}-${rec.losses || 0}-${rec.ties || 0}`;
+    if (rec.winrate != null) {
+      target.winrate = Number((rec.winrate * 100).toFixed(1));
+    }
+  } else if (d.winrate != null) {
+    target.winrate = Number((d.winrate > 1 ? d.winrate : d.winrate * 100).toFixed(1));
+  }
+  return true;
+}
+
 async function syncSingleTeamStatbotics(t) {
   try {
     const controller = new AbortController();
     const tid = setTimeout(() => controller.abort(), 4000);
-    // Query 2026 year first, fallback to team summary
+    // Query 2026 year first, fallback to general team endpoint
     let res = await fetch(`https://api.statbotics.io/v3/team_year/${t.team}/2026`, { signal: controller.signal });
     if (!res.ok) {
       res = await fetch(`https://api.statbotics.io/v3/team/${t.team}`, { signal: controller.signal });
@@ -3722,17 +3761,7 @@ async function syncSingleTeamStatbotics(t) {
     clearTimeout(tid);
     if (res.ok) {
       const d = await res.json();
-      if (d) {
-        const epaVal = d.epa?.breakdown?.total_points?.mean ?? d.epa_end ?? d.epa ?? (d.norm_epa?.current ? (d.norm_epa.current - 1500) / 10 + 40 : null);
-        if (epaVal != null && !isNaN(epaVal)) {
-          t.epa = Number(Number(epaVal).toFixed(1));
-          t.auto_epa = Number((d.epa?.breakdown?.auto_points?.mean ?? d.auto_epa_end ?? d.auto_epa ?? (epaVal * 0.25)).toFixed(1));
-          t.teleop_epa = Number((d.epa?.breakdown?.teleop_points?.mean ?? d.teleop_epa_end ?? d.teleop_epa ?? (epaVal * 0.58)).toFixed(1));
-          t.endgame_epa = Number((d.epa?.breakdown?.endgame_points?.mean ?? d.endgame_epa_end ?? d.endgame_epa ?? (epaVal * 0.17)).toFixed(1));
-          if (d.record?.winrate != null) t.winrate = Number((d.record.winrate * 100).toFixed(1));
-          return true;
-        }
-      }
+      return applyStatboticsRecord(t, d);
     }
   } catch (e) {}
   return false;
@@ -3747,17 +3776,80 @@ async function syncStatboticsData(silent = false) {
     syncBtn.disabled = true;
     syncBtn.innerHTML = `<i class=fa-hourglass-half aria-hidden=true></i> Live Syncing Statbotics…`;
   }
-  if (!silent) toast("Fetching real-time 2026 metrics from Statbotics...");
+  if (!silent) toast("Fetching real-time rankings & EPA from Statbotics API...");
 
-  // Sync teams in concurrent batches of 4
   let updatedCount = 0;
-  const batchSize = 4;
-  for (let i = 0; i < frcTeamsData.length; i += batchSize) {
-    const batch = frcTeamsData.slice(i, i + batchSize);
-    const results = await Promise.all(batch.map(t => syncSingleTeamStatbotics(t)));
-    updatedCount += results.filter(Boolean).length;
-    // Keep UI responsive
-    if (i === 0 && !silent) renderRankings();
+
+  try {
+    // 1. Bulk fetch top ranked 2026 teams directly from Statbotics v3 leaderboard (2 pages x 250 = 500 teams)
+    const offsets = [0, 250];
+    const bulkResults = await Promise.allSettled(offsets.map(async offset => {
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 9000);
+      const res = await fetch(`https://api.statbotics.io/v3/team_years?year=2026&metric=epa&ascending=false&limit=250&offset=${offset}`, { signal: controller.signal });
+      clearTimeout(tid);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }));
+
+    let bulkFetchedTeams = [];
+    for (const res of bulkResults) {
+      if (res.status === "fulfilled" && Array.isArray(res.value)) {
+        bulkFetchedTeams.push(...res.value);
+      }
+    }
+
+    if (bulkFetchedTeams.length > 0) {
+      const teamMap = new Map();
+      frcTeamsData.forEach(t => teamMap.set(t.team, t));
+
+      for (const item of bulkFetchedTeams) {
+        if (!item || !item.team) continue;
+        let existing = teamMap.get(item.team);
+        if (!existing) {
+          existing = {
+            team: item.team,
+            name: item.name || `Team ${item.team}`,
+            location: item.state ? `${item.state}, ${item.country || "USA"}` : (item.country || "USA"),
+            epa: 0,
+            auto_epa: 0,
+            teleop_epa: 0,
+            endgame_epa: 0,
+            winrate: 50,
+            record: "0-0-0",
+            rookie: item.rookie_year || 2026
+          };
+          frcTeamsData.push(existing);
+          teamMap.set(item.team, existing);
+        }
+        if (applyStatboticsRecord(existing, item)) {
+          updatedCount++;
+        }
+      }
+
+      // Preserve Home Team 11744 if not already present
+      if (!teamMap.has(11744)) {
+        frcTeamsData.unshift({
+          team: 11744,
+          name: "NYX Robotics",
+          location: "San Diego, CA, USA",
+          epa: 215.4,
+          auto_epa: 48.6,
+          teleop_epa: 112.5,
+          endgame_epa: 54.3,
+          winrate: 72.5,
+          record: "22-8-0",
+          rookie: 2026
+        });
+      }
+    } else {
+      // 2. Fallback: Query individual teams in batches if bulk query encounters network limitations
+      const sampleTeams = frcTeamsData.slice(0, 40);
+      const results = await Promise.all(sampleTeams.map(t => syncSingleTeamStatbotics(t)));
+      updatedCount += results.filter(Boolean).length;
+    }
+  } catch (err) {
+    console.warn("Statbotics live sync warning:", err);
   }
 
   isSyncingStatbotics = false;
@@ -3771,7 +3863,7 @@ async function syncStatboticsData(silent = false) {
   renderRankings();
   populateSimulatorSelectors();
   if (!silent) {
-    toast(updatedCount > 0 ? `Real-time sync complete: Updated ${updatedCount} teams from Statbotics!` : "Real-time sync active (data up to date).");
+    toast(updatedCount > 0 ? `Statbotics connected: Updated ${updatedCount} team stats & rankings!` : "Statbotics connected: Rankings & stats up to date.");
   }
 }
 
@@ -5315,47 +5407,41 @@ async function handleTeamLookup(e) {
 
   let teamObj = frcTeamsData.find(t => t.team === num);
 
-  // Try Statbotics v3 team_year 2026 or team endpoint
-  if (!teamObj) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+  // Fetch directly from live Statbotics v3 API if not cached or to get freshest live stats
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
 
-      // Try 2026 team_year first, then team metadata
-      let res = await fetch(`https://api.statbotics.io/v3/team_year/${num}/2026`, { signal: controller.signal });
-      if (!res.ok) {
-        res = await fetch(`https://api.statbotics.io/v3/team/${num}`, { signal: controller.signal });
-      }
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data && (data.team || data.team_number)) {
-          const tNum = data.team || data.team_number || num;
-          const epaTotal = data.epa_end || data.epa || (data.norm_epa?.current ? (data.norm_epa.current - 1500) / 10 + 40 : 48.0);
-          const autoVal = data.auto_epa_end || data.auto_epa || (epaTotal * 0.25);
-          const teleVal = data.teleop_epa_end || data.teleop_epa || (epaTotal * 0.58);
-          const endVal = data.endgame_epa_end || data.endgame_epa || (epaTotal * 0.17);
-          const winRate = data.winrate != null ? Number((data.winrate * 100).toFixed(1)) : 68.0;
-
-          teamObj = {
-            team: tNum,
-            name: data.name || `Team ${tNum}`,
-            location: data.state ? `${data.state}, ${data.country || 'USA'}` : (data.country || "USA"),
-            epa: Number(Number(epaTotal).toFixed(1)),
-            auto_epa: Number(Number(autoVal).toFixed(1)),
-            teleop_epa: Number(Number(teleVal).toFixed(1)),
-            endgame_epa: Number(Number(endVal).toFixed(1)),
-            winrate: winRate,
-            rank: data.rank || data.epa_rank || 180,
-            record: data.record ? `${data.record.wins || 22}-${data.record.losses || 9}-${data.record.ties || 0}` : "22-9-0",
-            rookie: data.rookie_year || 2022
-          };
-        }
-      }
-    } catch (err) {
-      // Gracefully fall back below
+    // Try 2026 team_year first, then team metadata
+    let res = await fetch(`https://api.statbotics.io/v3/team_year/${num}/2026`, { signal: controller.signal });
+    if (!res.ok) {
+      res = await fetch(`https://api.statbotics.io/v3/team/${num}`, { signal: controller.signal });
     }
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.team || data.team_number)) {
+        if (!teamObj) {
+          teamObj = {
+            team: data.team || data.team_number || num,
+            name: data.name || `Team ${num}`,
+            location: data.state ? `${data.state}, ${data.country || "USA"}` : (data.country || "USA"),
+            epa: 0,
+            auto_epa: 0,
+            teleop_epa: 0,
+            endgame_epa: 0,
+            winrate: 50,
+            record: "0-0-0",
+            rookie: data.rookie_year || 2026
+          };
+          frcTeamsData.push(teamObj);
+        }
+        applyStatboticsRecord(teamObj, data);
+      }
+    }
+  } catch (err) {
+    // Gracefully fall back below
   }
 
   // Fallback intelligent projection based on team number age
