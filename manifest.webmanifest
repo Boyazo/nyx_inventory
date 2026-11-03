@@ -1,0 +1,24 @@
+{
+  "name": "Nyx Dashboard",
+  "short_name": "Nyx 11744",
+  "description": "Shared inventory, tool tracking, robot parts needed, calendar shifts, and team dashboard for FRC Team 11744 Nyx",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192 512x512 1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
