@@ -1,4 +1,4 @@
--- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
+﻿-- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
 -- Run this entire script in Supabase Dashboard -> SQL Editor.
 create extension if not exists pgcrypto;
 
@@ -1122,33 +1122,3 @@ begin
     end loop;
   end if;
 end $$;
-
-
-
--- 15. Team App Settings (Discord announcement webhooks, configuration)
-create table if not exists public.app_settings (
-  key text primary key,
-  value text not null default '',
-  description text not null default '',
-  updated_at timestamptz not null default now()
-);
-
-alter table public.app_settings enable row level security;
-
-drop policy if exists "Approved members can read app settings" on public.app_settings;
-create policy "Approved members can read app settings" on public.app_settings
-for select to authenticated using((select public.is_approved_member()));
-
-drop policy if exists "Staff can update app settings" on public.app_settings;
-create policy "Staff can update app settings" on public.app_settings
-for all to authenticated
-using((select public.is_team_staff()))
-with check((select public.is_team_staff()));
-
--- Prepopulate discord announcement channels
-insert into public.app_settings (key, value, description) values
-  ('discord_webhook_mechanical', '', 'Discord webhook URL for #mechanical-announcements'),
-  ('discord_webhook_electrical', '', 'Discord webhook URL for #electrical-announcements'),
-  ('discord_webhook_software', '', 'Discord webhook URL for #software-announcements'),
-  ('discord_webhook_general', '', 'Discord webhook URL for general announcements (#announcements)')
-on conflict (key) do nothing;

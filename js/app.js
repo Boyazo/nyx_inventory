@@ -1,4 +1,4 @@
-import * as gcal from "./gcal.js?v=20261028t";
+﻿import * as gcal from "./gcal.js?v=20261028t";
 import { attachPartPicker, vendorLinks } from "./part_picker.js?v=20261028t";
 import { initShiftCalendar, renderShiftCalendar, isDeptVisible } from "./shift_calendar.js?v=20261028t";
 import { initInventoryCategories, loadInventoryCategories, renderFilterTabs, matchesFilter, groupOf, fillCategorySelect, isValidCategory, kindOf, toolCategories, OTHER_TOOLS } from "./inventory_categories.js?v=20261028t";
@@ -337,7 +337,6 @@ async function checkUser(user) {
   const elAddPn = $("#add-part-needed-btn"); if (elAddPn) elAddPn.classList.toggle("hidden", !isStaff(data));
   const elAddTsk = $("#add-task-btn"); if (elAddTsk) elAddTsk.classList.toggle("hidden", !isStaff(data));
   const elAddShift = $("#add-shift-btn"); if (elAddShift) elAddShift.classList.toggle("hidden", !isStaff(data));
-  const elDiscSet = $("#discord-settings-btn"); if (elDiscSet) elDiscSet.classList.toggle("hidden", !isStaff(data));
   const elTabSpend = $("#tab-spending"); if (elTabSpend) elTabSpend.classList.toggle("hidden", !isStaff(data));
   const elTabMem = $("#tab-members"); if (elTabMem) elTabMem.classList.toggle("hidden", !data.is_admin);
   const elAdminAuditBtn = $("#admin-audit-logs-btn"); if (elAdminAuditBtn) elAdminAuditBtn.classList.toggle("hidden", !data.is_admin);
@@ -781,7 +780,6 @@ function shiftCardHtml(s) {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <b class="mono small" style="color:var(--text-muted)">ROSTER (${attendees.length})</b>
             <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-            ${isAdmin ? `<button class="btn btn--sm btn--ghost" data-action="announce-shift" data-id="${s.id}" title="Post shift announcement to department Discord channel" style="color:#5865F2;"><i class="fa-brands fa-discord" aria-hidden="true"></i> Announce</button>` : ""}
             ${isAdmin ? `<button class="btn btn--sm btn--ghost" data-action="assign-shift" data-id="${s.id}" title="Assign members"><i class=fa-users aria-hidden=true></i> Assign</button>` : ''}
             ${isAttending ? `
               <button class="btn btn--sm btn--ghost" data-action="toggle-attend-shift" data-id="${s.id}" style="color:var(--red); border-color:rgba(248,113,113,.3);" title="Remove yourself from this shift">
@@ -1325,7 +1323,8 @@ async function loadMembers() {
             </label>`;
           }).join("")}
         </div>
-        <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
+                <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
+          <button class="btn btn--ghost btn--sm" data-action="edit-member-depts" data-id="${p.id}" data-name="${esc(p.full_name)}" data-depts="${esc(JSON.stringify(p.departments || []))}" title="Change departments for ${esc(p.full_name)}"><i class="fa-solid fa-gear" aria-hidden="true"></i> Depts</button>
           ${p.id !== currentUser.id ? `
             <button class="btn btn--danger btn--sm" data-action="revoke-member" data-id="${p.id}" data-name="${esc(p.full_name)}">Revoke</button>
           ` : ''}
@@ -1709,159 +1708,6 @@ function openProfileModal() {
   });
 }
 
-/* Discord Shift Announcements & Settings */
-async function announceShiftToDiscord(shift, reason = "Shift Scheduled") {
-  if (!shift || !shift.title) return;
-  const isAllDay = (shift.start_time === "00:00" && shift.end_time === "23:59") || (shift.start_time === shift.end_time && shift.start_time === "00:00");
-  const timeDesc = isAllDay ? "ð Full Day Event" : `ð ${shift.start_time}â${shift.end_time}`;
-  const dept = shift.department || "General";
-
-  // First try invoking the discord-reminders edge function
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/discord-reminders?mode=announce`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_PUBLIC_KEY,
-        "Authorization": `Bearer ${currentUser?.access_token || SUPABASE_PUBLIC_KEY}`
-      },
-      body: JSON.stringify({ shift, reason })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.ok) return true;
-    }
-  } catch (fnErr) {
-    console.warn("Edge function announcement call failed, checking direct webhook:", fnErr);
-  }
-
-  // Fallback: check app_settings for department webhook and post directly
-  try {
-    let settingKey = "discord_webhook_general";
-    const dLower = dept.toLowerCase();
-    if (dLower === "mechanical") settingKey = "discord_webhook_mechanical";
-    else if (dLower === "electrical") settingKey = "discord_webhook_electrical";
-    else if (dLower === "software") settingKey = "discord_webhook_software";
-
-    const { data: setting } = await supabase.from("app_settings").select("value").eq("key", settingKey).maybeSingle();
-    let hookUrl = setting?.value;
-    if (!hookUrl || !hookUrl.startsWith("http")) {
-      const { data: genSetting } = await supabase.from("app_settings").select("value").eq("key", "discord_webhook_general").maybeSingle();
-      hookUrl = genSetting?.value;
-    }
-
-    if (hookUrl && hookUrl.startsWith("http")) {
-      let headerEmoji = "ð¢";
-      if (dept === "Mechanical") headerEmoji = "âï¸";
-      else if (dept === "Electrical") headerEmoji = "â¡";
-      else if (dept === "Software") headerEmoji = "ð»";
-
-      const lines = [
-        `${headerEmoji} **${reason.toUpperCase()}: ${shift.title}**`,
-        `ð **Department:** ${dept}`,
-        `ðï¸ **Date:** ${shift.shift_date}`,
-        `â° **Time:** ${timeDesc}`,
-        `ð **Location:** ${shift.location || "Main Shop"}`
-      ];
-      if (shift.lead_name) {
-        lines.push(`ð **Shift Lead:** **${shift.lead_name}**`);
-      }
-      const attendees = Array.isArray(shift.attendees) ? shift.attendees : [];
-      if (attendees.length) {
-        lines.push(`ð¥ **Roster (${attendees.length}):** ${attendees.join(", ")}`);
-      } else {
-        lines.push(`ð¥ **Roster:** None scheduled yet â join on the dashboard!`);
-      }
-      if (shift.notes) {
-        const cleanN = shift.notes.replace("[ð Weekly Shift]", "").trim();
-        if (cleanN) lines.push(`ð **Goals / Notes:** ${cleanN}`);
-      }
-      lines.push(`\nð Join, swap, or view details: <https://dashboard.nyx11744.org/>`);
-
-      await fetch(hookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: "NYX Shift Bot",
-          content: lines.join("\n")
-        })
-      });
-      return true;
-    }
-  } catch (directErr) {
-    console.error("Direct webhook dispatch failed:", directErr);
-    throw directErr;
-  }
-
-  return true;
-}
-
-async function openDiscordSettingsModal() {
-  if (!isStaff()) {
-    toast("Only admins and moderators can configure Discord channels.", true);
-    return;
-  }
-  const modal = $("#discord-settings-modal");
-  if (!modal) return;
-  modal.classList.remove("hidden");
-
-  try {
-    const { data, error } = await supabase.from("app_settings").select("key, value");
-    if (!error && data) {
-      data.forEach(row => {
-        if (row.key === "discord_webhook_mechanical") $("#webhook-mech").value = row.value || "";
-        if (row.key === "discord_webhook_electrical") $("#webhook-elec").value = row.value || "";
-        if (row.key === "discord_webhook_software") $("#webhook-soft").value = row.value || "";
-        if (row.key === "discord_webhook_general") $("#webhook-gen").value = row.value || "";
-      });
-    }
-  } catch (err) {
-    console.warn("Could not load webhook settings:", err);
-  }
-}
-
-function closeDiscordSettingsModal() {
-  $("#discord-settings-modal")?.classList.add("hidden");
-}
-
-$("#discord-settings-btn")?.addEventListener("click", openDiscordSettingsModal);
-$("#close-discord-settings-modal")?.addEventListener("click", closeDiscordSettingsModal);
-$("#cancel-discord-settings")?.addEventListener("click", closeDiscordSettingsModal);
-$("#discord-settings-modal")?.addEventListener("click", e => {
-  if (e.target.id === "discord-settings-modal") closeDiscordSettingsModal();
-});
-
-$("#discord-settings-form")?.addEventListener("submit", async e => {
-  e.preventDefault();
-  if (!isStaff()) return;
-
-  const btn = $("#save-discord-settings-btn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
-
-  const updates = [
-    { key: "discord_webhook_mechanical", value: $("#webhook-mech")?.value.trim() || "", description: "Discord webhook URL for #mechanical-announcements", updated_at: new Date().toISOString() },
-    { key: "discord_webhook_electrical", value: $("#webhook-elec")?.value.trim() || "", description: "Discord webhook URL for #electrical-announcements", updated_at: new Date().toISOString() },
-    { key: "discord_webhook_software", value: $("#webhook-soft")?.value.trim() || "", description: "Discord webhook URL for #software-announcements", updated_at: new Date().toISOString() },
-    { key: "discord_webhook_general", value: $("#webhook-gen")?.value.trim() || "", description: "Discord webhook URL for general announcements (#announcements)", updated_at: new Date().toISOString() },
-  ];
-
-  try {
-    const { error } = await supabase.from("app_settings").upsert(updates);
-    if (error) {
-      toast("Could not save webhooks: " + error.message, true);
-    } else {
-      toast("Discord announcement channels updated!");
-      closeDiscordSettingsModal();
-    }
-  } catch (err) {
-    toast("Save failed: " + err.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Save Webhooks";
-  }
-});
-
 /* Claude MCP connector: personal keys for the Supabase "mcp" edge function */
 const MCP_ENDPOINT = `${SUPABASE_URL}/functions/v1/mcp`;
 let lastConnectorUrl = "";
@@ -2006,8 +1852,6 @@ function openShiftModal(shift, prefill) {
     leadSelect.innerHTML = `<option value="">No shift lead assigned</option>` +
       teamMembers.map(m => `<option value="${esc(m.full_name)}" ${m.full_name === currentLead ? "selected" : ""}>${esc(m.full_name)}${m.departments.length ? ` (${esc(m.departments.join(", "))})` : ""}</option>`).join("");
   }
-  const discAnnounceCb = $("#shift-announce-discord");
-  if (discAnnounceCb) discAnnounceCb.checked = !shift;
 
   $("#shift-modal").classList.remove("hidden");
   $("#shift-title").focus();
@@ -2349,7 +2193,6 @@ $("#shift-form").addEventListener("submit", async e => {
   const location = $("#shift-location").value.trim() || "Main Shop";
   const notes = $("#shift-notes").value.trim();
   const lead_name = $("#shift-lead")?.value?.trim() || "";
-  const shouldAnnounce = !!$("#shift-announce-discord")?.checked;
 
   if (!title || !shift_date || (!isAllDay && (!start_time || !end_time))) {
     toast("Please enter all required shift fields.", true);
@@ -2422,9 +2265,6 @@ $("#shift-form").addEventListener("submit", async e => {
   const removed = previousAttendees.filter(n => !attendees.includes(n));
   if (added.length || removed.length) {
     await logAction("SHIFT_ASSIGNED", "team_shifts", wasEditing || "new", { shift_title: title, shift_date, assigned: added, unassigned: removed });
-  }
-  if (shouldAnnounce) {
-    announceShiftToDiscord({ title, department, shift_date, start_time, end_time, location, notes, lead_name, attendees }, wasEditing ? "Shift Updated" : "New Shift Scheduled");
   }
   closeShiftModal();
   await loadShifts();
@@ -3210,19 +3050,6 @@ $("#view-shifts").addEventListener("click", async e => {
       $(".assign-box")?.scrollIntoView({ block: "center" });
       $("#shift-assign-search")?.focus();
     }, 50);
-  } else if (action === "announce-shift" && shift) {
-    if (!isStaff()) return;
-    b.disabled = true;
-    b.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sendingâ€¦`;
-    try {
-      await announceShiftToDiscord(shift, "Shift Schedule Reminder");
-      toast(`Announced "${shift.title}" to #${shift.department.toLowerCase()}-announcements!`);
-    } catch (err) {
-      toast("Announcement error: " + err.message, true);
-    } finally {
-      b.disabled = false;
-      b.innerHTML = `<i class="fa-brands fa-discord"></i> Announce`;
-    }
   } else if (action === "edit-shift" && shift) {
     if (!isStaff()) {
       toast("Only admins and moderators can edit shifts.", true);
@@ -3633,7 +3460,15 @@ $("#admin-members-list").addEventListener("click", async e => {
   const name = b.dataset.name;
   const action = b.dataset.action;
 
+  if (action === "edit-member-depts") {
+    let currentDepts = [];
+    try { currentDepts = JSON.parse(b.dataset.depts || "[]"); } catch(_) {}
+    openAdminDeptModal(id, name, currentDepts);
+    return;
+  }
+
   if (action === "approve-member" || action === "revoke-member") {
+
     const approve = action === "approve-member";
     const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("id", id);
     if (error) {
@@ -3648,6 +3483,80 @@ $("#admin-members-list").addEventListener("click", async e => {
       toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
     }
   }
+});
+
+
+/* Admin Edit Member Departments */
+function openAdminDeptModal(memberId, memberName, memberDepts) {
+  if (!currentProfile?.is_admin) {
+    toast("Only admins can change other members' departments.", true);
+    return;
+  }
+  const modal = $("#admin-dept-modal");
+  if (!modal) return;
+  $("#admin-dept-member-id").value = memberId;
+  $("#admin-dept-title").textContent = `Departments: ${memberName}`;
+  const depts = Array.isArray(memberDepts) ? memberDepts : [];
+  $$("input[name='admin-member-dept']").forEach(cb => {
+    cb.checked = depts.includes(cb.value);
+  });
+  modal.classList.remove("hidden");
+}
+
+function closeAdminDeptModal() {
+  $("#admin-dept-modal")?.classList.add("hidden");
+  $("#admin-dept-member-id").value = "";
+}
+
+$("#close-admin-dept-modal")?.addEventListener("click", closeAdminDeptModal);
+$("#cancel-admin-dept-modal")?.addEventListener("click", closeAdminDeptModal);
+$("#admin-dept-modal")?.addEventListener("click", e => {
+  if (e.target.id === "admin-dept-modal") closeAdminDeptModal();
+});
+
+$("#admin-dept-form")?.addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!currentProfile?.is_admin) return;
+
+  const memberId = $("#admin-dept-member-id")?.value;
+  if (!memberId) return;
+
+  const selectedDepts = Array.from($$("input[name='admin-member-dept']:checked")).map(cb => cb.value);
+  const deptsToSave = selectedDepts.length ? selectedDepts : ["Mechanical"];
+
+  const btn = $("#save-admin-dept-btn");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  const { error } = await supabase.from("profiles").update({
+    departments: deptsToSave
+  }).eq("id", memberId);
+
+  btn.disabled = false;
+  btn.textContent = "Save Departments";
+
+  if (error) {
+    toast("Failed to update departments: " + error.message, true);
+    return;
+  }
+
+  const targetMember = teamMembers.find(m => m.id === memberId);
+  const memberName = targetMember?.full_name || "Member";
+
+  if (memberId === currentUser?.id) {
+    currentProfile.departments = deptsToSave;
+    const elRole = $("#profile-role");
+    if (elRole) elRole.textContent = `${deptsToSave.join(" · ").toUpperCase()} · ${roleLabel(currentProfile)}`;
+  }
+
+  await logAction("MEMBER_DEPARTMENTS_UPDATED", "profiles", memberId, {
+    member_name: memberName,
+    departments: deptsToSave
+  });
+
+  closeAdminDeptModal();
+  await loadMembers();
+  toast(`Updated departments for ${memberName} (${deptsToSave.join(", ")}).`);
 });
 
 /* Member roles (admins): Admin / Strategy / Secret. The profiles trigger only allows admins to change these. */
