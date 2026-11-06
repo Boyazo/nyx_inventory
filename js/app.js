@@ -44,6 +44,73 @@ let editingTaskId = null;
 let editingShiftId = null;
 let checkingOutItem = null;
 let channel = null;
+let pendingPollTimer = null;
+let pendingChannel = null;
+
+function clearPendingWatch() {
+  if (pendingPollTimer) {
+    clearInterval(pendingPollTimer);
+    pendingPollTimer = null;
+  }
+  if (pendingChannel && supabase) {
+    try { supabase.removeChannel(pendingChannel); } catch (_) {}
+    pendingChannel = null;
+  }
+}
+
+function startPendingWatch(user) {
+  clearPendingWatch();
+  if (!user || !supabase) return;
+
+  const checkStatus = async (isManual = false) => {
+    try {
+      const { data, error } = await supabase.from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.warn("Pending status check failed:", error.message);
+        if (isManual) toast("Check failed: " + error.message, true);
+        return;
+      }
+
+      if (data && data.is_approved) {
+        clearPendingWatch();
+        toast("Your account has been approved! Welcome to Team NYX.");
+        await checkUser(user);
+      } else if (isManual) {
+        toast("Account still pending approval by a Team NYX admin.");
+      }
+    } catch (err) {
+      console.warn("Pending status check error:", err);
+      if (isManual) toast("Could not check status right now.", true);
+    }
+  };
+
+  // 1. Setup realtime subscription for this specific profile row
+  try {
+    pendingChannel = supabase.channel("pending-profile-" + user.id)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "profiles",
+        filter: "id=eq." + user.id
+      }, (payload) => {
+        if (payload?.new?.is_approved) {
+          clearPendingWatch();
+          toast("Your account has been approved! Welcome to Team NYX.");
+          checkUser(user);
+        }
+      })
+      .subscribe();
+  } catch (err) {
+    console.warn("Failed to subscribe to pending profile realtime:", err);
+  }
+
+  // 2. Poll every 4 seconds as a reliable backup
+  pendingPollTimer = setInterval(() => checkStatus(false), 4000);
+}
 
 /* Light/Dark Segmented Controller */
 function initTheme() {
@@ -276,6 +343,7 @@ async function logAction(action, entityType, entityId, details) {
 
 async function signOut() {
   clearPinSession();
+  clearPendingWatch();
   if (channel && supabase) {
     await supabase.removeChannel(channel);
     channel = null;
@@ -312,8 +380,11 @@ async function checkUser(user) {
 
   if (!data.is_approved) {
     screens("pending");
+    startPendingWatch(user);
     return;
   }
+
+  clearPendingWatch();
 
   screens("inventory");
   const name = data.full_name || user.email || "Team Member";
@@ -2654,7 +2725,11 @@ $("#signin-form").addEventListener("submit", async e => {
     });
     if (error) {
       if (b) b.disabled = false;
-      message(error.message, true);
+      let errMsg = error.message;
+      if (/email not confirmed/i.test(errMsg)) {
+        errMsg = "Email not confirmed in Supabase Auth. An admin can confirm your email in Supabase Dashboard -> Users, or verify via email.";
+      }
+      message(errMsg, true);
       return;
     }
     await logAction("USER_LOGIN", "auth", data.user?.id, {
@@ -2737,6 +2812,32 @@ $("#recovery-form").addEventListener("submit", async e => {
 
 $("#signout-button").addEventListener("click", signOut);
 $("#pending-signout").addEventListener("click", signOut);
+$("#pending-refresh")?.addEventListener("click", async () => {
+  const btn = $("#pending-refresh");
+  if (btn) btn.disabled = true;
+  try {
+    if (currentUser) {
+      const { data, error } = await supabase.from("profiles")
+        .select("*")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+      if (error) {
+        toast("Could not check status: " + error.message, true);
+      } else if (data && data.is_approved) {
+        clearPendingWatch();
+        toast("Your account has been approved! Loading dashboard...");
+        await checkUser(currentUser);
+      } else {
+        toast("Account still pending approval by a Team NYX admin.");
+      }
+    } else {
+      screens("auth");
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+});
 
 // Profile button triggers
 $("#open-profile-btn").addEventListener("click", (e) => {

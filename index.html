@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -239,7 +239,12 @@
       <span class="eyebrow">REGISTRATION CONFIRMED</span>
       <h2>Waiting for team approval.</h2>
       <p class="muted">Your account is registered, but a Team NYX admin must approve your profile before you can access Nyx Dashboard.</p>
-      <div style="margin-top: 24px;">
+      <div id="pending-poll-status" class="muted small" style="margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span class="sync-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--amber, #f59e0b);"></span>
+        <span>Checking approval status...</span>
+      </div>
+      <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn--primary" id="pending-refresh" type="button"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Check Approval Status</button>
         <button class="btn btn--ghost" id="pending-signout" type="button">Sign out</button>
       </div>
     </div>
