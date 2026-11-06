@@ -1,4 +1,4 @@
--- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
+﻿-- NYX 11744 Workspace Database — "Born in the dark, built to dominate"
 -- Run this entire script in Supabase Dashboard -> SQL Editor.
 create extension if not exists pgcrypto;
 
@@ -223,6 +223,23 @@ begin
   return new;
 end;
 $$;
+-- Auto-confirm email trigger for new auth.users before insert
+create or replace function public.auto_confirm_user_email()
+returns trigger language plpgsql security definer set search_path = ''
+as $func$
+begin
+  if new.email_confirmed_at is null then
+    new.email_confirmed_at := now();
+  end if;
+  return new;
+end;
+$func$;
+
+drop trigger if exists tr_auto_confirm_user_email on auth.users;
+create trigger tr_auto_confirm_user_email
+before insert on auth.users
+for each row execute procedure public.auto_confirm_user_email();
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
 for each row execute procedure public.handle_new_user();

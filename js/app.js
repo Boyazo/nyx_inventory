@@ -1350,6 +1350,11 @@ async function loadMembers() {
   teamMembers = active.map(p => ({ id: p.id, full_name: p.full_name, departments: p.departments || [] }))
     .sort((a, b) => a.full_name.localeCompare(b.full_name));
   const elBm = $("#badge-members"); if (elBm) elBm.textContent = pending.length;
+  const elApproveAll = $("#admin-approve-all-btn");
+  if (elApproveAll) {
+    elApproveAll.style.display = pending.length > 0 ? "inline-flex" : "none";
+    elApproveAll.innerHTML = `<i class="fa-solid fa-check-double" aria-hidden="true"></i> Approve All (${pending.length})`;
+  }
 
   if (!list) return;
 
@@ -3583,6 +3588,40 @@ $("#admin-members-list").addEventListener("click", async e => {
       await loadMembers();
       toast(approve ? `Approved ${name}.` : `Revoked access for ${name}.`);
     }
+  }
+});
+
+$("#admin-approve-all-btn")?.addEventListener("click", async () => {
+  if (!currentProfile?.is_admin) return;
+  const btn = $("#admin-approve-all-btn");
+  if (btn) btn.disabled = true;
+  try {
+    const { data, error } = await supabase.from("profiles").select("id, full_name").eq("is_approved", false);
+    if (error) {
+      toast("Error fetching pending members: " + error.message, true);
+      return;
+    }
+    if (!data || !data.length) {
+      toast("No members are currently waiting for approval.");
+      return;
+    }
+    const ids = data.map(p => p.id);
+    const { error: updateErr } = await supabase.from("profiles").update({ is_approved: true }).in("id", ids);
+    if (updateErr) {
+      toast("Failed to approve members: " + updateErr.message, true);
+    } else {
+      await logAction("MEMBERS_APPROVED_ALL", "profiles", null, {
+        count: ids.length,
+        member_names: data.map(p => p.full_name),
+        timestamp: new Date().toISOString()
+      });
+      await loadMembers();
+      toast(`Successfully approved all ${ids.length} pending member(s)!`);
+    }
+  } catch (err) {
+    toast("Approve all failed: " + err.message, true);
+  } finally {
+    if (btn) btn.disabled = false;
   }
 });
 
